@@ -1,0 +1,53 @@
+[gd_scene format=3 uid="uid://cygseefr5cx8a"]
+
+[ext_resource type="Script" uid="uid://b8l5yhi5thqn" path="res://Scripts/Player.cs" id="1_mv7q2"]
+[ext_resource type="Texture2D" uid="uid://cbnn0o0mufyk5" path="res://CosmicLegacy_PetricakeGamesPNG.png" id="2_u2r47"]
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_p5hms"]
+size = Vector2(126, 127)
+
+[sub_resource type="CircleShape2D" id="CircleShape2D_5xq6q"]
+radius = 243.0
+
+[node name="MainPlayer" type="Node2D" unique_id=375524829]
+
+[node name="Player" type="CharacterBody2D" parent="." unique_id=272412821]
+collision_mask = 14
+script = ExtResource("1_mv7q2")
+InteractionHintLabelPath = NodePath("../UI/InteractionHintLabel")
+
+[node name="Sprite2D" type="Sprite2D" parent="Player" unique_id=373331228]
+position = Vector2(-3.500002, -1.5000019)
+scale = Vector2(8.0625, 7.8125)
+texture = ExtResource("2_u2r47")
+region_enabled = true
+region_rect = Rect2(158.86967, 47.261597, 16.19281, 16.706875)
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Player" unique_id=160022622]
+position = Vector2(-1, -0.5)
+shape = SubResource("RectangleShape2D_p5hms")
+
+[node name="Camera2D" type="Camera2D" parent="Player" unique_id=1876884036]
+position_smoothing_enabled = true
+
+[node name="InteractionArea" type="Area2D" parent="Player" unique_id=1568551401]
+monitoring = true
+monitorable = true
+collision_layer = 0
+collision_mask = 8
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Player/InteractionArea" unique_id=968322492]
+shape = SubResource("CircleShape2D_5xq6q")
+
+[node name="UI" type="CanvasLayer" parent="."]
+
+[node name="InteractionHintLabel" type="Label" parent="UI"]
+visible = false
+offset_left = 24.0
+offset_top = 24.0
+offset_right = 424.0
+offset_bottom = 60.0
+theme_override_colors/font_color = Color(1, 1, 1, 1)
+theme_override_colors/font_outline_color = Color(0, 0, 0, 1)
+theme_override_constants/outline_size = 3
+text = ""
