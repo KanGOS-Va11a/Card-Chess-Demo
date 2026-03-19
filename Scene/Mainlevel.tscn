@@ -1,0 +1,53 @@
+[gd_scene format=3 uid="uid://clfyfxbbjiapg"]
+
+[ext_resource type="Script" uid="uid://b8l5yhi5thqn" path="res://Scripts/Player.cs" id="1_dx8mo"]
+[ext_resource type="Texture2D" uid="uid://cbnn0o0mufyk5" path="res://CosmicLegacy_PetricakeGamesPNG.png" id="2_j8rcl"]
+[ext_resource type="PackedScene" uid="uid://c1ojey6clae1h" path="res://Scene/Chest.tscn" id="3_5o5ic"]
+[ext_resource type="PackedScene" uid="uid://cgf2evpc6ty4e" path="res://Scene/Healing.tscn" id="3_j8rcl"]
+[ext_resource type="PackedScene" uid="uid://cko4roccpe105" path="res://Scene/NpcScene.tscn" id="5_5o5ic"]
+[ext_resource type="PackedScene" uid="uid://c0v263dw3prrw" path="res://Scene/SceneDoor.tscn" id="6_ujx8d"]
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_bnnbe"]
+size = Vector2(126, 127)
+
+[sub_resource type="CircleShape2D" id="CircleShape2D_f4wc2"]
+radius = 243.0
+
+[node name="Node2D" type="Node2D" unique_id=94755713]
+
+[node name="Player" type="CharacterBody2D" parent="." unique_id=2130330233]
+collision_mask = 14
+script = ExtResource("1_dx8mo")
+
+[node name="Sprite2D" type="Sprite2D" parent="Player" unique_id=1405253644]
+position = Vector2(-3.500002, -1.5000019)
+scale = Vector2(8.0625, 7.8125)
+texture = ExtResource("2_j8rcl")
+region_enabled = true
+region_rect = Rect2(158.86967, 47.261597, 16.19281, 16.706875)
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Player" unique_id=1419809530]
+position = Vector2(-1, -0.5)
+shape = SubResource("RectangleShape2D_bnnbe")
+
+[node name="Camera2D" type="Camera2D" parent="Player" unique_id=449423949]
+position_smoothing_enabled = true
+
+[node name="InteractionArea" type="Area2D" parent="Player" unique_id=1617757214]
+collision_layer = 0
+collision_mask = 8
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Player/InteractionArea" unique_id=806901492]
+shape = SubResource("CircleShape2D_f4wc2")
+
+[node name="Scene02" parent="." unique_id=419507687 instance=ExtResource("3_5o5ic")]
+position = Vector2(-702, 6)
+
+[node name="Healing" parent="." unique_id=836515479 instance=ExtResource("3_j8rcl")]
+position = Vector2(-355, 689)
+
+[node name="NpcScene" parent="." unique_id=1266535779 instance=ExtResource("5_5o5ic")]
+position = Vector2(631, -21)
+
+[node name="Door" parent="." unique_id=583652748 instance=ExtResource("6_ujx8d")]
+position = Vector2(611, 649)
