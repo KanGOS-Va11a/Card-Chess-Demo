@@ -60,7 +60,7 @@ public partial class HealStation : StaticBody2D, IInteractable
 //         // 视觉反馈：闪烁一下绿色
 //         var sprite = GetNode<Sprite2D>("Sprite2D");
 //         sprite.Modulate = Colors.Green;
-        
+		
 //         // 1秒后恢复原色
 //         GetTree().CreateTimer(1.0).Timeout += () => sprite.Modulate = Colors.White;
 //     }
