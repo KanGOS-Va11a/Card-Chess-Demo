@@ -1,17 +1,26 @@
-[gd_scene load_steps=3 format=3 uid="uid://cfsbnmkxedlfy"]
+[gd_scene format=3 uid="uid://cfsbnmkxedlfy"]
 
-[ext_resource type="Script" path="res://Scripts/Battle/BattleSceneController.cs" id="1_hq08r"]
-[ext_resource type="Script" path="res://Scripts/Battle/BattleBoardDebugView.cs" id="2_spjhi"]
+[ext_resource type="Script" uid="uid://b1v3ts2ne8faa" path="res://Scripts/Battle/BattleSceneController.cs" id="1_hq08r"]
+[ext_resource type="Script" uid="uid://v6k5hylri703" path="res://Scripts/Battle/Visual/BattleBoardOverlay.cs" id="2_7r48u"]
+[ext_resource type="PackedScene" uid="uid://b0scsa813e0hn" path="res://Scene/Battle/Rooms/GruntDebugRoomA.tscn" id="3_oxbdf"]
+[ext_resource type="PackedScene" path="res://Scene/Battle/Rooms/GruntDebugRoomB.tscn" id="4_fypyy"]
+[ext_resource type="Resource" uid="uid://dy3y14c3mod7u" path="res://Resources/Battle/Rooms/DebugBattleRoomPool.tres" id="5_4mo8r"]
 
 [node name="Battle" type="Node2D" unique_id=990095149]
 script = ExtResource("1_hq08r")
+BattleRoomScenes = [ExtResource("3_oxbdf"), ExtResource("4_fypyy")]
+BattleRoomPools = ExtResource("5_4mo8r")
+RandomSeed = 20260320
 
-[node name="BoardRoot" type="Node2D" parent="."]
-position = Vector2(80, 80)
+[node name="Camera2D" type="Camera2D" parent="." unique_id=768109450]
+position = Vector2(160, 90)
 
-[node name="DebugView" type="Node2D" parent="BoardRoot"]
-script = ExtResource("2_spjhi")
+[node name="BackdropRoot" type="Node2D" parent="." unique_id=83275987]
 
-[node name="PieceRoot" type="Node2D" parent="."]
+[node name="RoomContainer" type="Node2D" parent="." unique_id=351072525]
+position = Vector2(32, 26)
 
-[node name="EffectRoot" type="Node2D" parent="."]
+[node name="BoardOverlay" type="Node2D" parent="RoomContainer" unique_id=1625006113]
+script = ExtResource("2_7r48u")
+
+[node name="OverlayRoot" type="Node2D" parent="." unique_id=476631555]

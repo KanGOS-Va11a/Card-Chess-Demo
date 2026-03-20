@@ -1,0 +1,14 @@
+[gd_resource type="Resource" script_class="BattleRoomPoolDefinition" format=3 uid="uid://dy3y14c3mod7u"]
+
+[ext_resource type="Script" uid="uid://dkwd5ka0iluov" path="res://Scripts/Battle/Rooms/BattleRoomPoolDefinition.cs" id="1_3anlp"]
+[ext_resource type="Script" uid="uid://c3m18klvqpeik" path="res://Scripts/Battle/Rooms/BattleRoomPoolEntry.cs" id="2_u1q87"]
+[ext_resource type="PackedScene" uid="uid://b0scsa813e0hn" path="res://Scene/Battle/Rooms/GruntDebugRoomA.tscn" id="3_h0tr2"]
+
+[sub_resource type="Resource" id="Resource_grunt_entry"]
+script = ExtResource("2_u1q87")
+EnemyTypeId = "grunt"
+RoomScenes = [ExtResource("3_h0tr2")]
+
+[resource]
+script = ExtResource("1_3anlp")
+Entries = [SubResource("Resource_grunt_entry")]
