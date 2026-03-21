@@ -1,0 +1,14 @@
+[gd_resource type="Resource" script_class="BattleEncounterLibrary" format=3 uid="uid://bmpjfpqs2pghk"]
+
+[ext_resource type="Script" uid="uid://blbhtyj15rk4f" path="res://Scripts/Battle/Encounters/BattleEncounterLibrary.cs" id="1_lib"]
+[ext_resource type="Script" uid="uid://d0iglgawcrcpb" path="res://Scripts/Battle/Encounters/BattleEncounterProfile.cs" id="2_profile"]
+
+[sub_resource type="Resource" id="Encounter_grunt_debug"]
+script = ExtResource("2_profile")
+EncounterId = "grunt_debug"
+DisplayName = "Debug Grunt Encounter"
+EnemyTypeIds = PackedStringArray("grunt")
+
+[resource]
+script = ExtResource("1_lib")
+Entries = [SubResource("Encounter_grunt_debug")]

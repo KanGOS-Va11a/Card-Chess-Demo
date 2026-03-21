@@ -1,7 +1,7 @@
-[gd_resource type="Resource" script_class="BattlePrefabLibrary" load_steps=8 format=3]
+[gd_resource type="Resource" script_class="BattlePrefabLibrary" format=3 uid="uid://cfuduyxkf0keq"]
 
-[ext_resource type="Script" path="res://Scripts/Battle/Presentation/BattlePrefabLibrary.cs" id="1_lib"]
-[ext_resource type="Script" path="res://Scripts/Battle/Presentation/BattlePrefabEntry.cs" id="2_entry"]
+[ext_resource type="Script" uid="uid://ctf2skdl317o6" path="res://Scripts/Battle/Presentation/BattlePrefabLibrary.cs" id="1_lib"]
+[ext_resource type="Script" uid="uid://bchuddjflp8v6" path="res://Scripts/Battle/Presentation/BattlePrefabEntry.cs" id="2_entry"]
 [ext_resource type="PackedScene" path="res://Scene/Battle/Tiles/BattlePlayerToken.tscn" id="3_player"]
 [ext_resource type="PackedScene" path="res://Scene/Battle/Tiles/BattleEnemyToken.tscn" id="4_enemy"]
 [ext_resource type="PackedScene" path="res://Scene/Battle/Tiles/BattleObstacleToken.tscn" id="5_obstacle"]
@@ -14,6 +14,7 @@ PrefabScene = ExtResource("3_player")
 DefaultMaxHp = 12
 DefaultCurrentHp = 12
 DefaultMovePointsPerTurn = 4
+DefaultAttackDamage = 2
 
 [sub_resource type="Resource" id="Entry_Enemy"]
 script = ExtResource("2_entry")
@@ -31,7 +32,8 @@ DisplayName = "Obstacle"
 PrefabScene = ExtResource("5_obstacle")
 DefaultMaxHp = 3
 DefaultCurrentHp = 3
-DefaultMovePointsPerTurn = 0
+DefaultAttackRange = 0
+DefaultAttackDamage = 0
 
 [resource]
 script = ExtResource("1_lib")

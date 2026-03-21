@@ -1,4 +1,4 @@
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using Godot;
 
 namespace CardChessDemo.Battle.Board;
@@ -14,6 +14,8 @@ public static class OccupancyRules
     {
         failureReason = string.Empty;
 
+        // 这里目前只裁决“能不能站进去”。
+        // 它不处理敌我关系、攻击判定、互动触发或脚下事件。
         if (!boardState.TryGetCell(targetCell, out BoardCellState? cellState) || cellState == null)
         {
             failureReason = $"Cell {targetCell} is outside of the board.";
@@ -24,6 +26,7 @@ public static class OccupancyRules
 
         if (boardObject.ObjectType == BoardObjectType.Unit)
         {
+            // 单位遵守“一格一单位”，同时要检查格内其他对象是否允许叠放。
             if (!string.IsNullOrWhiteSpace(cellState.UnitObjectId) && cellState.UnitObjectId != boardObject.ObjectId)
             {
                 failureReason = $"Cell {targetCell} already contains another unit.";

@@ -7,6 +7,8 @@ using CardChessDemo.Battle.Shared;
 
 namespace CardChessDemo.Battle.State;
 
+// 把 board 层对象整理成更适合 HUD / prefab 读取的只读快照。
+// 当前状态仍然比较轻量，还没有 buff、行动点、敌人意图等完整战斗字段。
 public sealed class BattleObjectStateManager
 {
     private readonly Dictionary<string, BattleObjectState> _states = new(StringComparer.Ordinal);
@@ -29,6 +31,7 @@ public sealed class BattleObjectStateManager
 
         foreach (BoardObject boardObject in _registry.AllObjects)
         {
+            ApplyRuntimeCombatData(boardObject);
             BattleObjectState state = CreateState(boardObject);
             _states[state.ObjectId] = state;
         }
@@ -46,17 +49,30 @@ public sealed class BattleObjectStateManager
 
     public void SyncAllFromRegistry()
     {
+        // registry 是逻辑真源，表现层状态每帧向它靠拢。
+        HashSet<string> activeObjectIds = _registry.AllObjects
+            .Select(boardObject => boardObject.ObjectId)
+            .ToHashSet(StringComparer.Ordinal);
+
+        foreach (string staleObjectId in _states.Keys.Where(objectId => !activeObjectIds.Contains(objectId)).ToArray())
+        {
+            _states.Remove(staleObjectId);
+        }
+
         foreach (BoardObject boardObject in _registry.AllObjects)
         {
             if (!_states.TryGetValue(boardObject.ObjectId, out BattleObjectState? state))
             {
+                ApplyRuntimeCombatData(boardObject);
                 state = CreateState(boardObject);
                 _states[state.ObjectId] = state;
             }
 
+            ApplyRuntimeCombatData(boardObject);
+            BattlePrefabEntry? prefabEntry = _prefabLibrary.FindEntry(boardObject.DefinitionId);
             state.Cell = boardObject.Cell;
-            state.CurrentHp = boardObject.CurrentHp;
             state.MaxHp = boardObject.MaxHp > 0 ? boardObject.MaxHp : state.MaxHp;
+            state.CurrentHp = ResolveCurrentHp(boardObject, prefabEntry);
         }
 
         SyncPlayerFromSession();
@@ -70,10 +86,14 @@ public sealed class BattleObjectStateManager
             return;
         }
 
+        // 玩家单位的显示名、生命和移动力以全局 session 为准，
+        // 这样 HUD 调试改动能立即反馈到战斗表现。
         playerState.DisplayName = _session.PlayerDisplayName;
         playerState.MaxHp = _session.PlayerMaxHp;
         playerState.CurrentHp = _session.PlayerCurrentHp;
         playerState.MovePointsPerTurn = _session.PlayerMovePointsPerTurn;
+        playerState.AttackRange = _session.PlayerAttackRange;
+        playerState.AttackDamage = _session.PlayerAttackDamage;
     }
 
     private BattleObjectState CreateState(BoardObject boardObject)
@@ -90,19 +110,66 @@ public sealed class BattleObjectStateManager
         {
             Cell = boardObject.Cell,
             MaxHp = boardObject.MaxHp > 0 ? boardObject.MaxHp : prefabEntry?.DefaultMaxHp ?? 0,
-            CurrentHp = boardObject.CurrentHp > 0 ? boardObject.CurrentHp : prefabEntry?.DefaultCurrentHp ?? 0,
+            CurrentHp = ResolveCurrentHp(boardObject, prefabEntry),
             MovePointsPerTurn = prefabEntry?.DefaultMovePointsPerTurn ?? 0,
+            AttackRange = prefabEntry?.DefaultAttackRange ?? 1,
+            AttackDamage = prefabEntry?.DefaultAttackDamage ?? 1,
             IsPlayer = isPlayer,
         };
 
         if (isPlayer)
         {
+            // 玩家是当前唯一会被外部全局状态覆盖的对象。
+            // 敌人和障碍物暂时没有独立持久化来源。
             state.DisplayName = _session.PlayerDisplayName;
             state.MaxHp = _session.PlayerMaxHp;
             state.CurrentHp = _session.PlayerCurrentHp;
             state.MovePointsPerTurn = _session.PlayerMovePointsPerTurn;
+            state.AttackRange = _session.PlayerAttackRange;
+            state.AttackDamage = _session.PlayerAttackDamage;
         }
 
         return state;
+    }
+
+    private void ApplyRuntimeCombatData(BoardObject boardObject)
+    {
+        BattlePrefabEntry? prefabEntry = _prefabLibrary.FindEntry(boardObject.DefinitionId);
+        bool isPlayer = boardObject.HasTag("player");
+
+        if (isPlayer)
+        {
+            boardObject.SyncCombatStats(_session.PlayerMaxHp, _session.PlayerCurrentHp);
+            return;
+        }
+
+        int resolvedMaxHp = boardObject.MaxHp > 0 ? boardObject.MaxHp : prefabEntry?.DefaultMaxHp ?? 0;
+        int resolvedCurrentHp = boardObject.CurrentHp > 0
+            ? boardObject.CurrentHp
+            : prefabEntry?.DefaultCurrentHp > 0
+                ? prefabEntry.DefaultCurrentHp
+                : resolvedMaxHp;
+
+        boardObject.ApplyCombatDefaults(resolvedMaxHp, resolvedCurrentHp);
+    }
+
+    private static int ResolveCurrentHp(BoardObject boardObject, BattlePrefabEntry? prefabEntry)
+    {
+        if (boardObject.CurrentHp > 0)
+        {
+            return boardObject.CurrentHp;
+        }
+
+        if (boardObject.MaxHp > 0)
+        {
+            return boardObject.MaxHp;
+        }
+
+        if (prefabEntry?.DefaultCurrentHp > 0)
+        {
+            return prefabEntry.DefaultCurrentHp;
+        }
+
+        return prefabEntry?.DefaultMaxHp ?? 0;
     }
 }

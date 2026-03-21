@@ -1,4 +1,4 @@
-using Godot;
+﻿using Godot;
 using CardChessDemo.Battle.State;
 
 namespace CardChessDemo.Battle.Presentation;
@@ -6,6 +6,7 @@ namespace CardChessDemo.Battle.Presentation;
 public partial class BattleAnimatedViewBase : Node2D
 {
 	private AnimatedSprite2D? _animatedSprite;
+	// 有些调用会在节点 _Ready 前发生，所以先缓存“想播什么动画”。
 	private string _pendingAnimation = "idle";
 
 	public BattleObjectState? State { get; private set; }
@@ -21,6 +22,8 @@ public partial class BattleAnimatedViewBase : Node2D
 
 		if (_animatedSprite.SpriteFrames == null)
 		{
+			// 运行期允许 prefab 没配美术资源时降级成内建帧，
+			// 这样战斗原型不会因为缺贴图直接失效。
 			_animatedSprite.SpriteFrames = BuildFallbackFrames();
 		}
 
@@ -47,6 +50,7 @@ public partial class BattleAnimatedViewBase : Node2D
 	{
 		_pendingAnimation = animationName;
 
+		// 如果视图还没 ready，就只记录状态，不立刻访问 AnimatedSprite2D。
 		if (_animatedSprite?.SpriteFrames == null)
 		{
 			if (State != null)
@@ -59,6 +63,7 @@ public partial class BattleAnimatedViewBase : Node2D
 
 		if (!_animatedSprite.SpriteFrames.HasAnimation(animationName))
 		{
+			// 当前原型允许调用比资源更多的动画名，缺失时统一回退到 idle。
 			animationName = "idle";
 		}
 
@@ -82,6 +87,7 @@ public partial class BattleAnimatedViewBase : Node2D
 		AddAnimation(frames, "move", new[] { primary.Lightened(0.1f), secondary, primary.Darkened(0.1f) }, 7.0f, true);
 		AddAnimation(frames, "action", new[] { secondary, primary, secondary }, 10.0f, false);
 		AddAnimation(frames, "hit", new[] { new Color(1.0f, 1.0f, 1.0f), primary.Darkened(0.3f) }, 8.0f, false);
+		// defend 目前只是视觉占位动画，正式防御规则还没有落地。
 		AddAnimation(frames, "defend", new[] { primary, new Color(0.75f, 0.95f, 1.0f), primary }, 6.0f, false);
 		return frames;
 	}

@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using Godot;
 
@@ -24,6 +24,8 @@ public sealed class BoardQueryService
 
         List<BoardObject> objects = new();
 
+        // 返回顺序固定为：单位 -> blocking -> resident。
+        // 这样上层调试或绘制时更容易先拿到主占位对象。
         if (!string.IsNullOrWhiteSpace(cellState.UnitObjectId) && _registry.TryGet(cellState.UnitObjectId, out BoardObject? unitObject) && unitObject != null)
         {
             objects.Add(unitObject);
@@ -61,6 +63,19 @@ public sealed class BoardQueryService
         return Math.Max(0, moveCost);
     }
 
+    public bool CanOccupyCell(string objectId, Vector2I targetCell, out string failureReason)
+    {
+        failureReason = string.Empty;
+
+        if (!_registry.TryGet(objectId, out BoardObject? boardObject) || boardObject == null)
+        {
+            failureReason = $"Object {objectId} was not found in the registry.";
+            return false;
+        }
+
+        return OccupancyRules.CanPlaceObject(_boardState, _registry, boardObject, targetCell, out failureReason);
+    }
+
     public bool TryMoveObject(string objectId, Vector2I targetCell, out string failureReason)
     {
         failureReason = string.Empty;
@@ -81,6 +96,8 @@ public sealed class BoardQueryService
             return false;
         }
 
+        // 当前移动只处理 board 层位置交换。
+        // 还没有攻击触发、机会攻击、地形事件、时间推进或动画时序系统。
         _boardState.RemoveObject(boardObject);
         boardObject.SetCell(targetCell);
         _boardState.PlaceObject(boardObject);

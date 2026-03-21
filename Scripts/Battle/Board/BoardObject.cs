@@ -51,7 +51,7 @@ public sealed class BoardObject
 
     public IReadOnlyCollection<string> Tags => _tags;
 
-    public int MaxHp { get; }
+    public int MaxHp { get; private set; }
 
     public int CurrentHp { get; private set; }
 
@@ -85,6 +85,23 @@ public sealed class BoardObject
         }
 
         CurrentHp = Math.Max(0, CurrentHp - amount);
+    }
+
+    public void ApplyCombatDefaults(int maxHp, int currentHp)
+    {
+        if (MaxHp > 0)
+        {
+            return;
+        }
+
+        MaxHp = Math.Max(0, maxHp);
+        CurrentHp = MaxHp <= 0 ? 0 : Mathf.Clamp(currentHp, 0, MaxHp);
+    }
+
+    public void SyncCombatStats(int maxHp, int currentHp)
+    {
+        MaxHp = Math.Max(0, maxHp);
+        CurrentHp = MaxHp <= 0 ? 0 : Mathf.Clamp(currentHp, 0, MaxHp);
     }
 
     public static BoardObject FromSpawn(BoardObjectSpawnDefinition spawn)

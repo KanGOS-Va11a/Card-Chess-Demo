@@ -1,146 +1,509 @@
+using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using Godot;
+using CardChessDemo.Battle.Cards;
 using CardChessDemo.Battle.State;
-using CardChessDemo.Battle.Shared;
 using CardChessDemo.Battle.Turn;
 
 namespace CardChessDemo.Battle.UI;
 
 public partial class BattleHudController : CanvasLayer
 {
-    [Signal] public delegate void EndTurnRequestedEventHandler();
-    [Signal] public delegate void MovePointDeltaRequestedEventHandler(int delta);
+	[Signal] public delegate void EndTurnRequestedEventHandler();
+	[Signal] public delegate void AttackRequestedEventHandler();
+	[Signal] public delegate void MeditateRequestedEventHandler();
+	[Signal] public delegate void CardRequestedEventHandler(string cardInstanceId);
 
-    [Export] public int ReservedBottomScreenPixels { get; set; } = 44;
+	private const float HoverOffsetX = 10.0f;
+	private const float HoverOffsetY = -8.0f;
+	private const float ScreenMargin = 4.0f;
+	private const float SelectedCardLift = 8.0f;
+	private const float CardWidth = 42.0f;
+	private const float CardHeight = 42.0f;
 
-    private Label _playerSummary = null!;
-    private Label _turnSummary = null!;
-    private Label _objectStates = null!;
-    private Label _debugHint = null!;
-    private Button _endTurnButton = null!;
-    private Button _moveMinusButton = null!;
-    private Button _movePlusButton = null!;
+	private readonly PackedScene _cardViewScene = GD.Load<PackedScene>("res://Scene/Battle/UI/BattleCardView.tscn");
 
-    private BattleObjectStateManager? _stateManager;
-    private GlobalGameSession? _session;
-    private TurnActionState? _turnState;
+	private PanelContainer _hoveredUnitPanel = null!;
+	private Label _hoveredUnitTitle = null!;
+	private Label _hoveredUnitStats = null!;
+	private PanelContainer _hoveredCardPanel = null!;
+	private Label _hoveredCardTitle = null!;
+	private Label _hoveredCardStats = null!;
+	private PanelContainer _pilePopup = null!;
+	private Label _pilePopupTitle = null!;
+	private RichTextLabel _pilePopupBody = null!;
+	private Label _turnLabel = null!;
+	private Label _resourceLabel = null!;
+	private Button _drawPileButton = null!;
+	private Button _discardPileButton = null!;
+	private Button _exhaustPileButton = null!;
+	private Button _attackButton = null!;
+	private Button _meditateButton = null!;
+	private Button _endTurnButton = null!;
+	private Control _handArea = null!;
+	private Control _cardFxRoot = null!;
 
-    public override void _Ready()
-    {
-        _playerSummary = GetNode<Label>("Panel/Margin/VBox/TopRow/PlayerSummary");
-        _turnSummary = GetNode<Label>("Panel/Margin/VBox/TopRow/TurnSummary");
-        _objectStates = GetNode<Label>("Panel/Margin/VBox/BottomRow/ObjectStates");
-        _debugHint = GetNode<Label>("Panel/Margin/VBox/BottomRow/DebugHint");
-        _endTurnButton = GetNode<Button>("Panel/Margin/VBox/TopRow/EndTurnButton");
-        _moveMinusButton = GetNode<Button>("Panel/Margin/VBox/TopRow/MoveMinusButton");
-        _movePlusButton = GetNode<Button>("Panel/Margin/VBox/TopRow/MovePlusButton");
+	private readonly Dictionary<string, BattleCardView> _cardViews = new(StringComparer.Ordinal);
 
-        _endTurnButton.Pressed += OnEndTurnPressed;
-        _moveMinusButton.Pressed += OnMoveMinusPressed;
-        _movePlusButton.Pressed += OnMovePlusPressed;
-    }
+	private TurnActionState? _turnState;
+	private BattleObjectState? _hoveredUnitState;
+	private Vector2 _hoveredUnitScreenPosition;
+	private BattleCardInstance? _hoveredCard;
+	private Vector2 _hoveredCardScreenPosition;
+	private BattleCardInstance[] _handCards = Array.Empty<BattleCardInstance>();
+	private BattleCardInstance[] _drawPileCards = Array.Empty<BattleCardInstance>();
+	private BattleCardInstance[] _discardPileCards = Array.Empty<BattleCardInstance>();
+	private BattleCardInstance[] _exhaustPileCards = Array.Empty<BattleCardInstance>();
+	private int _currentEnergy;
+	private int _maxEnergy;
+	private int _energyRechargeProgress;
+	private int _energyRechargeInterval = 3;
+	private string _selectedCardInstanceId = string.Empty;
+	private string _lastHandSignature = string.Empty;
+	private bool _signalsHooked;
 
-    public override void _ExitTree()
-    {
-        if (IsNodeReady())
-        {
-            _endTurnButton.Pressed -= OnEndTurnPressed;
-            _moveMinusButton.Pressed -= OnMoveMinusPressed;
-            _movePlusButton.Pressed -= OnMovePlusPressed;
-        }
-    }
+	public override void _Ready()
+	{
+		if (!EnsureNodes())
+		{
+			return;
+		}
 
-    public void Bind(BattleObjectStateManager stateManager, GlobalGameSession session, TurnActionState turnState)
-    {
-        _stateManager = stateManager;
-        _session = session;
-        _turnState = turnState;
-        Refresh();
-    }
+		HookSignals();
+		Refresh();
+	}
 
-    public override void _Process(double delta)
-    {
-        Refresh();
-    }
+	public override void _ExitTree()
+	{
+		if (!_signalsHooked)
+		{
+			return;
+		}
 
-    private void Refresh()
-    {
-        if (_stateManager == null || _session == null || _turnState == null || !IsNodeReady())
-        {
-            return;
-        }
+		_attackButton.Pressed -= OnAttackPressed;
+		_meditateButton.Pressed -= OnMeditatePressed;
+		_endTurnButton.Pressed -= OnEndTurnPressed;
+		_drawPileButton.Pressed -= OnDrawPilePressed;
+		_discardPileButton.Pressed -= OnDiscardPilePressed;
+		_exhaustPileButton.Pressed -= OnExhaustPilePressed;
+		_handArea.Resized -= OnHandAreaResized;
+		_signalsHooked = false;
+	}
 
-        BattleObjectState? playerState = _stateManager.GetPrimaryPlayerState();
-        if (playerState != null)
-        {
-            _playerSummary.Text = $"HP {playerState.CurrentHp}/{playerState.MaxHp}  MV {playerState.MovePointsPerTurn}  @{FormatCell(playerState.Cell)}";
-        }
-        else
-        {
-            _playerSummary.Text = "Player missing";
-        }
+	public void Bind(TurnActionState turnState)
+	{
+		_turnState = turnState;
+		if (IsNodeReady())
+		{
+			Refresh();
+		}
+	}
 
-        _turnSummary.Text = $"Turn {_turnState.TurnIndex}  M:{FormatFlag(_turnState.HasMoved)}  E:{FormatFlag(_turnState.HasEndedTurn)}";
-        _endTurnButton.Text = _turnState.HasEndedTurn ? "Next" : "End";
-        _objectStates.Text = BuildObjectSummary();
-        _debugHint.Text = "LMB move | T/Enter end-turn";
-    }
+	public void SetCardState(
+		int currentEnergy,
+		int maxEnergy,
+		int energyRechargeProgress,
+		int energyRechargeInterval,
+		IReadOnlyList<BattleCardInstance> handCards,
+		string selectedCardInstanceId,
+		IReadOnlyList<BattleCardInstance> drawPileCards,
+		IReadOnlyList<BattleCardInstance> discardPileCards,
+		IReadOnlyList<BattleCardInstance> exhaustPileCards)
+	{
+		_currentEnergy = currentEnergy;
+		_maxEnergy = maxEnergy;
+		_energyRechargeProgress = energyRechargeProgress;
+		_energyRechargeInterval = Math.Max(1, energyRechargeInterval);
+		_handCards = handCards.ToArray();
+		_selectedCardInstanceId = selectedCardInstanceId ?? string.Empty;
+		_drawPileCards = drawPileCards.ToArray();
+		_discardPileCards = discardPileCards.ToArray();
+		_exhaustPileCards = exhaustPileCards.ToArray();
+	}
 
-    private void OnEndTurnPressed()
-    {
-        EmitSignal(SignalName.EndTurnRequested);
-    }
+	public void SetHoveredUnitState(BattleObjectState? hoveredUnitState, Vector2 screenPosition)
+	{
+		_hoveredUnitState = hoveredUnitState;
+		_hoveredUnitScreenPosition = screenPosition;
+		if (IsNodeReady())
+		{
+			RefreshHoveredUnit();
+		}
+	}
 
-    private void OnMoveMinusPressed()
-    {
-        EmitSignal(SignalName.MovePointDeltaRequested, -1);
-    }
+	public void PlayCardUseEffect(BattleCardInstance cardInstance)
+	{
+		if (!EnsureNodes() || !_cardViews.TryGetValue(cardInstance.InstanceId, out BattleCardView? sourceView))
+		{
+			return;
+		}
 
-    private void OnMovePlusPressed()
-    {
-        EmitSignal(SignalName.MovePointDeltaRequested, 1);
-    }
+		BattleCardView fxView = _cardViewScene.Instantiate<BattleCardView>();
+		_cardFxRoot.AddChild(fxView);
+		fxView.Bind(cardInstance, false, true);
+		fxView.Size = new Vector2(CardWidth, CardHeight);
+		fxView.Position = _cardFxRoot.GetGlobalTransformWithCanvas().AffineInverse() * sourceView.GlobalPosition;
+		fxView.Disabled = true;
+		fxView.MouseFilter = Control.MouseFilterEnum.Ignore;
+		fxView.ZIndex = 30;
 
-    private string BuildObjectSummary()
-    {
-        if (_stateManager == null)
-        {
-            return "Objs P0 E0 O0";
-        }
+		Vector2 viewportSize = GetViewport().GetVisibleRect().Size;
+		Vector2 targetPosition = new(viewportSize.X * 0.5f - CardWidth * 0.5f, viewportSize.Y * 0.45f - CardHeight * 0.5f);
+		Vector2 localTarget = _cardFxRoot.GetGlobalTransformWithCanvas().AffineInverse() * targetPosition;
 
-        int playerCount = 0;
-        int enemyCount = 0;
-        int obstacleCount = 0;
+		Tween tween = CreateTween();
+		tween.SetParallel();
+		tween.SetEase(Tween.EaseType.Out);
+		tween.SetTrans(Tween.TransitionType.Cubic);
+		tween.TweenProperty(fxView, "position", localTarget, 0.18f);
+		tween.TweenProperty(fxView, "scale", new Vector2(1.12f, 1.12f), 0.18f);
+		tween.TweenProperty(fxView, "modulate:a", 0.0f, 0.14f).SetDelay(0.08f);
+		tween.Finished += fxView.QueueFree;
+	}
 
-        foreach (BattleObjectState state in _stateManager.AllStates)
-        {
-            switch (state.ObjectType)
-            {
-                case CardChessDemo.Battle.Board.BoardObjectType.Unit when state.IsPlayer:
-                    playerCount++;
-                    break;
-                case CardChessDemo.Battle.Board.BoardObjectType.Unit:
-                    enemyCount++;
-                    break;
-                case CardChessDemo.Battle.Board.BoardObjectType.Obstacle:
-                    obstacleCount++;
-                    break;
-            }
-        }
+	public override void _Process(double delta)
+	{
+		Refresh();
+	}
 
-        BattleObjectState? playerState = _stateManager.GetPrimaryPlayerState();
-        string animation = playerState?.CurrentAnimation ?? "n/a";
-        return $"Objs P{playerCount} E{enemyCount} O{obstacleCount}  Anim {animation}";
-    }
+	private void Refresh()
+	{
+		if (_turnState == null || !IsNodeReady() || !EnsureNodes())
+		{
+			return;
+		}
 
-    private static string FormatFlag(bool value)
-    {
-        return value ? "Y" : "N";
-    }
+		_turnLabel.Text = BuildTurnLabel();
+		_resourceLabel.Text = $"E{_currentEnergy}/{_maxEnergy} R{_energyRechargeProgress}/{_energyRechargeInterval}";
+		_drawPileButton.Text = $"抽{_drawPileCards.Length}";
+		_discardPileButton.Text = $"弃{_discardPileCards.Length}";
+		_exhaustPileButton.Text = $"消{_exhaustPileCards.Length}";
+		_attackButton.Visible = _turnState.CanEnterAttackTargeting || _turnState.IsAttackTargeting;
+		_attackButton.Text = _turnState.IsAttackTargeting ? "取消" : "攻击";
+		_attackButton.Disabled = !_turnState.CanEnterAttackTargeting && !_turnState.IsAttackTargeting;
+		_meditateButton.Disabled = !_turnState.CanSelectCard;
+		_endTurnButton.Disabled = !_turnState.IsPlayerTurn && !_turnState.IsAttackTargeting && !_turnState.IsCardTargeting;
+		RefreshHandViews();
+		RefreshHoveredUnit();
+		RefreshHoveredCard();
+	}
 
-    private static string FormatCell(Vector2I cell)
-    {
-        return $"{cell.X},{cell.Y}";
-    }
+	private void RefreshHoveredUnit()
+	{
+		if (_hoveredUnitState == null)
+		{
+			_hoveredUnitPanel.Visible = false;
+			return;
+		}
+
+		_hoveredUnitPanel.Visible = true;
+		_hoveredUnitTitle.Text = _hoveredUnitState.DisplayName;
+		_hoveredUnitStats.Text = $"生命 {_hoveredUnitState.CurrentHp}/{_hoveredUnitState.MaxHp}";
+		PositionFloatingPanel(_hoveredUnitPanel, _hoveredUnitScreenPosition);
+	}
+
+	private void RefreshHoveredCard()
+	{
+		if (_hoveredCard == null)
+		{
+			_hoveredCardPanel.Visible = false;
+			return;
+		}
+
+		StringBuilder line = new();
+		line.Append(_hoveredCard.Definition.Description);
+		if (_hoveredCard.Definition.IsQuick)
+		{
+			line.Append(" 迅速");
+		}
+
+		if (_hoveredCard.Definition.ExhaustsOnPlay)
+		{
+			line.Append(" 消耗");
+		}
+
+		_hoveredCardPanel.Visible = true;
+		_hoveredCardTitle.Text = $"{_hoveredCard.Definition.DisplayName} 费 {_hoveredCard.Definition.Cost}";
+		_hoveredCardStats.Text = line.ToString();
+		PositionFloatingPanel(_hoveredCardPanel, _hoveredCardScreenPosition);
+	}
+
+	private void PositionFloatingPanel(Control panel, Vector2 screenPosition)
+	{
+		Vector2 panelSize = panel.GetCombinedMinimumSize();
+		panel.Size = panelSize;
+		Vector2 viewportSize = GetViewport().GetVisibleRect().Size;
+		Vector2 desiredPosition = screenPosition + new Vector2(HoverOffsetX, HoverOffsetY);
+
+		if (desiredPosition.X + panelSize.X > viewportSize.X - ScreenMargin)
+		{
+			desiredPosition.X = screenPosition.X - panelSize.X - HoverOffsetX;
+		}
+
+		if (desiredPosition.Y + panelSize.Y > viewportSize.Y - ScreenMargin)
+		{
+			desiredPosition.Y = screenPosition.Y - panelSize.Y - 8.0f;
+		}
+
+		desiredPosition.X = Mathf.Clamp(desiredPosition.X, ScreenMargin, viewportSize.X - panelSize.X - ScreenMargin);
+		desiredPosition.Y = Mathf.Clamp(desiredPosition.Y, ScreenMargin, viewportSize.Y - panelSize.Y - ScreenMargin);
+		panel.Position = desiredPosition;
+	}
+
+	private void RefreshHandViews()
+	{
+		string handSignature = string.Join(
+			"|",
+			_handCards.Select(card =>
+				$"{card.InstanceId}:{card.Definition.DisplayName}:{card.Definition.Cost}:{card.Definition.IsQuick}:{card.Definition.ExhaustsOnPlay}"))
+			+ $"|sel:{_selectedCardInstanceId}|en:{_currentEnergy}";
+
+		if (handSignature == _lastHandSignature)
+		{
+			LayoutCardViews();
+			return;
+		}
+
+		foreach (Node child in _handArea.GetChildren())
+		{
+			child.QueueFree();
+		}
+
+		_cardViews.Clear();
+
+		foreach (BattleCardInstance card in _handCards)
+		{
+			BattleCardView cardView = _cardViewScene.Instantiate<BattleCardView>();
+			_handArea.AddChild(cardView);
+
+			bool isPlayable = _turnState?.CanSelectCard == true && card.Definition.Cost <= _currentEnergy;
+			bool isSelected = string.Equals(card.InstanceId, _selectedCardInstanceId, StringComparison.Ordinal);
+			cardView.Bind(card, isSelected, isPlayable);
+			cardView.Pressed += () => EmitSignal(SignalName.CardRequested, card.InstanceId);
+			cardView.MouseEntered += () => OnCardMouseEntered(card);
+			cardView.MouseExited += OnCardMouseExited;
+			_cardViews[card.InstanceId] = cardView;
+		}
+
+		_lastHandSignature = handSignature;
+		LayoutCardViews();
+	}
+
+	private void LayoutCardViews()
+	{
+		if (_cardViews.Count == 0)
+		{
+			return;
+		}
+
+		int cardCount = _handCards.Length;
+		float availableWidth = Mathf.Max(CardWidth, _handArea.Size.X);
+		float spacing = cardCount <= 1
+			? 0.0f
+			: Mathf.Clamp((availableWidth - CardWidth * cardCount) / Math.Max(1, cardCount - 1), 2.0f, 8.0f);
+
+		float totalWidth = CardWidth * cardCount + spacing * Mathf.Max(0, cardCount - 1);
+		float startX = Mathf.Max(0.0f, (availableWidth - totalWidth) * 0.5f);
+
+		for (int index = 0; index < _handCards.Length; index++)
+		{
+			BattleCardInstance card = _handCards[index];
+			if (!_cardViews.TryGetValue(card.InstanceId, out BattleCardView? cardView))
+			{
+				continue;
+			}
+
+			bool isPlayable = _turnState?.CanSelectCard == true && card.Definition.Cost <= _currentEnergy;
+			bool isSelected = string.Equals(card.InstanceId, _selectedCardInstanceId, StringComparison.Ordinal);
+			cardView.Bind(card, isSelected, isPlayable);
+			cardView.Size = new Vector2(CardWidth, CardHeight);
+			cardView.Position = new Vector2(startX + index * (CardWidth + spacing), isSelected ? 0.0f : SelectedCardLift);
+			cardView.ZIndex = isSelected ? 10 : index;
+		}
+	}
+
+	private void ShowPilePopup(string title, IReadOnlyList<BattleCardInstance> cards)
+	{
+		StringBuilder builder = new();
+		if (cards.Count == 0)
+		{
+			builder.Append("空");
+		}
+		else
+		{
+			for (int index = cards.Count - 1; index >= 0; index--)
+			{
+				BattleCardInstance card = cards[index];
+				builder.Append(card.Definition.DisplayName);
+				builder.Append(" 费");
+				builder.Append(card.Definition.Cost);
+
+				if (card.Definition.IsQuick)
+				{
+					builder.Append(" 迅速");
+				}
+
+				if (card.Definition.ExhaustsOnPlay)
+				{
+					builder.Append(" 消耗");
+				}
+
+				if (index > 0)
+				{
+					builder.Append('\n');
+				}
+			}
+		}
+
+		_pilePopupTitle.Text = title;
+		_pilePopupBody.Text = builder.ToString();
+		_pilePopup.Visible = true;
+	}
+
+	private bool EnsureNodes()
+	{
+		if (_turnLabel != null)
+		{
+			return true;
+		}
+
+		_hoveredUnitPanel = GetNodeOrNull<PanelContainer>("HoverPanel");
+		_hoveredUnitTitle = GetNodeOrNull<Label>("HoverPanel/Margin/VBox/HoverTitle");
+		_hoveredUnitStats = GetNodeOrNull<Label>("HoverPanel/Margin/VBox/HoverStats");
+		_hoveredCardPanel = GetNodeOrNull<PanelContainer>("CardHoverPanel");
+		_hoveredCardTitle = GetNodeOrNull<Label>("CardHoverPanel/Margin/VBox/HoverTitle");
+		_hoveredCardStats = GetNodeOrNull<Label>("CardHoverPanel/Margin/VBox/HoverStats");
+		_pilePopup = GetNodeOrNull<PanelContainer>("PilePopup");
+		_pilePopupTitle = GetNodeOrNull<Label>("PilePopup/Margin/VBox/TitleLabel");
+		_pilePopupBody = GetNodeOrNull<RichTextLabel>("PilePopup/Margin/VBox/BodyLabel");
+		_turnLabel = GetNodeOrNull<Label>("TopBar/LeftInfo/TurnLabel");
+		_resourceLabel = GetNodeOrNull<Label>("TopBar/LeftInfo/ResourceLabel");
+		_drawPileButton = GetNodeOrNull<Button>("TopBar/RightControls/PileRow/DrawPileButton");
+		_discardPileButton = GetNodeOrNull<Button>("TopBar/RightControls/PileRow/DiscardPileButton");
+		_exhaustPileButton = GetNodeOrNull<Button>("TopBar/RightControls/PileRow/ExhaustPileButton");
+		_attackButton = GetNodeOrNull<Button>("TopBar/RightControls/ActionRow/AttackButton");
+		_meditateButton = GetNodeOrNull<Button>("TopBar/RightControls/ActionRow/MeditateButton");
+		_endTurnButton = GetNodeOrNull<Button>("TopBar/RightControls/ActionRow/EndTurnButton");
+		_handArea = GetNodeOrNull<Control>("BottomHand/HandArea");
+		_cardFxRoot = GetNodeOrNull<Control>("CardFxRoot");
+
+		return _hoveredUnitPanel != null
+			&& _hoveredUnitTitle != null
+			&& _hoveredUnitStats != null
+			&& _hoveredCardPanel != null
+			&& _hoveredCardTitle != null
+			&& _hoveredCardStats != null
+			&& _pilePopup != null
+			&& _pilePopupTitle != null
+			&& _pilePopupBody != null
+			&& _turnLabel != null
+			&& _resourceLabel != null
+			&& _drawPileButton != null
+			&& _discardPileButton != null
+			&& _exhaustPileButton != null
+			&& _attackButton != null
+			&& _meditateButton != null
+			&& _endTurnButton != null
+			&& _handArea != null
+			&& _cardFxRoot != null;
+	}
+
+	private void HookSignals()
+	{
+		if (_signalsHooked || !EnsureNodes())
+		{
+			return;
+		}
+
+		_attackButton.Pressed += OnAttackPressed;
+		_meditateButton.Pressed += OnMeditatePressed;
+		_endTurnButton.Pressed += OnEndTurnPressed;
+		_drawPileButton.Pressed += OnDrawPilePressed;
+		_discardPileButton.Pressed += OnDiscardPilePressed;
+		_exhaustPileButton.Pressed += OnExhaustPilePressed;
+		_handArea.Resized += OnHandAreaResized;
+		_signalsHooked = true;
+	}
+
+	private void OnCardMouseEntered(BattleCardInstance card)
+	{
+		_hoveredCard = card;
+		_hoveredCardScreenPosition = GetViewport().GetMousePosition();
+		RefreshHoveredCard();
+	}
+
+	private void OnCardMouseExited()
+	{
+		_hoveredCard = null;
+		_hoveredCardPanel.Visible = false;
+	}
+
+	private void OnHandAreaResized()
+	{
+		LayoutCardViews();
+	}
+
+	private void OnAttackPressed()
+	{
+		_pilePopup.Visible = false;
+		EmitSignal(SignalName.AttackRequested);
+	}
+
+	private void OnMeditatePressed()
+	{
+		_pilePopup.Visible = false;
+		EmitSignal(SignalName.MeditateRequested);
+	}
+
+	private void OnEndTurnPressed()
+	{
+		_pilePopup.Visible = false;
+		EmitSignal(SignalName.EndTurnRequested);
+	}
+
+	private void OnDrawPilePressed()
+	{
+		ShowPilePopup("抽牌堆", _drawPileCards);
+	}
+
+	private void OnDiscardPilePressed()
+	{
+		ShowPilePopup("弃牌堆", _discardPileCards);
+	}
+
+	private void OnExhaustPilePressed()
+	{
+		ShowPilePopup("消耗牌堆", _exhaustPileCards);
+	}
+
+	private string BuildTurnLabel()
+	{
+		if (_turnState == null)
+		{
+			return "回合 ?";
+		}
+
+		string phaseLabel = _turnState.Phase switch
+		{
+			TurnPhase.PlayerMove => "移动",
+			TurnPhase.PlayerAction => "行动",
+			TurnPhase.TurnPost => "结算",
+			TurnPhase.EnemyTurn => "敌方",
+			_ => _turnState.Phase.ToString(),
+		};
+
+		if (_turnState.IsCardTargeting)
+		{
+			return $"T{_turnState.TurnIndex} {phaseLabel} 牌";
+		}
+
+		if (_turnState.IsAttackTargeting)
+		{
+			return $"T{_turnState.TurnIndex} {phaseLabel} 攻";
+		}
+
+		return $"T{_turnState.TurnIndex} {phaseLabel}";
+	}
 }

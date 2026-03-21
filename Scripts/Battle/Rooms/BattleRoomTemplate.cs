@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using Godot;
 using CardChessDemo.Battle.Board;
@@ -9,6 +9,7 @@ namespace CardChessDemo.Battle.Rooms;
 [Tool]
 public partial class BattleRoomTemplate : Node2D
 {
+	// 房间模板同时承担编辑器内容承载和运行时 layout 输出两类职责。
 	private static readonly StringName PlayerTag = new("player");
 	private static readonly StringName EnemyTag = new("enemy");
 	private static readonly StringName ObstacleTag = new("obstacle");
@@ -54,11 +55,13 @@ public partial class BattleRoomTemplate : Node2D
 		}
 	}
 
-	public RoomLayoutDefinition BuildLayoutDefinition()
+	public RoomLayoutDefinition BuildLayoutDefinition(string enemyDefinitionId = "battle_enemy")
 	{
 		EnsureReferences();
 		EnsureTopology();
 
+		// MarkerLayer 是当前原型的内容输入源。
+		// 玩家、敌人、障碍物都先以 marker tile 存在，再在运行时转成 spawn 定义。
 		List<BoardObjectSpawnDefinition> spawns = new();
 		List<Vector2I> playerSpawnCells = new();
 		List<Vector2I> enemySpawnCells = new();
@@ -87,7 +90,7 @@ public partial class BattleRoomTemplate : Node2D
 			{
 				enemyCounter++;
 				enemySpawnCells.Add(cell);
-				spawns.Add(CreateEnemySpawn(enemyCounter, cell));
+				spawns.Add(CreateEnemySpawn(enemyCounter, cell, enemyDefinitionId));
 				continue;
 			}
 
@@ -200,6 +203,8 @@ public partial class BattleRoomTemplate : Node2D
 			return;
 		}
 
+		// 如果场景里没显式带 TileSet，就在运行时补一个最小可编辑版本。
+		// 这样 debug 房间即使资源不完整，也能稳定显示和拾取格子。
 		Texture2D floorTexture = GD.Load<Texture2D>("res://Assets/Tilemap/CosmicLegacy_PetricakeGamesPNG.png");
 		PackedScene playerScene = GD.Load<PackedScene>("res://Scene/Battle/Tiles/BattlePlayerToken.tscn");
 		PackedScene enemyScene = GD.Load<PackedScene>("res://Scene/Battle/Tiles/BattleEnemyToken.tscn");
@@ -220,6 +225,7 @@ public partial class BattleRoomTemplate : Node2D
 	{
 		if (_floorLayer.GetUsedCells().Count == 0)
 		{
+			// 兜底绘制只用于保证空白房间也能启动，不代表正式关卡内容生产方式。
 			for (int y = 0; y < BoardSize.Y; y++)
 			{
 				for (int x = 0; x < BoardSize.X; x++)
@@ -231,6 +237,7 @@ public partial class BattleRoomTemplate : Node2D
 
 		if (_markerLayer.GetUsedCells().Count == 0)
 		{
+			// 当前默认对象分布仍然是原型测试布局，后续应由具体房间内容决定。
 			PaintMarker(DefaultPlayerCell, PlayerMarkerTileId);
 
 			foreach (Vector2I cell in DefaultEnemyCells)
@@ -269,16 +276,18 @@ public partial class BattleRoomTemplate : Node2D
 		};
 	}
 
-	private static BoardObjectSpawnDefinition CreateEnemySpawn(int index, Vector2I cell)
+	private static BoardObjectSpawnDefinition CreateEnemySpawn(int index, Vector2I cell, string definitionId)
 	{
+		string resolvedDefinitionId = string.IsNullOrWhiteSpace(definitionId) ? "battle_enemy" : definitionId;
+
 		return new BoardObjectSpawnDefinition
 		{
 			ObjectId = $"enemy_{index:00}",
-			DefinitionId = "battle_enemy",
+			DefinitionId = resolvedDefinitionId,
 			ObjectType = BoardObjectType.Unit,
 			Cell = cell,
 			Faction = BoardObjectFaction.Enemy,
-			Tags = new[] { EnemyTag.ToString() },
+			Tags = new[] { EnemyTag.ToString(), resolvedDefinitionId },
 			StackableWithUnit = false,
 		};
 	}
@@ -293,6 +302,8 @@ public partial class BattleRoomTemplate : Node2D
 			Cell = cell,
 			Faction = BoardObjectFaction.World,
 			Tags = new[] { ObstacleTag.ToString(), "destructible" },
+			// 这里只是给障碍物预留 HP / destructible 数据。
+			// 当前项目还没有正式攻击链路来消耗这部分生命值。
 			MaxHp = 3,
 			CurrentHp = 3,
 			BlocksMovement = true,

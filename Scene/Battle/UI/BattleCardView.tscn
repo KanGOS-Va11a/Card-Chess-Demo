@@ -1,0 +1,119 @@
+[gd_scene load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://Scripts/Battle/UI/BattleCardView.cs" id="1_card"]
+
+[node name="BattleCardView" type="Button"]
+custom_minimum_size = Vector2(42, 42)
+focus_mode = 0
+mouse_default_cursor_shape = 2
+flat = true
+script = ExtResource("1_card")
+
+[node name="Margin" type="MarginContainer" parent="."]
+mouse_filter = 2
+theme_override_constants/margin_left = 3
+theme_override_constants/margin_top = 3
+theme_override_constants/margin_right = 3
+theme_override_constants/margin_bottom = 3
+
+[node name="Root" type="VBoxContainer" parent="Margin"]
+mouse_filter = 2
+theme_override_constants/separation = 2
+
+[node name="Head" type="HBoxContainer" parent="Margin/Root"]
+mouse_filter = 2
+theme_override_constants/separation = 2
+
+[node name="CostBox" type="Control" parent="Margin/Root/Head"]
+custom_minimum_size = Vector2(14, 14)
+layout_mode = 2
+mouse_filter = 2
+
+[node name="CostIcon" type="TextureRect" parent="Margin/Root/Head/CostBox"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+stretch_mode = 5
+mouse_filter = 2
+
+[node name="CostLabel" type="Label" parent="Margin/Root/Head/CostBox"]
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -6.0
+offset_top = -6.0
+offset_right = 6.0
+offset_bottom = 6.0
+grow_horizontal = 2
+grow_vertical = 2
+horizontal_alignment = 1
+vertical_alignment = 1
+theme_override_font_sizes/font_size = 10
+text = "0"
+mouse_filter = 2
+
+[node name="NameLabel" type="Label" parent="Margin/Root/Head"]
+custom_minimum_size = Vector2(0, 14)
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_font_sizes/font_size = 10
+clip_text = true
+vertical_alignment = 1
+text = "卡"
+mouse_filter = 2
+
+[node name="ArtFrame" type="PanelContainer" parent="Margin/Root"]
+custom_minimum_size = Vector2(0, 16)
+layout_mode = 2
+size_flags_vertical = 3
+mouse_filter = 2
+
+[node name="ArtTexture" type="TextureRect" parent="Margin/Root/ArtFrame"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+stretch_mode = 6
+mouse_filter = 2
+
+[node name="ArtSymbol" type="Label" parent="Margin/Root/ArtFrame"]
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -10.0
+offset_top = -9.0
+offset_right = 10.0
+offset_bottom = 9.0
+grow_horizontal = 2
+grow_vertical = 2
+horizontal_alignment = 1
+vertical_alignment = 1
+theme_override_font_sizes/font_size = 14
+text = "斩"
+mouse_filter = 2
+
+[node name="Foot" type="HBoxContainer" parent="Margin/Root"]
+mouse_filter = 2
+theme_override_constants/separation = 2
+
+[node name="KeywordLabel" type="Label" parent="Margin/Root/Foot"]
+custom_minimum_size = Vector2(0, 8)
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_font_sizes/font_size = 8
+modulate = Color(1, 0.9, 0.65, 1)
+clip_text = true
+horizontal_alignment = 1
+text = "迅 消"
+mouse_filter = 2

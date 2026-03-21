@@ -8,10 +8,12 @@ public partial class BattleBoardOverlay : Node2D
 {
     [Export] public Color HoverColor { get; set; } = new(0.2f, 0.85f, 1.0f, 0.28f);
     [Export] public Color ReachableColor { get; set; } = new(0.2f, 1.0f, 0.45f, 0.18f);
+    [Export] public Color AttackTargetColor { get; set; } = new(1.0f, 0.35f, 0.35f, 0.22f);
     [Export] public Color PathColor { get; set; } = new(1.0f, 0.9f, 0.3f, 0.82f);
 
     private BattleRoomTemplate? _room;
     private readonly List<Vector2I> _reachableCells = new();
+    private readonly List<Vector2I> _attackTargetCells = new();
     private readonly List<Vector2I> _previewPath = new();
     private bool _hasHoveredCell;
     private Vector2I _hoveredCell;
@@ -26,6 +28,13 @@ public partial class BattleBoardOverlay : Node2D
     {
         _reachableCells.Clear();
         _reachableCells.AddRange(cells);
+        QueueRedraw();
+    }
+
+    public void SetAttackTargetCells(IEnumerable<Vector2I> cells)
+    {
+        _attackTargetCells.Clear();
+        _attackTargetCells.AddRange(cells);
         QueueRedraw();
     }
 
@@ -58,6 +67,13 @@ public partial class BattleBoardOverlay : Node2D
         foreach (Vector2I cell in _reachableCells)
         {
             DrawRect(_room.GetCellRect(cell), ReachableColor, true);
+        }
+
+        foreach (Vector2I cell in _attackTargetCells)
+        {
+            Rect2 attackRect = _room.GetCellRect(cell);
+            DrawRect(attackRect, AttackTargetColor, true);
+            DrawRect(attackRect.Grow(-1.0f), PathColor, false, 2.0f);
         }
 
         if (_previewPath.Count > 1)

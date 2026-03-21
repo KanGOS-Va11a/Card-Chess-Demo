@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 using Godot;
 using CardChessDemo.Battle.Board;
 using CardChessDemo.Battle.Rooms;
@@ -21,6 +22,7 @@ public sealed class BattlePieceViewManager
 
     public void Rebuild(BoardObjectRegistry registry, BattleObjectStateManager stateManager, BattleRoomTemplate room)
     {
+        // 进入房间时直接整表重建，比维护复杂 diff 更适合当前原型阶段。
         foreach (Node child in _pieceRoot.GetChildren())
         {
             child.QueueFree();
@@ -30,34 +32,33 @@ public sealed class BattlePieceViewManager
 
         foreach (BoardObject boardObject in registry.AllObjects)
         {
-            BattleObjectState? state = stateManager.Get(boardObject.ObjectId);
-            if (state == null)
-            {
-                continue;
-            }
-
-            BattlePrefabEntry? entry = _prefabLibrary.FindEntry(boardObject.DefinitionId);
-            if (entry?.PrefabScene == null)
-            {
-                continue;
-            }
-
-            BattleAnimatedViewBase? view = entry.PrefabScene.Instantiate<BattleAnimatedViewBase>();
-            view.Bind(state);
-            _pieceRoot.AddChild(view);
-            view.SetBoardPosition(room.CellToLocalCenter(state.Cell));
-            view.PlayIdle();
-            _views[state.ObjectId] = view;
+            CreateView(boardObject, stateManager, room);
         }
     }
 
     public void Sync(BoardObjectRegistry registry, BattleObjectStateManager stateManager, BattleRoomTemplate room)
     {
+        HashSet<string> activeObjectIds = registry.AllObjects
+            .Select(boardObject => boardObject.ObjectId)
+            .ToHashSet(StringComparer.Ordinal);
+
+        foreach (string staleObjectId in _views.Keys.Where(objectId => !activeObjectIds.Contains(objectId)).ToArray())
+        {
+            if (_views.Remove(staleObjectId, out BattleAnimatedViewBase? staleView))
+            {
+                staleView.QueueFree();
+            }
+        }
+
         foreach (BoardObject boardObject in registry.AllObjects)
         {
             if (!_views.TryGetValue(boardObject.ObjectId, out BattleAnimatedViewBase? view))
             {
-                continue;
+                view = CreateView(boardObject, stateManager, room);
+                if (view == null)
+                {
+                    continue;
+                }
             }
 
             BattleObjectState? state = stateManager.Get(boardObject.ObjectId);
@@ -74,7 +75,47 @@ public sealed class BattlePieceViewManager
     {
         if (_views.TryGetValue(objectId, out BattleAnimatedViewBase? view))
         {
+            // 当前移动表现只有本地动画切换，没有位移补间或行动时序。
             view.PlayMove();
         }
+    }
+
+    public void PlayAction(string objectId)
+    {
+        if (_views.TryGetValue(objectId, out BattleAnimatedViewBase? view))
+        {
+            view.PlayAction();
+        }
+    }
+
+    public void PlayHit(string objectId)
+    {
+        if (_views.TryGetValue(objectId, out BattleAnimatedViewBase? view))
+        {
+            view.PlayHit();
+        }
+    }
+
+    private BattleAnimatedViewBase? CreateView(BoardObject boardObject, BattleObjectStateManager stateManager, BattleRoomTemplate room)
+    {
+        BattleObjectState? state = stateManager.Get(boardObject.ObjectId);
+        if (state == null)
+        {
+            return null;
+        }
+
+        BattlePrefabEntry? entry = _prefabLibrary.FindEntry(boardObject.DefinitionId);
+        if (entry?.PrefabScene == null)
+        {
+            return null;
+        }
+
+        BattleAnimatedViewBase? view = entry.PrefabScene.Instantiate<BattleAnimatedViewBase>();
+        view.Bind(state);
+        _pieceRoot.AddChild(view);
+        view.SetBoardPosition(room.CellToLocalCenter(state.Cell));
+        view.PlayIdle();
+        _views[state.ObjectId] = view;
+        return view;
     }
 }

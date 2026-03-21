@@ -23,6 +23,8 @@ public sealed class BattleObjectState
     public int MaxHp { get; set; }
     public int CurrentHp { get; set; }
     public int MovePointsPerTurn { get; set; }
+    public int AttackRange { get; set; }
+    public int AttackDamage { get; set; }
     public string CurrentAnimation { get; set; } = "idle";
     public bool IsPlayer { get; set; }
 }

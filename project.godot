@@ -35,6 +35,11 @@ project/assembly_name="newproject"
 
 enabled=PackedStringArray("res://addons/godot_mcp/plugin.cfg")
 
+[gui]
+
+theme/custom="res://Resources/UI/ProjectUiTheme.tres"
+theme/custom_font="res://Assets/Fonts/unifont_t-17.0.04.otf"
+
 [input]
 
 move_left={
