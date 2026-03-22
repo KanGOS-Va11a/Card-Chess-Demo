@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using Godot;
 using CardChessDemo.Battle.Board;
@@ -9,10 +9,12 @@ namespace CardChessDemo.Battle.Rooms;
 [Tool]
 public partial class BattleRoomTemplate : Node2D
 {
-	// 房间模板同时承担编辑器内容承载和运行时 layout 输出两类职责。
 	private static readonly StringName PlayerTag = new("player");
 	private static readonly StringName EnemyTag = new("enemy");
 	private static readonly StringName ObstacleTag = new("obstacle");
+	private static readonly StringName DestructibleObstacleTag = new("destructible");
+	private static readonly StringName IndestructibleObstacleTag = new("indestructible");
+	private static readonly StringName SlowPassObstacleTag = new("slow_pass");
 
 	[Export] public string LayoutId { get; set; } = "battle_room_debug";
 	[Export] public Vector2I BoardSize { get; set; } = new(16, 8);
@@ -23,13 +25,17 @@ public partial class BattleRoomTemplate : Node2D
 	[Export] public string[] RoomTags { get; set; } = Array.Empty<string>();
 	[Export] public Vector2I DefaultPlayerCell { get; set; } = new(2, 6);
 	[Export] public Godot.Collections.Array<Vector2I> DefaultEnemyCells { get; set; } = new() { new Vector2I(11, 2), new Vector2I(13, 5) };
-	[Export] public Godot.Collections.Array<Vector2I> DefaultObstacleCells { get; set; } = new() { new Vector2I(6, 2), new Vector2I(7, 5), new Vector2I(9, 3) };
+	[Export] public Godot.Collections.Array<Vector2I> DefaultDestructibleObstacleCells { get; set; } = new() { new Vector2I(6, 2) };
+	[Export] public Godot.Collections.Array<Vector2I> DefaultIndestructibleObstacleCells { get; set; } = new() { new Vector2I(7, 5) };
+	[Export] public Godot.Collections.Array<Vector2I> DefaultSlowPassObstacleCells { get; set; } = new() { new Vector2I(9, 3) };
 	[Export] public int FloorSourceId { get; set; } = 0;
 	[Export] public Vector2I DefaultFloorAtlasCoords { get; set; } = Vector2I.Zero;
 	[Export] public int MarkerSourceId { get; set; } = 1;
 	[Export] public int PlayerMarkerTileId { get; set; } = 1;
 	[Export] public int EnemyMarkerTileId { get; set; } = 2;
-	[Export] public int ObstacleMarkerTileId { get; set; } = 3;
+	[Export] public int DestructibleObstacleMarkerTileId { get; set; } = 3;
+	[Export] public int IndestructibleObstacleMarkerTileId { get; set; } = 4;
+	[Export] public int SlowPassObstacleMarkerTileId { get; set; } = 5;
 
 	private TileMapLayer _floorLayer = null!;
 	private TileMapLayer _markerLayer = null!;
@@ -60,8 +66,6 @@ public partial class BattleRoomTemplate : Node2D
 		EnsureReferences();
 		EnsureTopology();
 
-		// MarkerLayer 是当前原型的内容输入源。
-		// 玩家、敌人、障碍物都先以 marker tile 存在，再在运行时转成 spawn 定义。
 		List<BoardObjectSpawnDefinition> spawns = new();
 		List<Vector2I> playerSpawnCells = new();
 		List<Vector2I> enemySpawnCells = new();
@@ -94,10 +98,24 @@ public partial class BattleRoomTemplate : Node2D
 				continue;
 			}
 
-			if (tileId == ObstacleMarkerTileId)
+			if (tileId == DestructibleObstacleMarkerTileId)
 			{
 				obstacleCounter++;
-				spawns.Add(CreateObstacleSpawn(obstacleCounter, cell));
+				spawns.Add(CreateDestructibleObstacleSpawn(obstacleCounter, cell));
+				continue;
+			}
+
+			if (tileId == IndestructibleObstacleMarkerTileId)
+			{
+				obstacleCounter++;
+				spawns.Add(CreateIndestructibleObstacleSpawn(obstacleCounter, cell));
+				continue;
+			}
+
+			if (tileId == SlowPassObstacleMarkerTileId)
+			{
+				obstacleCounter++;
+				spawns.Add(CreateSlowPassObstacleSpawn(obstacleCounter, cell));
 			}
 		}
 
@@ -127,7 +145,7 @@ public partial class BattleRoomTemplate : Node2D
 			{
 				BoardObjectType.Unit when boardObject.HasTag(PlayerTag.ToString()) => PlayerMarkerTileId,
 				BoardObjectType.Unit => EnemyMarkerTileId,
-				_ => ObstacleMarkerTileId,
+				_ => ResolveObstacleMarkerTileId(boardObject),
 			};
 
 			_markerLayer.SetCell(boardObject.Cell, MarkerSourceId, Vector2I.Zero, tileId);
@@ -203,8 +221,6 @@ public partial class BattleRoomTemplate : Node2D
 			return;
 		}
 
-		// 如果场景里没显式带 TileSet，就在运行时补一个最小可编辑版本。
-		// 这样 debug 房间即使资源不完整，也能稳定显示和拾取格子。
 		Texture2D floorTexture = GD.Load<Texture2D>("res://Assets/Tilemap/CosmicLegacy_PetricakeGamesPNG.png");
 		PackedScene playerScene = GD.Load<PackedScene>("res://Scene/Battle/Tiles/BattlePlayerToken.tscn");
 		PackedScene enemyScene = GD.Load<PackedScene>("res://Scene/Battle/Tiles/BattleEnemyToken.tscn");
@@ -225,7 +241,6 @@ public partial class BattleRoomTemplate : Node2D
 	{
 		if (_floorLayer.GetUsedCells().Count == 0)
 		{
-			// 兜底绘制只用于保证空白房间也能启动，不代表正式关卡内容生产方式。
 			for (int y = 0; y < BoardSize.Y; y++)
 			{
 				for (int x = 0; x < BoardSize.X; x++)
@@ -237,7 +252,6 @@ public partial class BattleRoomTemplate : Node2D
 
 		if (_markerLayer.GetUsedCells().Count == 0)
 		{
-			// 当前默认对象分布仍然是原型测试布局，后续应由具体房间内容决定。
 			PaintMarker(DefaultPlayerCell, PlayerMarkerTileId);
 
 			foreach (Vector2I cell in DefaultEnemyCells)
@@ -245,9 +259,19 @@ public partial class BattleRoomTemplate : Node2D
 				PaintMarker(cell, EnemyMarkerTileId);
 			}
 
-			foreach (Vector2I cell in DefaultObstacleCells)
+			foreach (Vector2I cell in DefaultDestructibleObstacleCells)
 			{
-				PaintMarker(cell, ObstacleMarkerTileId);
+				PaintMarker(cell, DestructibleObstacleMarkerTileId);
+			}
+
+			foreach (Vector2I cell in DefaultIndestructibleObstacleCells)
+			{
+				PaintMarker(cell, IndestructibleObstacleMarkerTileId);
+			}
+
+			foreach (Vector2I cell in DefaultSlowPassObstacleCells)
+			{
+				PaintMarker(cell, SlowPassObstacleMarkerTileId);
 			}
 		}
 	}
@@ -260,6 +284,21 @@ public partial class BattleRoomTemplate : Node2D
 		}
 
 		_markerLayer.SetCell(cell, MarkerSourceId, Vector2I.Zero, tileId);
+	}
+
+	private int ResolveObstacleMarkerTileId(BoardObject boardObject)
+	{
+		if (boardObject.HasTag(SlowPassObstacleTag.ToString()))
+		{
+			return SlowPassObstacleMarkerTileId;
+		}
+
+		if (boardObject.HasTag(IndestructibleObstacleTag.ToString()))
+		{
+			return IndestructibleObstacleMarkerTileId;
+		}
+
+		return DestructibleObstacleMarkerTileId;
 	}
 
 	private static BoardObjectSpawnDefinition CreatePlayerSpawn(int index, Vector2I cell)
@@ -288,27 +327,60 @@ public partial class BattleRoomTemplate : Node2D
 			Cell = cell,
 			Faction = BoardObjectFaction.Enemy,
 			Tags = new[] { EnemyTag.ToString(), resolvedDefinitionId },
+			MaxShield = 2,
+			CurrentShield = 2,
 			StackableWithUnit = false,
 		};
 	}
 
-	private static BoardObjectSpawnDefinition CreateObstacleSpawn(int index, Vector2I cell)
+	private static BoardObjectSpawnDefinition CreateDestructibleObstacleSpawn(int index, Vector2I cell)
 	{
 		return new BoardObjectSpawnDefinition
 		{
-			ObjectId = $"obstacle_{index:00}",
-			DefinitionId = "battle_obstacle",
+			ObjectId = $"obstacle_destructible_{index:00}",
+			DefinitionId = "battle_obstacle_destructible",
 			ObjectType = BoardObjectType.Obstacle,
 			Cell = cell,
 			Faction = BoardObjectFaction.World,
-			Tags = new[] { ObstacleTag.ToString(), "destructible" },
-			// 这里只是给障碍物预留 HP / destructible 数据。
-			// 当前项目还没有正式攻击链路来消耗这部分生命值。
+			Tags = new[] { ObstacleTag.ToString(), DestructibleObstacleTag.ToString() },
 			MaxHp = 3,
 			CurrentHp = 3,
 			BlocksMovement = true,
 			BlocksLineOfSight = true,
 			StackableWithUnit = false,
+		};
+	}
+
+	private static BoardObjectSpawnDefinition CreateIndestructibleObstacleSpawn(int index, Vector2I cell)
+	{
+		return new BoardObjectSpawnDefinition
+		{
+			ObjectId = $"obstacle_wall_{index:00}",
+			DefinitionId = "battle_obstacle_wall",
+			ObjectType = BoardObjectType.Obstacle,
+			Cell = cell,
+			Faction = BoardObjectFaction.World,
+			Tags = new[] { ObstacleTag.ToString(), IndestructibleObstacleTag.ToString() },
+			BlocksMovement = true,
+			BlocksLineOfSight = true,
+			StackableWithUnit = false,
+		};
+	}
+
+	private static BoardObjectSpawnDefinition CreateSlowPassObstacleSpawn(int index, Vector2I cell)
+	{
+		return new BoardObjectSpawnDefinition
+		{
+			ObjectId = $"obstacle_slow_{index:00}",
+			DefinitionId = "battle_obstacle_slow",
+			ObjectType = BoardObjectType.Obstacle,
+			Cell = cell,
+			Faction = BoardObjectFaction.World,
+			Tags = new[] { ObstacleTag.ToString(), SlowPassObstacleTag.ToString() },
+			BlocksMovement = false,
+			BlocksLineOfSight = false,
+			StackableWithUnit = true,
+			MoveCostModifier = 1,
 		};
 	}
 }

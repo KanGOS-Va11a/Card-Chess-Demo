@@ -26,6 +26,7 @@ public sealed class BattleCardDefinition
         int damage = 0,
         int drawCount = 0,
         int energyGain = 0,
+        int shieldGain = 0,
         bool isQuick = false,
         bool exhaustsOnPlay = false)
     {
@@ -39,6 +40,7 @@ public sealed class BattleCardDefinition
         Damage = damage < 0 ? 0 : damage;
         DrawCount = drawCount < 0 ? 0 : drawCount;
         EnergyGain = energyGain < 0 ? 0 : energyGain;
+        ShieldGain = shieldGain < 0 ? 0 : shieldGain;
         IsQuick = isQuick;
         ExhaustsOnPlay = exhaustsOnPlay;
     }
@@ -62,6 +64,8 @@ public sealed class BattleCardDefinition
     public int DrawCount { get; }
 
     public int EnergyGain { get; }
+
+    public int ShieldGain { get; }
 
     public bool IsQuick { get; }
 

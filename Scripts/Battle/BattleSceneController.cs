@@ -284,14 +284,14 @@ public partial class BattleSceneController : Node2D
 
 		if (TurnState?.IsAttackTargeting == true)
 		{
-			BoardObject? enemyTarget = GetEnemyUnitAtCell(playerState.ObjectId, targetCell);
-			if (enemyTarget == null)
+			BoardObject? attackTarget = GetAttackableObjectAtCell(playerState.ObjectId, targetCell);
+			if (attackTarget == null)
 			{
 				TurnState.CancelTargeting();
 				return;
 			}
 
-			TryAttackObject(playerState.ObjectId, enemyTarget.ObjectId, out _);
+			TryAttackObject(playerState.ObjectId, attackTarget.ObjectId, out _);
 			return;
 		}
 
@@ -492,7 +492,7 @@ public partial class BattleSceneController : Node2D
 		};
 	}
 
-	private BoardObject? GetEnemyUnitAtCell(string sourceObjectId, Vector2I targetCell)
+	private BoardObject? GetAttackableObjectAtCell(string sourceObjectId, Vector2I targetCell)
 	{
 		if (QueryService == null || Registry == null || !Registry.TryGet(sourceObjectId, out BoardObject? sourceObject) || sourceObject == null)
 		{
@@ -501,25 +501,49 @@ public partial class BattleSceneController : Node2D
 
 		foreach (BoardObject boardObject in QueryService.GetObjectsAtCell(targetCell))
 		{
-			if (boardObject.ObjectType != BoardObjectType.Unit)
-			{
-				continue;
-			}
-
 			if (boardObject.ObjectId == sourceObjectId)
 			{
 				continue;
 			}
 
-			if (boardObject.Faction == sourceObject.Faction)
+			if (boardObject.ObjectType == BoardObjectType.Unit)
 			{
-				continue;
+				if (boardObject.Faction == sourceObject.Faction)
+				{
+					continue;
+				}
+
+				return boardObject;
 			}
 
-			return boardObject;
+			if (boardObject.ObjectType == BoardObjectType.Obstacle && boardObject.HasTag("destructible"))
+			{
+				return boardObject;
+			}
 		}
 
 		return null;
+	}
+
+	private BoardObject? GetEnemyUnitAtCell(string sourceObjectId, Vector2I targetCell)
+	{
+		BoardObject? attackableObject = GetAttackableObjectAtCell(sourceObjectId, targetCell);
+		return attackableObject?.ObjectType == BoardObjectType.Unit ? attackableObject : null;
+	}
+
+	private static bool IsAttackable(BoardObject sourceObject, BoardObject targetObject)
+	{
+		if (targetObject.ObjectType == BoardObjectType.Unit)
+		{
+			return sourceObject.Faction != targetObject.Faction;
+		}
+
+		if (targetObject.ObjectType == BoardObjectType.Obstacle)
+		{
+			return targetObject.HasTag("destructible");
+		}
+
+		return false;
 	}
 
 	private bool TryPlayCard(string attackerId, string cardInstanceId, string? targetId, out string failureReason)
@@ -582,6 +606,11 @@ public partial class BattleSceneController : Node2D
 			_playerDeck.GainEnergy(cardInstance.Definition.EnergyGain);
 		}
 
+		if (cardInstance.Definition.ShieldGain > 0)
+		{
+			attacker.GainShield(cardInstance.Definition.ShieldGain);
+		}
+
 		if (cardInstance.Definition.DrawCount > 0)
 		{
 			_playerDeck.DrawCards(cardInstance.Definition.DrawCount);
@@ -628,15 +657,9 @@ public partial class BattleSceneController : Node2D
 			return false;
 		}
 
-		if (target.ObjectType != BoardObjectType.Unit)
+		if (!IsAttackable(attacker, target))
 		{
-			failureReason = "Only unit targets can be attacked.";
-			return false;
-		}
-
-		if (attacker.Faction == target.Faction)
-		{
-			failureReason = "Friendly targets cannot be attacked.";
+			failureReason = "This target cannot be attacked.";
 			return false;
 		}
 
@@ -889,12 +912,7 @@ public partial class BattleSceneController : Node2D
 
 		foreach (BoardObject boardObject in Registry.AllObjects)
 		{
-			if (boardObject.ObjectType != BoardObjectType.Unit || boardObject.ObjectId == objectId)
-			{
-				continue;
-			}
-
-			if (boardObject.Faction == sourceObject.Faction)
+			if (boardObject.ObjectId == objectId || !IsAttackable(sourceObject, boardObject))
 			{
 				continue;
 			}
@@ -1185,6 +1203,31 @@ public partial class BattleSceneController : Node2D
 				BattleCardTargetingMode.None,
 				energyGain: 2,
 				exhaustsOnPlay: true),
+			new BattleCardDefinition(
+				"guard_up",
+				"举盾",
+				"得 3 盾",
+				1,
+				BattleCardCategory.Skill,
+				BattleCardTargetingMode.None,
+				shieldGain: 3),
+			new BattleCardDefinition(
+				"brace",
+				"架势",
+				"得 5 盾",
+				2,
+				BattleCardCategory.Skill,
+				BattleCardTargetingMode.None,
+				shieldGain: 5),
+			new BattleCardDefinition(
+				"quick_guard",
+				"瞬守",
+				"得 2 盾",
+				0,
+				BattleCardCategory.Skill,
+				BattleCardTargetingMode.None,
+				shieldGain: 2,
+				isQuick: true),
 		};
 	}
 }

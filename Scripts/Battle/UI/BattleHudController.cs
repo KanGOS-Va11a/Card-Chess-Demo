@@ -218,7 +218,8 @@ public partial class BattleHudController : CanvasLayer
 
 		_hoveredUnitPanel.Visible = true;
 		_hoveredUnitTitle.Text = _hoveredUnitState.DisplayName;
-		_hoveredUnitStats.Text = $"HP {_hoveredUnitState.CurrentHp}/{_hoveredUnitState.MaxHp}";
+		string hpText = _hoveredUnitState.MaxHp > 0 ? $"{_hoveredUnitState.CurrentHp}/{_hoveredUnitState.MaxHp}" : "-";
+		_hoveredUnitStats.Text = $"HP {hpText} SH {_hoveredUnitState.CurrentShield}";
 		PositionFloatingPanel(_hoveredUnitPanel, _hoveredUnitScreenPosition);
 	}
 

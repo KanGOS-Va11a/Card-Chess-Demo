@@ -14,6 +14,8 @@ public partial class BoardObjectSpawnDefinition : Resource
     [Export] public string[] Tags { get; set; } = System.Array.Empty<string>();
     [Export] public int MaxHp { get; set; } = 0;
     [Export] public int CurrentHp { get; set; } = 0;
+    [Export] public int MaxShield { get; set; } = 0;
+    [Export] public int CurrentShield { get; set; } = 0;
     [Export] public bool BlocksMovement { get; set; } = false;
     [Export] public bool BlocksLineOfSight { get; set; } = false;
     [Export] public bool StackableWithUnit { get; set; } = true;

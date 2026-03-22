@@ -25,16 +25,32 @@ DefaultMaxHp = 6
 DefaultCurrentHp = 6
 DefaultMovePointsPerTurn = 3
 
-[sub_resource type="Resource" id="Entry_Obstacle"]
+[sub_resource type="Resource" id="Entry_Obstacle_Destructible"]
 script = ExtResource("2_entry")
-DefinitionId = "battle_obstacle"
-DisplayName = "Obstacle"
+DefinitionId = "battle_obstacle_destructible"
+DisplayName = "Breakable"
 PrefabScene = ExtResource("5_obstacle")
 DefaultMaxHp = 3
 DefaultCurrentHp = 3
 DefaultAttackRange = 0
 DefaultAttackDamage = 0
 
+[sub_resource type="Resource" id="Entry_Obstacle_Wall"]
+script = ExtResource("2_entry")
+DefinitionId = "battle_obstacle_wall"
+DisplayName = "Wall"
+PrefabScene = ExtResource("5_obstacle")
+DefaultAttackRange = 0
+DefaultAttackDamage = 0
+
+[sub_resource type="Resource" id="Entry_Obstacle_Slow"]
+script = ExtResource("2_entry")
+DefinitionId = "battle_obstacle_slow"
+DisplayName = "Rubble"
+PrefabScene = ExtResource("5_obstacle")
+DefaultAttackRange = 0
+DefaultAttackDamage = 0
+
 [resource]
 script = ExtResource("1_lib")
-Entries = [SubResource("Entry_Player"), SubResource("Entry_Enemy"), SubResource("Entry_Obstacle")]
+Entries = [SubResource("Entry_Player"), SubResource("Entry_Enemy"), SubResource("Entry_Obstacle_Destructible"), SubResource("Entry_Obstacle_Wall"), SubResource("Entry_Obstacle_Slow")]

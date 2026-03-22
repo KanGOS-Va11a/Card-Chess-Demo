@@ -73,6 +73,7 @@ public sealed class BattleObjectStateManager
             state.Cell = boardObject.Cell;
             state.MaxHp = boardObject.MaxHp > 0 ? boardObject.MaxHp : state.MaxHp;
             state.CurrentHp = ResolveCurrentHp(boardObject, prefabEntry);
+            state.CurrentShield = ResolveCurrentShield(boardObject);
         }
 
         SyncPlayerFromSession();
@@ -111,6 +112,7 @@ public sealed class BattleObjectStateManager
             Cell = boardObject.Cell,
             MaxHp = boardObject.MaxHp > 0 ? boardObject.MaxHp : prefabEntry?.DefaultMaxHp ?? 0,
             CurrentHp = ResolveCurrentHp(boardObject, prefabEntry),
+            CurrentShield = ResolveCurrentShield(boardObject),
             MovePointsPerTurn = prefabEntry?.DefaultMovePointsPerTurn ?? 0,
             AttackRange = prefabEntry?.DefaultAttackRange ?? 1,
             AttackDamage = prefabEntry?.DefaultAttackDamage ?? 1,
@@ -139,7 +141,11 @@ public sealed class BattleObjectStateManager
 
         if (isPlayer)
         {
-            boardObject.SyncCombatStats(_session.PlayerMaxHp, _session.PlayerCurrentHp);
+            boardObject.SyncCombatStats(
+                _session.PlayerMaxHp,
+                _session.PlayerCurrentHp,
+                boardObject.MaxShield,
+                boardObject.CurrentShield);
             return;
         }
 
@@ -149,8 +155,10 @@ public sealed class BattleObjectStateManager
             : prefabEntry?.DefaultCurrentHp > 0
                 ? prefabEntry.DefaultCurrentHp
                 : resolvedMaxHp;
+        int resolvedMaxShield = boardObject.MaxShield;
+        int resolvedCurrentShield = boardObject.CurrentShield;
 
-        boardObject.ApplyCombatDefaults(resolvedMaxHp, resolvedCurrentHp);
+        boardObject.ApplyCombatDefaults(resolvedMaxHp, resolvedCurrentHp, resolvedMaxShield, resolvedCurrentShield);
     }
 
     private static int ResolveCurrentHp(BoardObject boardObject, BattlePrefabEntry? prefabEntry)
@@ -171,5 +179,10 @@ public sealed class BattleObjectStateManager
         }
 
         return prefabEntry?.DefaultMaxHp ?? 0;
+    }
+
+    private static int ResolveCurrentShield(BoardObject boardObject)
+    {
+        return boardObject.CurrentShield;
     }
 }

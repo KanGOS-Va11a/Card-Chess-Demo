@@ -22,6 +22,8 @@ public sealed class BattleObjectState
     public Vector2I Cell { get; set; }
     public int MaxHp { get; set; }
     public int CurrentHp { get; set; }
+    public int MaxShield { get; set; }
+    public int CurrentShield { get; set; }
     public int MovePointsPerTurn { get; set; }
     public int AttackRange { get; set; }
     public int AttackDamage { get; set; }

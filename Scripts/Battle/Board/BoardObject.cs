@@ -18,6 +18,8 @@ public sealed class BoardObject
         IEnumerable<string>? tags,
         int maxHp,
         int currentHp,
+        int maxShield,
+        int currentShield,
         bool blocksMovement,
         bool blocksLineOfSight,
         bool stackableWithUnit,
@@ -32,6 +34,8 @@ public sealed class BoardObject
         _tags = new HashSet<string>(tags ?? Array.Empty<string>(), StringComparer.Ordinal);
         MaxHp = Math.Max(0, maxHp);
         CurrentHp = MaxHp <= 0 ? 0 : Mathf.Clamp(currentHp, 0, MaxHp);
+        MaxShield = Math.Max(0, maxShield);
+        CurrentShield = Math.Max(0, currentShield);
         BlocksMovement = blocksMovement;
         BlocksLineOfSight = blocksLineOfSight;
         StackableWithUnit = stackableWithUnit;
@@ -54,6 +58,10 @@ public sealed class BoardObject
     public int MaxHp { get; private set; }
 
     public int CurrentHp { get; private set; }
+
+    public int MaxShield { get; private set; }
+
+    public int CurrentShield { get; private set; }
 
     public bool BlocksMovement { get; }
 
@@ -84,24 +92,49 @@ public sealed class BoardObject
             return;
         }
 
-        CurrentHp = Math.Max(0, CurrentHp - amount);
+        int remainingDamage = amount;
+        if (CurrentShield > 0)
+        {
+            int absorbed = Math.Min(CurrentShield, remainingDamage);
+            CurrentShield -= absorbed;
+            remainingDamage -= absorbed;
+        }
+
+        if (remainingDamage > 0)
+        {
+            CurrentHp = Math.Max(0, CurrentHp - remainingDamage);
+        }
     }
 
-    public void ApplyCombatDefaults(int maxHp, int currentHp)
+    public void GainShield(int amount)
     {
-        if (MaxHp > 0)
+        if (amount <= 0)
+        {
+            return;
+        }
+
+        CurrentShield += amount;
+    }
+
+    public void ApplyCombatDefaults(int maxHp, int currentHp, int maxShield = 0, int currentShield = 0)
+    {
+        if (MaxHp > 0 || CurrentShield > 0)
         {
             return;
         }
 
         MaxHp = Math.Max(0, maxHp);
         CurrentHp = MaxHp <= 0 ? 0 : Mathf.Clamp(currentHp, 0, MaxHp);
+        MaxShield = Math.Max(0, maxShield);
+        CurrentShield = Math.Max(0, currentShield);
     }
 
-    public void SyncCombatStats(int maxHp, int currentHp)
+    public void SyncCombatStats(int maxHp, int currentHp, int maxShield = 0, int currentShield = 0)
     {
         MaxHp = Math.Max(0, maxHp);
         CurrentHp = MaxHp <= 0 ? 0 : Mathf.Clamp(currentHp, 0, MaxHp);
+        MaxShield = Math.Max(0, maxShield);
+        CurrentShield = Math.Max(0, currentShield);
     }
 
     public static BoardObject FromSpawn(BoardObjectSpawnDefinition spawn)
@@ -119,6 +152,7 @@ public sealed class BoardObject
         }
 
         int resolvedCurrentHp = spawn.CurrentHp > 0 ? spawn.CurrentHp : spawn.MaxHp;
+        int resolvedCurrentShield = spawn.CurrentShield > 0 ? spawn.CurrentShield : spawn.MaxShield;
 
         return new BoardObject(
             objectId,
@@ -129,6 +163,8 @@ public sealed class BoardObject
             spawn.Tags,
             spawn.MaxHp,
             resolvedCurrentHp,
+            spawn.MaxShield,
+            resolvedCurrentShield,
             spawn.BlocksMovement,
             spawn.BlocksLineOfSight,
             spawn.StackableWithUnit,
