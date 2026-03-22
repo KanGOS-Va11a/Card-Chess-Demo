@@ -16,6 +16,11 @@ public partial class GlobalGameSession : Node
 	[Export] public int PlayerAttackRange { get; set; } = 1;
 	[Export] public int PlayerAttackDamage { get; set; } = 2;
 
+	public string PendingEncounterId { get; private set; } = string.Empty;
+	public string PendingReturnScenePath { get; private set; } = string.Empty;
+	public Vector2 PendingReturnPlayerPosition { get; private set; } = Vector2.Zero;
+	public bool HasPendingEncounter => !string.IsNullOrWhiteSpace(PendingEncounterId);
+
 	public void SetPlayerMovePointsPerTurn(int value)
 	{
 		PlayerMovePointsPerTurn = Mathf.Max(0, value);
@@ -75,5 +80,29 @@ public partial class GlobalGameSession : Node
 		}
 
 		EmitSignal(SignalName.PlayerRuntimeChanged);
+	}
+
+	public void SetPendingEncounterContext(string encounterId, string returnScenePath, Vector2 returnPlayerPosition)
+	{
+		PendingEncounterId = encounterId ?? string.Empty;
+		PendingReturnScenePath = returnScenePath ?? string.Empty;
+		PendingReturnPlayerPosition = returnPlayerPosition;
+	}
+
+	public bool TryConsumePendingEncounterContext(out string encounterId, out string returnScenePath, out Vector2 returnPlayerPosition)
+	{
+		encounterId = PendingEncounterId;
+		returnScenePath = PendingReturnScenePath;
+		returnPlayerPosition = PendingReturnPlayerPosition;
+
+		if (string.IsNullOrWhiteSpace(encounterId))
+		{
+			return false;
+		}
+
+		PendingEncounterId = string.Empty;
+		PendingReturnScenePath = string.Empty;
+		PendingReturnPlayerPosition = Vector2.Zero;
+		return true;
 	}
 }

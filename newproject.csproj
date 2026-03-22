@@ -6,9 +6,4 @@
     <Nullable>enable</Nullable>
   </PropertyGroup>
 
-  <ItemGroup>
-    <Compile Remove="Scripts\**\*.cs" />
-    <Compile Include="Scripts\Battle\**\*.cs" />
-    <Compile Remove="Card-Chess-Demo-main\**\*.cs" />
-  </ItemGroup>
 </Project>
