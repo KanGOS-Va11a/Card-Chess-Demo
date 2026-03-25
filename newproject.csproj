@@ -3,7 +3,13 @@
     <TargetFramework>net8.0</TargetFramework>
     <TargetFramework Condition=" '$(GodotTargetPlatform)' == 'android' ">net9.0</TargetFramework>
     <EnableDynamicLoading>true</EnableDynamicLoading>
+    <EnableDefaultCompileItems>false</EnableDefaultCompileItems>
     <Nullable>enable</Nullable>
   </PropertyGroup>
+
+  <ItemGroup>
+    <Compile Include="Scripts\**\*.cs" />
+    <Compile Remove="Card-Chess-Demo-main\**\*.cs" />
+  </ItemGroup>
 
 </Project>

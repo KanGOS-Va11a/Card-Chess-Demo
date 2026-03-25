@@ -1,14 +1,14 @@
 using Godot;
-using CardChessDemo.Battle.Shared;
 
 public partial class Enemy : InteractableTemplate
 {
-	[Export] public string EncounterId = "debug_grunt";
+	[Export] public string EncounterId = "grunt_debug";
+	[Export] public PackedScene? BattleScene;
 	[Export(PropertyHint.File, "*.tscn")] public string BattleScenePath = "res://Scene/Battle/Battle.tscn";
-	[Export] public string BusyText = "进入战斗中...";
+	[Export] public string BusyText = "战斗中...";
 	[Export] public bool DisableAfterInteract = true;
 
-	private bool _isTransitioning = false;
+	private bool _isTransitioning;
 
 	public override string GetInteractText(Player player)
 	{
@@ -19,7 +19,7 @@ public partial class Enemy : InteractableTemplate
 
 		if (!CanInteract(player))
 		{
-			return "已清理";
+			return "无法接战";
 		}
 
 		return string.IsNullOrWhiteSpace(PromptText) ? "发起战斗" : PromptText;
@@ -32,30 +32,18 @@ public partial class Enemy : InteractableTemplate
 			return false;
 		}
 
-		return base.CanInteract(player);
+		return base.CanInteract(player)
+			&& !string.IsNullOrWhiteSpace(EncounterId)
+			&& (BattleScene != null || !string.IsNullOrWhiteSpace(BattleScenePath));
 	}
 
 	protected override void OnInteract(Player player)
 	{
-		if (string.IsNullOrWhiteSpace(BattleScenePath))
-		{
-			GD.PushError("Enemy: BattleScenePath 为空，无法切换战斗场景。");
-			return;
-		}
-
 		_isTransitioning = true;
-
-		GlobalGameSession session = GetNodeOrNull<GlobalGameSession>("/root/GlobalGameSession");
-		Node currentScene = GetTree().CurrentScene;
-		string returnScenePath = currentScene?.SceneFilePath ?? string.Empty;
-		Vector2 returnPlayerPosition = player?.GlobalPosition ?? Vector2.Zero;
-		session?.SetPendingEncounterContext(EncounterId, returnScenePath, returnPlayerPosition);
-
-		Error result = GetTree().ChangeSceneToFile(BattleScenePath.Trim());
-		if (result != Error.Ok)
+		if (!MapBattleTransitionHelper.TryEnterBattle(this, player, BattleScene, BattleScenePath, EncounterId, out string failureReason))
 		{
 			_isTransitioning = false;
-			GD.PushError($"Enemy: 切换战斗场景失败，错误码={result}");
+			GD.PushError($"Enemy: {failureReason}");
 			return;
 		}
 

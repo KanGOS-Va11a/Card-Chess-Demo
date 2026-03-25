@@ -4,8 +4,6 @@ using CardChessDemo.Battle.Boundary;
 
 namespace CardChessDemo.Battle.Shared;
 
-// 当前全局状态只保存玩家最小运行时信息。
-// 它还不是完整存档系统，也不承载地图进度、牌组或战斗结果。
 public partial class GlobalGameSession : Node
 {
 	[Signal] public delegate void PlayerRuntimeChangedEventHandler();
@@ -131,7 +129,6 @@ public partial class GlobalGameSession : Node
 
 	public Godot.Collections.Dictionary BuildPlayerSnapshot()
 	{
-		// 这里保留 Dictionary 形式，方便当前原型期快速序列化/回灌。
 		return new Godot.Collections.Dictionary
 		{
 			["display_name"] = PlayerDisplayName,
@@ -147,7 +144,6 @@ public partial class GlobalGameSession : Node
 
 	public void ApplyPlayerSnapshot(Godot.Collections.Dictionary snapshot)
 	{
-		// 当前只恢复玩家基础字段；更复杂的战斗上下文尚未接入。
 		if (snapshot.TryGetValue("display_name", out Variant displayName))
 		{
 			PlayerDisplayName = displayName.AsString();
@@ -190,29 +186,5 @@ public partial class GlobalGameSession : Node
 
 		EmitSignal(SignalName.PlayerRuntimeChanged);
 		EmitSignal(SignalName.ArakawaRuntimeChanged);
-	}
-
-	public void SetPendingEncounterContext(string encounterId, string returnScenePath, Vector2 returnPlayerPosition)
-	{
-		PendingEncounterId = encounterId ?? string.Empty;
-		PendingReturnScenePath = returnScenePath ?? string.Empty;
-		PendingReturnPlayerPosition = returnPlayerPosition;
-	}
-
-	public bool TryConsumePendingEncounterContext(out string encounterId, out string returnScenePath, out Vector2 returnPlayerPosition)
-	{
-		encounterId = PendingEncounterId;
-		returnScenePath = PendingReturnScenePath;
-		returnPlayerPosition = PendingReturnPlayerPosition;
-
-		if (string.IsNullOrWhiteSpace(encounterId))
-		{
-			return false;
-		}
-
-		PendingEncounterId = string.Empty;
-		PendingReturnScenePath = string.Empty;
-		PendingReturnPlayerPosition = Vector2.Zero;
-		return true;
 	}
 }

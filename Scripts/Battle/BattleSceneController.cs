@@ -1034,14 +1034,6 @@ public partial class BattleSceneController : Node2D
 
 	private void ResolveEncounterConfiguration()
 	{
-		if (GlobalSession != null && string.IsNullOrWhiteSpace(EncounterId))
-		{
-			if (GlobalSession.TryConsumePendingEncounterContext(out string pendingEncounterId, out _, out _))
-			{
-				EncounterId = pendingEncounterId;
-			}
-		}
-
 		if (EncounterLibrary == null || string.IsNullOrWhiteSpace(EncounterId))
 		{
 			return;
