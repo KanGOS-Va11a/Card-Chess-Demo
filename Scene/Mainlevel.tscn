@@ -6,7 +6,7 @@
 [ext_resource type="PackedScene" uid="uid://cgf2evpc6ty4e" path="res://Scene/Healing.tscn" id="3_j8rcl"]
 [ext_resource type="PackedScene" uid="uid://cko4roccpe105" path="res://Scene/NpcScene.tscn" id="5_5o5ic"]
 [ext_resource type="PackedScene" uid="uid://c0v263dw3prrw" path="res://Scene/SceneDoor.tscn" id="6_ujx8d"]
-[ext_resource type="PackedScene" path="res://Scene/Enemy.tscn" id="7_enemy"]
+[ext_resource type="PackedScene" path="res://Scene/BattleEncounterEnemy.tscn" id="7_enemybattle"]
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_3jdkb"]
 
@@ -21,7 +21,6 @@ script = ExtResource("1_dx8mo")
 
 [node name="Sprite2D" type="Sprite2D" parent="Player" unique_id=1405253644]
 position = Vector2(-3.500002, -1.5000019)
-scale = Vector2(3.096, 3)
 texture = ExtResource("2_j8rcl")
 region_enabled = true
 region_rect = Rect2(158.86967, 47.261597, 16.19281, 16.706875)
@@ -49,6 +48,9 @@ position = Vector2(-355, 689)
 
 [node name="NpcScene" parent="." unique_id=1266535779 instance=ExtResource("5_5o5ic")]
 position = Vector2(631, -21)
+
+[node name="BattleEnemy" parent="." instance=ExtResource("7_enemybattle")]
+position = Vector2(236, 236)
 
 [node name="Door" parent="." unique_id=583652748 instance=ExtResource("6_ujx8d")]
 position = Vector2(611, 649)

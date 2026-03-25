@@ -1,18 +1,21 @@
 using Godot;
-
 public partial class SceneDoor : InteractableTemplate
 {
-	[Export] public PackedScene NextScene;
-	[Export(PropertyHint.File, "*.tscn")] public string NextScenePath = "";
+	[Export] public PackedScene? NextScene;
+	[Export(PropertyHint.File, "*.tscn")] public string NextScenePath = string.Empty;
+	[Export] public bool StartsBattle = false;
+	[Export] public PackedScene? BattleScene;
+	[Export(PropertyHint.File, "*.tscn")] public string BattleScenePath = "res://Scene/Battle/Battle.tscn";
+	[Export] public string BattleEncounterId = "grunt_debug";
 	[Export] public string BusyText = "切换中...";
 
-	private bool _isTransitioning = false;
+	private bool _isTransitioning;
 
 	public override void _Ready()
 	{
-		if (NextScene == null && string.IsNullOrWhiteSpace(NextScenePath))
+		if (!HasValidDestination())
 		{
-			GD.PushWarning("SceneDoor: 未配置 NextScene 或 NextScenePath，按 E 不会触发切换。");
+			GD.PushWarning("SceneDoor: no valid destination is configured.");
 		}
 	}
 
@@ -28,7 +31,12 @@ public partial class SceneDoor : InteractableTemplate
 			return "无法进入";
 		}
 
-		return string.IsNullOrWhiteSpace(PromptText) ? "进入下一场景" : PromptText;
+		if (!string.IsNullOrWhiteSpace(PromptText))
+		{
+			return PromptText;
+		}
+
+		return StartsBattle ? "进入战斗" : "进入下一场景";
 	}
 
 	public override bool CanInteract(Player player)
@@ -38,38 +46,57 @@ public partial class SceneDoor : InteractableTemplate
 			return false;
 		}
 
-		if (!base.CanInteract(player))
+		return base.CanInteract(player) && HasValidDestination();
+	}
+
+	protected override void OnInteract(Player player)
+	{
+		if (StartsBattle)
 		{
-			return false;
+			EnterBattle(player);
+			return;
+		}
+
+		ChangeToScene();
+	}
+
+	private bool HasValidDestination()
+	{
+		if (StartsBattle)
+		{
+			return BattleScene != null || !string.IsNullOrWhiteSpace(BattleScenePath);
 		}
 
 		return NextScene != null || !string.IsNullOrWhiteSpace(NextScenePath);
 	}
 
-	protected override void OnInteract(Player player)
+	private void ChangeToScene()
 	{
 		if (NextScene == null && string.IsNullOrWhiteSpace(NextScenePath))
 		{
-			GD.PushError("SceneDoor: 目标场景未配置，请在 Inspector 设置 NextScene 或 NextScenePath。");
+			GD.PushError("SceneDoor: target scene is not configured.");
 			return;
 		}
 
 		_isTransitioning = true;
-
-		Error result;
-		if (NextScene != null)
-		{
-			result = GetTree().ChangeSceneToPacked(NextScene);
-		}
-		else
-		{
-			result = GetTree().ChangeSceneToFile(NextScenePath.Trim());
-		}
+		Error result = NextScene != null
+			? GetTree().ChangeSceneToPacked(NextScene)
+			: GetTree().ChangeSceneToFile(NextScenePath.Trim());
 
 		if (result != Error.Ok)
 		{
 			_isTransitioning = false;
-			GD.PushError($"SceneDoor: 切换场景失败，错误码={result}");
+			GD.PushError($"SceneDoor: scene change failed, error={result}");
+		}
+	}
+
+	private void EnterBattle(Player player)
+	{
+		_isTransitioning = true;
+		if (!MapBattleTransitionHelper.TryEnterBattle(this, player, BattleScene, BattleScenePath, BattleEncounterId, out string failureReason))
+		{
+			_isTransitioning = false;
+			GD.PushError($"SceneDoor: {failureReason}");
 		}
 	}
 }

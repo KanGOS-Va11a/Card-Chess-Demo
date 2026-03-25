@@ -1,4 +1,7 @@
+using System;
 using Godot;
+using CardChessDemo.Battle.Boundary;
+using CardChessDemo.Battle.Shared;
 
 public partial class Player : CharacterBody2D
 {
@@ -19,9 +22,13 @@ public partial class Player : CharacterBody2D
 	private Area2D _interactionArea;
 	private Area2D _lastInteractedArea;
 	private ulong _lastInteractTimeMs;
+	private GlobalGameSession? _globalSession;
 
 	public override void _Ready()
 	{
+		_globalSession = GetNodeOrNull<GlobalGameSession>("/root/GlobalGameSession");
+		ApplyPendingResumeContext();
+		_globalSession?.ConsumeLastBattleResult();
 		_interactionArea = GetNode<Area2D>("InteractionArea");
 
 		// 防止脚本范围小于实际探测圈，导致看得到但交互不到。
@@ -164,6 +171,33 @@ public partial class Player : CharacterBody2D
 		_lastInteractedArea = bestArea;
 		_lastInteractTimeMs = nowMs;
 		bestTarget.Interact(this);
+	}
+
+	public void ReceiveHeal(int amount)
+	{
+		if (amount <= 0 || _globalSession == null)
+		{
+			return;
+		}
+
+		_globalSession.SetPlayerCurrentHp(_globalSession.PlayerCurrentHp + amount);
+	}
+
+	private void ApplyPendingResumeContext()
+	{
+		if (_globalSession?.PeekPendingMapResumeContext() is not MapResumeContext resumeContext)
+		{
+			return;
+		}
+
+		string currentScenePath = GetTree().CurrentScene?.SceneFilePath ?? SceneFilePath;
+		if (!string.Equals(currentScenePath, resumeContext.ScenePath, StringComparison.OrdinalIgnoreCase))
+		{
+			return;
+		}
+
+		GlobalPosition = resumeContext.PlayerGlobalPosition;
+		_globalSession.ConsumePendingMapResumeContext();
 	}
 
 	private bool HasLineOfSight(Area2D targetArea)

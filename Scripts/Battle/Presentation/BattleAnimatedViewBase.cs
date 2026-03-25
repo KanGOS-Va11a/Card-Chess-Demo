@@ -8,6 +8,10 @@ public partial class BattleAnimatedViewBase : Node2D
 	private AnimatedSprite2D? _animatedSprite;
 	// 有些调用会在节点 _Ready 前发生，所以先缓存“想播什么动画”。
 	private string _pendingAnimation = "idle";
+	private Vector2 _boardAnchor;
+	private Vector2 _motionOffset;
+	private Tween? _motionTween;
+	private Tween? _pulseTween;
 
 	public BattleObjectState? State { get; private set; }
 
@@ -38,7 +42,8 @@ public partial class BattleAnimatedViewBase : Node2D
 
 	public void SetBoardPosition(Vector2 localCenter)
 	{
-		Position = localCenter;
+		_boardAnchor = localCenter;
+		ApplyVisualPosition();
 	}
 
 	public virtual void PlayIdle() => PlayCue("idle");
@@ -50,6 +55,40 @@ public partial class BattleAnimatedViewBase : Node2D
 	public virtual void PlayCue(StringName animationName)
 	{
 		PlayNamedAnimation(animationName.ToString());
+	}
+
+	public virtual void PlayTintPulse(Color tintColor)
+	{
+		_pulseTween?.Kill();
+		_pulseTween = CreateTween();
+		_pulseTween.SetParallel();
+		_pulseTween.SetEase(Tween.EaseType.Out);
+		_pulseTween.SetTrans(Tween.TransitionType.Cubic);
+		_pulseTween.TweenProperty(this, "modulate", tintColor, 0.08d);
+		_pulseTween.TweenProperty(this, "scale", new Vector2(1.06f, 1.06f), 0.08d);
+		_pulseTween.TweenProperty(this, "modulate", Colors.White, 0.20d).SetDelay(0.08d);
+		_pulseTween.TweenProperty(this, "scale", Vector2.One, 0.18d).SetDelay(0.08d);
+		PlayMotionOffset(new Vector2(0.0f, -1.5f), 0.04d, 0.12d);
+	}
+
+	public virtual void PlayMotionOffset(Vector2 targetOffset, double outDuration, double returnDuration, double returnDelay = 0.0d)
+	{
+		_motionTween?.Kill();
+		_motionTween = CreateTween();
+		_motionTween.SetEase(Tween.EaseType.Out);
+		_motionTween.SetTrans(Tween.TransitionType.Cubic);
+		_motionTween.TweenProperty(this, nameof(MotionOffset), targetOffset, outDuration);
+		_motionTween.TweenProperty(this, nameof(MotionOffset), Vector2.Zero, returnDuration).SetDelay(returnDelay);
+	}
+
+	public Vector2 MotionOffset
+	{
+		get => _motionOffset;
+		set
+		{
+			_motionOffset = value;
+			ApplyVisualPosition();
+		}
 	}
 
 	protected void PlayNamedAnimation(string animationName)
@@ -126,5 +165,10 @@ public partial class BattleAnimatedViewBase : Node2D
 		}
 
 		return ImageTexture.CreateFromImage(image);
+	}
+
+	private void ApplyVisualPosition()
+	{
+		Position = _boardAnchor + _motionOffset;
 	}
 }

@@ -6,4 +6,7 @@
     <Nullable>enable</Nullable>
   </PropertyGroup>
 
+  <ItemGroup>
+    <Compile Remove="Card-Chess-Demo-main\**\*.cs" />
+  </ItemGroup>
 </Project>
