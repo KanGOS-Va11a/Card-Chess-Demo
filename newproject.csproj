@@ -9,6 +9,8 @@
 
   <ItemGroup>
     <Compile Include="Scripts\**\*.cs" />
+=======
+>>>>>>> Stashed changes
     <Compile Remove="Card-Chess-Demo-main\**\*.cs" />
   </ItemGroup>
 
