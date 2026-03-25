@@ -13,6 +13,10 @@ public partial class Player : CharacterBody2D
 	[Export] public float InteractionStickyWindow = 0.35f;
 	[Export] public float InteractionStickyBonus = 0.08f;
 	[Export] public bool ShowInteractionGizmo = true;
+	[Export] public NodePath PlayerHpLabelPath = "../UI/BottomStatusBar/Margin/HBox/PlayerBlock/PlayerHpLabel";
+	[Export] public NodePath PlayerHpBarPath = "../UI/BottomStatusBar/Margin/HBox/PlayerBlock/PlayerHpBar";
+	[Export] public NodePath PartnerEnergyLabelPath = "../UI/BottomStatusBar/Margin/HBox/PartnerBlock/PartnerEnergyLabel";
+	[Export] public NodePath PartnerEnergyBarPath = "../UI/BottomStatusBar/Margin/HBox/PartnerBlock/PartnerEnergyBar";
 	[Export] public Color GizmoRangeColor = new Color(0.2f, 0.85f, 1.0f, 0.35f);
 	[Export] public Color GizmoConeColor = new Color(0.3f, 1.0f, 0.6f, 0.85f);
 	[Export] public Color GizmoForwardColor = new Color(1.0f, 0.85f, 0.25f, 0.95f);
@@ -21,6 +25,10 @@ public partial class Player : CharacterBody2D
 	private Area2D _interactionArea;
 	private Area2D _lastInteractedArea;
 	private Label _interactionHintLabel;
+	private Label _playerHpLabel;
+	private ProgressBar _playerHpBar;
+	private Label _partnerEnergyLabel;
+	private ProgressBar _partnerEnergyBar;
 	private ulong _lastInteractTimeMs;
 
 	public override void _Ready()
@@ -54,6 +62,31 @@ public partial class Player : CharacterBody2D
 		{
 			InteractionRange = areaRadius;
 		}
+
+		_playerHpLabel = GetNodeOrNull<Label>(PlayerHpLabelPath);
+		_playerHpBar = GetNodeOrNull<ProgressBar>(PlayerHpBarPath);
+		_partnerEnergyLabel = GetNodeOrNull<Label>(PartnerEnergyLabelPath);
+		_partnerEnergyBar = GetNodeOrNull<ProgressBar>(PartnerEnergyBarPath);
+		UpdateStatusUi();
+
+		// 检查是否需要恢复战斗后的位置
+		RestorePositionIfNeeded();
+	}
+
+	private void RestorePositionIfNeeded()
+	{
+		GameSession session = GetGameSession();
+		if (session == null || !session.should_restore_player_position)
+		{
+			return;
+		}
+
+		// 恢复位置
+		GlobalPosition = session.pending_restore_player_position;
+		session.should_restore_player_position = false;
+		session.pending_restore_player_position = Vector2.Zero;
+
+		GD.Print($"Player: 位置已从战斗中恢复到 {GlobalPosition}");
 	}
 
 	public override void _PhysicsProcess(double delta)
@@ -76,11 +109,44 @@ public partial class Player : CharacterBody2D
 	public override void _Process(double delta)
 	{
 		UpdateInteractionHint();
+		UpdateStatusUi();
 
 		if (ShowInteractionGizmo)
 		{
 			QueueRedraw();
 		}
+	}
+
+	public void ReceiveHeal(int amount)
+	{
+		if (amount <= 0)
+		{
+			return;
+		}
+
+		ApplyPlayerHpDelta(amount);
+	}
+
+	public void ReceiveDamage(int amount)
+	{
+		if (amount <= 0)
+		{
+			return;
+		}
+
+		ApplyPlayerHpDelta(-amount);
+	}
+
+	public void RestoreHpToFull()
+	{
+		GameSession session = GetGameSession();
+		if (session == null)
+		{
+			return;
+		}
+
+		session.player_runtime.hp_current = Mathf.Max(0, session.player_runtime.hp_max);
+		UpdateStatusUi();
 	}
 
 	public override void _Draw()
@@ -321,4 +387,97 @@ public partial class Player : CharacterBody2D
 
 		return 0.0f;
 	}
+
+	private GameSession GetGameSession()
+	{
+		return GetNodeOrNull<GameSession>("/root/GameSession");
+	}
+
+	private void ApplyPlayerHpDelta(int delta)
+	{
+		GameSession session = GetGameSession();
+		if (session == null)
+		{
+			return;
+		}
+
+		int hpMax = Mathf.Max(1, session.player_runtime.hp_max);
+		session.apply_resource_delta("player_hp", delta, 0, hpMax);
+		UpdateStatusUi();
+	}
+
+	private bool IsPartnerJoined()
+	{
+		GameSession session = GetGameSession();
+		if (session == null) return false;
+
+		if (!session.world_flags.TryGetValue(new StringName("partner_joined"), out Variant value))
+		{
+			return false;
+		}
+
+		return value.VariantType == Variant.Type.Bool && value.AsBool();
+	}
+
+	private void UpdateStatusUi()
+	{
+		if (_playerHpLabel == null && _playerHpBar == null && _partnerEnergyLabel == null && _partnerEnergyBar == null)
+		{
+			return;
+		}
+
+		GameSession session = GetGameSession();
+		if (session == null)
+		{
+			return;
+		}
+
+		int hpMax = Mathf.Max(1, session.player_runtime.hp_max);
+		int hpCurrent = Mathf.Clamp(session.player_runtime.hp_current, 0, hpMax);
+		if (session.player_runtime.hp_current != hpCurrent)
+		{
+			session.player_runtime.hp_current = hpCurrent;
+		}
+
+		int energyCap = Mathf.Max(1, session.arakawa_state.energy_cap);
+		int energyCurrent = Mathf.Clamp(session.arakawa_state.energy_current, 0, energyCap);
+		if (session.arakawa_state.energy_current != energyCurrent)
+		{
+			session.arakawa_state.energy_current = energyCurrent;
+		}
+
+		if (_playerHpLabel != null)
+		{
+			_playerHpLabel.Text = $"主角 HP {hpCurrent}/{hpMax}";
+		}
+
+		if (_playerHpBar != null)
+		{
+			_playerHpBar.MaxValue = hpMax;
+			_playerHpBar.Value = hpCurrent;
+		}
+
+		// 只在伙伴加入后显示伙伴能量 UI
+		bool partnerJoined = IsPartnerJoined();
+		
+		if (_partnerEnergyLabel != null)
+		{
+			_partnerEnergyLabel.Visible = partnerJoined;
+			if (partnerJoined)
+			{
+				_partnerEnergyLabel.Text = $"伙伴 EN {energyCurrent}/{energyCap}";
+			}
+		}
+
+		if (_partnerEnergyBar != null)
+		{
+			_partnerEnergyBar.Visible = partnerJoined;
+			if (partnerJoined)
+			{
+				_partnerEnergyBar.MaxValue = energyCap;
+				_partnerEnergyBar.Value = energyCurrent;
+			}
+		}
+	}
+
 }

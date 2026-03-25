@@ -24,15 +24,28 @@ public partial class HealStation : StaticBody2D, IInteractable
 			return;
 		}
 
-		if (player.HasMethod("ReceiveHeal"))
+		GameSession session = GetNodeOrNull<GameSession>("/root/GameSession");
+		if (session == null)
 		{
-			player.Call("ReceiveHeal", HealAmount);
-			GD.Print($"治疗站：恢复 {HealAmount} 点生命。");
+			GD.PushWarning("治疗站：未找到 GameSession，无法恢复状态。");
+			return;
 		}
-		else
+
+		int playerHpMax = Mathf.Max(1, session.player_runtime.hp_max);
+		int playerHpDelta = playerHpMax - session.player_runtime.hp_current;
+		if (playerHpDelta != 0)
 		{
-			GD.Print("治疗站：玩家尚未实现 ReceiveHeal(amount) 方法。");
+			session.apply_resource_delta("player_hp", playerHpDelta, 0, playerHpMax);
 		}
+
+		int partnerEnergyCap = Mathf.Max(1, session.arakawa_state.energy_cap);
+		int partnerEnergyDelta = partnerEnergyCap - session.arakawa_state.energy_current;
+		if (partnerEnergyDelta != 0)
+		{
+			session.apply_resource_delta("arakawa_energy", partnerEnergyDelta, 0, partnerEnergyCap);
+		}
+
+		GD.Print($"治疗站：已回满主角 HP({session.player_runtime.hp_current}/{playerHpMax}) 与伙伴 EN({session.arakawa_state.energy_current}/{partnerEnergyCap})。");
 
 		_nextAvailableTimeMs = Time.GetTicksMsec() + (ulong)(CooldownSeconds * 1000.0f);
 

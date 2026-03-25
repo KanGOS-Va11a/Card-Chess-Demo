@@ -8,8 +8,7 @@
 [ext_resource type="PackedScene" uid="uid://c0v263dw3prrw" path="res://Scene/SceneDoor.tscn" id="6_ujx8d"]
 [ext_resource type="PackedScene" path="res://Scene/BattleEncounterEnemy.tscn" id="7_enemybattle"]
 
-[sub_resource type="RectangleShape2D" id="RectangleShape2D_bnnbe"]
-size = Vector2(126, 127)
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_3jdkb"]
 
 [sub_resource type="CircleShape2D" id="CircleShape2D_f4wc2"]
 radius = 243.0
@@ -27,10 +26,11 @@ region_enabled = true
 region_rect = Rect2(158.86967, 47.261597, 16.19281, 16.706875)
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="Player" unique_id=1419809530]
-position = Vector2(-1, -0.5)
-shape = SubResource("RectangleShape2D_bnnbe")
+scale = Vector2(3, 3)
+shape = SubResource("RectangleShape2D_3jdkb")
 
 [node name="Camera2D" type="Camera2D" parent="Player" unique_id=449423949]
+zoom = Vector2(0.5, 0.5)
 position_smoothing_enabled = true
 
 [node name="InteractionArea" type="Area2D" parent="Player" unique_id=1617757214]
@@ -54,3 +54,6 @@ position = Vector2(236, 236)
 
 [node name="Door" parent="." unique_id=583652748 instance=ExtResource("6_ujx8d")]
 position = Vector2(611, 649)
+
+[node name="Enemy" parent="." unique_id=270315686 instance=ExtResource("7_enemy")]
+position = Vector2(184, 170)

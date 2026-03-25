@@ -15,6 +15,12 @@ run/main_scene="uid://clfyfxbbjiapg"
 config/features=PackedStringArray("4.6", "C#", "Forward Plus")
 config/icon="res://icon.svg"
 
+[autoload]
+
+GameSession="*res://AutoLoad/GameSession.cs"
+GlobalBattleContext="*res://AutoLoad/GlobalBattleContext.cs"
+PartnerManager="*res://AutoLoad/PartnerManager.cs"
+
 [dotnet]
 
 project/assembly_name="newproject"
@@ -49,10 +55,10 @@ interact={
 
 [layer_names]
 
-2d_physics/layer_1="Player"
-2d_physics/layer_2="Environment"
-2d_physics/layer_3="Enemy"
-2d_physics/layer_4="Interactable"
+2d_physics/layer_1="玩家"
+2d_physics/layer_2="环境"
+2d_physics/layer_3="怪物"
+2d_physics/layer_4="交互物"
 
 [physics]
 
@@ -60,4 +66,7 @@ interact={
 
 [rendering]
 
+textures/canvas_textures/default_texture_filter=0
 rendering_device/driver.windows="d3d12"
+2d/snap/snap_2d_transforms_to_pixel=true
+2d/snap/snap_2d_vertices_to_pixel=true
