@@ -2,9 +2,11 @@ using Godot;
 using CardChessDemo.Battle.Boundary;
 using CardChessDemo.Battle.Shared;
 
+namespace CardChessDemo.Map;
+
 public partial class MapSceneController : Node2D
 {
-    [Export] public NodePath PlayerPath { get; set; } = new NodePath();
+    [Export] public NodePath PlayerPath { get; set; } = new("Player");
 
     private GlobalGameSession? _globalSession;
 
@@ -39,11 +41,24 @@ public partial class MapSceneController : Node2D
             return;
         }
 
-        if (GetNodeOrNull<Node2D>(PlayerPath) is Node2D player)
+        Node2D? player = ResolvePlayerNode();
+        if (player == null)
         {
-            player.GlobalPosition = resumeContext.PlayerGlobalPosition;
+            GD.PushWarning("MapSceneController: failed to resolve player node for map resume.");
+            return;
         }
 
+        player.GlobalPosition = resumeContext.PlayerGlobalPosition;
         _globalSession.ConsumePendingMapResumeContext();
+    }
+
+    private Node2D? ResolvePlayerNode()
+    {
+        if (!PlayerPath.IsEmpty && GetNodeOrNull<Node2D>(PlayerPath) is Node2D player)
+        {
+            return player;
+        }
+
+        return GetNodeOrNull<Node2D>("Player");
     }
 }

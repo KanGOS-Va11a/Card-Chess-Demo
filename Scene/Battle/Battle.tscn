@@ -1,14 +1,14 @@
-[gd_scene load_steps=10 format=3 uid="uid://cfsbnmkxedlfy"]
+[gd_scene format=3 uid="uid://cfsbnmkxedlfy"]
 
-[ext_resource type="Script" path="res://Scripts/Battle/BattleSceneController.cs" id="1_hq08r"]
-[ext_resource type="Script" path="res://Scripts/Battle/Visual/BattleBoardOverlay.cs" id="2_7r48u"]
-[ext_resource type="Script" path="res://Scripts/Battle/Visual/BattleFloatingTextLayer.cs" id="9_float"]
-[ext_resource type="PackedScene" path="res://Scene/Battle/Rooms/GruntDebugRoomA.tscn" id="3_oxbdf"]
-[ext_resource type="PackedScene" path="res://Scene/Battle/Rooms/GruntDebugRoomB.tscn" id="4_fypyy"]
-[ext_resource type="Resource" path="res://Resources/Battle/Rooms/DebugBattleRoomPool.tres" id="5_4mo8r"]
-[ext_resource type="Resource" path="res://Resources/Battle/Presentation/DefaultBattlePrefabLibrary.tres" id="6_prefab"]
+[ext_resource type="Script" uid="uid://b1v3ts2ne8faa" path="res://Scripts/Battle/BattleSceneController.cs" id="1_hq08r"]
+[ext_resource type="Script" uid="uid://v6k5hylri703" path="res://Scripts/Battle/Visual/BattleBoardOverlay.cs" id="2_7r48u"]
+[ext_resource type="PackedScene" uid="uid://b0scsa813e0hn" path="res://Scene/Battle/Rooms/GruntDebugRoomA.tscn" id="3_oxbdf"]
+[ext_resource type="PackedScene" uid="uid://bo41kkri4csjl" path="res://Scene/Battle/Rooms/GruntDebugRoomB.tscn" id="4_fypyy"]
+[ext_resource type="Resource" uid="uid://dy3y14c3mod7u" path="res://Resources/Battle/Rooms/DebugBattleRoomPool.tres" id="5_4mo8r"]
+[ext_resource type="Resource" uid="uid://cfuduyxkf0keq" path="res://Resources/Battle/Presentation/DefaultBattlePrefabLibrary.tres" id="6_prefab"]
 [ext_resource type="PackedScene" path="res://Scene/Battle/UI/BattleHud.tscn" id="7_hud"]
-[ext_resource type="Resource" path="res://Resources/Battle/Encounters/DebugBattleEncounterLibrary.tres" id="8_encounter"]
+[ext_resource type="Resource" uid="uid://bmpjfpqs2pghk" path="res://Resources/Battle/Encounters/DebugBattleEncounterLibrary.tres" id="8_encounter"]
+[ext_resource type="Script" uid="uid://co7rnt3ribqx8" path="res://Scripts/Battle/Visual/BattleFloatingTextLayer.cs" id="9_float"]
 
 [node name="Battle" type="Node2D" unique_id=990095149]
 script = ExtResource("1_hq08r")
@@ -19,30 +19,29 @@ EncounterLibrary = ExtResource("8_encounter")
 EncounterId = "grunt_debug"
 RandomSeed = 20260320
 
-[node name="Camera2D" type="Camera2D" parent="."]
+[node name="Camera2D" type="Camera2D" parent="." unique_id=41489898]
 position = Vector2(160, 90)
-enabled = true
 
-[node name="BackdropRoot" type="Node2D" parent="."]
+[node name="BackdropRoot" type="Node2D" parent="." unique_id=1528764606]
 
-[node name="RoomContainer" type="Node2D" parent="."]
+[node name="RoomContainer" type="Node2D" parent="." unique_id=444181665]
 position = Vector2(32, 26)
 
-[node name="BoardOverlay" type="Node2D" parent="RoomContainer"]
+[node name="BoardOverlay" type="Node2D" parent="RoomContainer" unique_id=208343124]
 script = ExtResource("2_7r48u")
 
-[node name="PieceRoot" type="Node2D" parent="RoomContainer"]
+[node name="PieceRoot" type="Node2D" parent="RoomContainer" unique_id=1217213128]
 
-[node name="FloatingTextLayer" type="Node2D" parent="RoomContainer"]
+[node name="FloatingTextLayer" type="Node2D" parent="RoomContainer" unique_id=1829250619]
 script = ExtResource("9_float")
 
-[node name="OverlayRoot" type="Node2D" parent="."]
+[node name="OverlayRoot" type="Node2D" parent="." unique_id=2099233086]
 
-[node name="BattleHud" parent="." instance=ExtResource("7_hud")]
+[node name="BattleHud" parent="." unique_id=672889577 instance=ExtResource("7_hud")]
 
-[node name="BattleFailOverlay" type="Control" parent="."]
+[node name="BattleFailOverlay" type="Control" parent="." unique_id=1655640422]
 visible = false
-layout_mode = 1
+layout_mode = 3
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
@@ -50,7 +49,7 @@ grow_horizontal = 2
 grow_vertical = 2
 mouse_filter = 2
 
-[node name="Flash" type="ColorRect" parent="BattleFailOverlay"]
+[node name="Flash" type="ColorRect" parent="BattleFailOverlay" unique_id=184023068]
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
@@ -60,7 +59,7 @@ grow_vertical = 2
 mouse_filter = 2
 color = Color(0.45, 0.04, 0.06, 0)
 
-[node name="DefeatLabel" type="Label" parent="BattleFailOverlay"]
+[node name="DefeatLabel" type="Label" parent="BattleFailOverlay" unique_id=1497087851]
 visible = false
 layout_mode = 1
 anchors_preset = 8

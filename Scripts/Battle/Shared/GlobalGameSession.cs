@@ -78,6 +78,13 @@ public partial class GlobalGameSession : Node
 		LastBattleResult = null;
 	}
 
+	public void CancelPendingBattleTransition()
+	{
+		PendingBattleRequest = null;
+		PendingBattleEncounterId = string.Empty;
+		PendingMapResumeContext = null;
+	}
+
 	public void SetPendingMapResumeContext(MapResumeContext? resumeContext)
 	{
 		PendingMapResumeContext = resumeContext;

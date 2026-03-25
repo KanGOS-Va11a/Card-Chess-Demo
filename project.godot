@@ -19,9 +19,24 @@ config/icon="res://icon.svg"
 
 GlobalGameSession="*res://Scripts/Battle/Shared/GlobalGameSession.cs"
 
+[display]
+
+window/size/viewport_width=320
+window/size/viewport_height=180
+window/size/window_width_override=1280
+window/size/window_height_override=720
+window/stretch/mode="viewport"
+window/stretch/aspect="keep"
+window/stretch/scale_mode="integer"
+
 [dotnet]
 
 project/assembly_name="newproject"
+
+[gui]
+
+theme/custom="res://Resources/UI/ProjectUiTheme.tres"
+theme/custom_font="res://Assets/Fonts/unifont_t-17.0.04.otf"
 
 [input]
 

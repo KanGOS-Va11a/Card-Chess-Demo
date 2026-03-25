@@ -1,5 +1,7 @@
 using Godot;
 
+namespace CardChessDemo.Map;
+
 public partial class Enemy : InteractableTemplate
 {
 	[Export] public string EncounterId = "grunt_debug";

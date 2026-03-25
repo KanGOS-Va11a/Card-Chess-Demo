@@ -1,4 +1,7 @@
 using Godot;
+
+namespace CardChessDemo.Map;
+
 public partial class SceneDoor : InteractableTemplate
 {
 	[Export] public PackedScene? NextScene;

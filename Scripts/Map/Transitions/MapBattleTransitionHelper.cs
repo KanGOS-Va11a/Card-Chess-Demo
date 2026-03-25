@@ -2,6 +2,8 @@ using Godot;
 using CardChessDemo.Battle.Boundary;
 using CardChessDemo.Battle.Shared;
 
+namespace CardChessDemo.Map;
+
 public static class MapBattleTransitionHelper
 {
     public static bool TryEnterBattle(
@@ -39,8 +41,7 @@ public static class MapBattleTransitionHelper
         if (result != Error.Ok)
         {
             failureReason = $"Scene change failed, error={result}.";
-            globalSession.SetPendingMapResumeContext(null);
-            globalSession.SetPendingBattleEncounterId(string.Empty);
+            globalSession.CancelPendingBattleTransition();
             return false;
         }
 

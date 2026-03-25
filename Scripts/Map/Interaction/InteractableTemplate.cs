@@ -1,5 +1,7 @@
 using Godot;
 
+namespace CardChessDemo.Map;
+
 /// <summary>
 /// 通用交互物基类，所有交互物（宝箱、NPC、回血站等）推荐继承此类。
 /// 只需实现 OnInteract 方法即可，冷却、禁用等逻辑自动处理。
@@ -12,6 +14,7 @@ public abstract partial class InteractableTemplate : StaticBody2D, IInteractable
 	[Export] public bool IsDisabled = false;
 
 	protected ulong _nextAvailableTimeMs = 0;
+	protected bool IsOnCooldown => Time.GetTicksMsec() < _nextAvailableTimeMs;
 
 	/// <summary>
 	/// 获取交互提示文本。
@@ -25,7 +28,7 @@ public abstract partial class InteractableTemplate : StaticBody2D, IInteractable
 			return "（已禁用）";
 		}
 
-		if (!CanInteract(player))
+		if (IsOnCooldown)
 		{
 			return "（冷却中）";
 		}
@@ -80,5 +83,15 @@ public abstract partial class InteractableTemplate : StaticBody2D, IInteractable
 		{
 			_nextAvailableTimeMs = Time.GetTicksMsec() + (ulong)(CooldownSeconds * 1000.0f);
 		}
+	}
+
+	protected void PlayInteractionPulse(Node2D? targetNode = null, float scaleFactor = 1.08f)
+	{
+		Node2D pulseTarget = targetNode ?? this;
+		Vector2 baseScale = pulseTarget.Scale;
+		Tween tween = pulseTarget.CreateTween();
+		tween.SetEase(Tween.EaseType.Out).SetTrans(Tween.TransitionType.Back);
+		tween.TweenProperty(pulseTarget, "scale", baseScale * scaleFactor, 0.08f);
+		tween.TweenProperty(pulseTarget, "scale", baseScale, 0.10f);
 	}
 }
