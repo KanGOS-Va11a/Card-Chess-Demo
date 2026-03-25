@@ -6,7 +6,7 @@
 [ext_resource type="PackedScene" uid="uid://cgf2evpc6ty4e" path="res://Scene/Healing.tscn" id="3_j8rcl"]
 [ext_resource type="PackedScene" uid="uid://cko4roccpe105" path="res://Scene/NpcScene.tscn" id="5_5o5ic"]
 [ext_resource type="PackedScene" uid="uid://c0v263dw3prrw" path="res://Scene/SceneDoor.tscn" id="6_ujx8d"]
-[ext_resource type="PackedScene" path="res://Scene/Enemy.tscn" id="7_enemy"]
+[ext_resource type="PackedScene" path="res://Scene/BattleEncounterEnemy.tscn" id="7_enemy"]
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_3jdkb"]
 

@@ -1,4 +1,4 @@
-[gd_scene format=3 uid="uid://clfyfxbbjiapg"]
+[gd_scene format=3 uid="uid://bq5qagu68cj0o"]
 
 [ext_resource type="PackedScene" uid="uid://c1ojey6clae1h" path="res://Scene(garbage)/Chest.tscn" id="1_pyta8"]
 [ext_resource type="PackedScene" uid="uid://cgf2evpc6ty4e" path="res://Scene(garbage)/HealingStation.tscn" id="2_xawni"]
