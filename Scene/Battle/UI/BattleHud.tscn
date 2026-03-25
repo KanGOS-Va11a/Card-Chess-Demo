@@ -134,7 +134,7 @@ anchor_left = 1.0
 offset_left = -38.0
 offset_top = 0.0
 offset_right = -2.0
-offset_bottom = 66.0
+offset_bottom = 76.0
 theme_override_constants/separation = 0
 z_index = 20
 
@@ -167,6 +167,11 @@ text = "Def"
 custom_minimum_size = Vector2(34, 10)
 theme_override_font_sizes/font_size = 16
 text = "Med"
+
+[node name="RetreatButton" type="Button" parent="RightControls"]
+custom_minimum_size = Vector2(34, 10)
+theme_override_font_sizes/font_size = 16
+text = "Run"
 
 [node name="EndTurnButton" type="Button" parent="RightControls"]
 custom_minimum_size = Vector2(34, 10)

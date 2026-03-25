@@ -19,13 +19,18 @@ public sealed class BattleDeckState
         IEnumerable<BattleCardDefinition> startingDeck,
         ulong seed,
         int handSize = 3,
-        int maxEnergyPerTurn = 2)
+        int maxEnergyPerTurn = 2,
+        BattleDeckRuntimeInit? runtimeInit = null)
     {
         _startingDeck = startingDeck.ToList();
-        HandSize = Math.Max(1, handSize);
-        MaxEnergyPerTurn = Math.Max(0, maxEnergyPerTurn);
+        HandSize = runtimeInit != null && runtimeInit.HandSizeOverride > 0
+            ? runtimeInit.HandSizeOverride
+            : Math.Max(1, handSize);
+        MaxEnergyPerTurn = runtimeInit != null && runtimeInit.MaxEnergyOverride >= 0
+            ? Math.Max(0, runtimeInit.MaxEnergyOverride)
+            : Math.Max(0, maxEnergyPerTurn);
         _rng.Seed = seed == 0 ? 1UL : seed;
-        ResetForBattle();
+        ResetForBattle(runtimeInit);
     }
 
     public int HandSize { get; }
@@ -52,7 +57,7 @@ public sealed class BattleDeckState
 
     public int ExhaustPileCount => _exhaustPile.Count;
 
-    public void ResetForBattle()
+    public void ResetForBattle(BattleDeckRuntimeInit? runtimeInit = null)
     {
         _drawPile.Clear();
         _hand.Clear();
@@ -60,13 +65,30 @@ public sealed class BattleDeckState
         _exhaustPile.Clear();
         _instanceCounter = 0;
 
-        foreach (BattleCardDefinition definition in _startingDeck)
+        if (runtimeInit != null && runtimeInit.HasExplicitPiles)
         {
-            _drawPile.Add(CreateInstance(definition));
+            AddInstances(_hand, runtimeInit.StartingHandCards);
+            AddInstances(_drawPile, runtimeInit.StartingDrawPileCards);
+            AddInstances(_discardPile, runtimeInit.StartingDiscardPileCards);
+            AddInstances(_exhaustPile, runtimeInit.StartingExhaustPileCards);
+        }
+        else
+        {
+            IEnumerable<BattleCardDefinition> sourceDeck = runtimeInit != null && runtimeInit.BuildCards.Length > 0
+                ? runtimeInit.BuildCards
+                : _startingDeck;
+
+            foreach (BattleCardDefinition definition in sourceDeck)
+            {
+                _drawPile.Add(CreateInstance(definition));
+            }
+
+            Shuffle(_drawPile);
         }
 
-        Shuffle(_drawPile);
-        CurrentEnergy = MaxEnergyPerTurn;
+        CurrentEnergy = runtimeInit != null && runtimeInit.InitialEnergy >= 0
+            ? Mathf.Clamp(runtimeInit.InitialEnergy, 0, MaxEnergyPerTurn)
+            : MaxEnergyPerTurn;
     }
 
     public void StartPlayerTurn()
@@ -223,6 +245,14 @@ public sealed class BattleDeckState
     {
         _instanceCounter++;
         return new BattleCardInstance($"{definition.CardId}_{_instanceCounter:D3}", definition);
+    }
+
+    private void AddInstances(List<BattleCardInstance> target, IEnumerable<BattleCardDefinition> definitions)
+    {
+        foreach (BattleCardDefinition definition in definitions)
+        {
+            target.Add(CreateInstance(definition));
+        }
     }
 
     private void Shuffle(List<BattleCardInstance> cards)

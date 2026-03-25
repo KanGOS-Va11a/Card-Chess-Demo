@@ -11,12 +11,13 @@ config_version=5
 [application]
 
 config/name="newproject"
-run/main_scene="uid://clfyfxbbjiapg"
+run/main_scene="res://Scene/Battle/Battle.tscn"
 config/features=PackedStringArray("4.6", "C#", "Forward Plus")
 config/icon="res://icon.svg"
 
 [autoload]
 
+GlobalGameSession="*res://Scripts/Battle/Shared/GlobalGameSession.cs"
 GameSession="*res://AutoLoad/GameSession.cs"
 GlobalBattleContext="*res://AutoLoad/GlobalBattleContext.cs"
 PartnerManager="*res://AutoLoad/PartnerManager.cs"

@@ -28,7 +28,7 @@ public partial class BattleQuickExitController : Node2D
 		var battleRequest = _battleContext.pending_battle_request;
 		
 		// 构建零伤害结果（直接通过）
-		var battleResult = new BattleResult
+		var battleResult = new LegacyBattleResult
 		{
 			hp_delta = 0,
 			arakawa_energy_delta = 0,
@@ -63,7 +63,7 @@ public partial class BattleQuickExitController : Node2D
 		}
 	}
 
-	private void ApplyBattleResult(BattleResult result)
+	private void ApplyBattleResult(LegacyBattleResult result)
 	{
 		if (_gameSession == null)
 		{

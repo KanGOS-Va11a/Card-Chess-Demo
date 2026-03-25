@@ -1,4 +1,4 @@
-[gd_scene load_steps=2 format=3 uid="uid://cfsbnmkxedlfy"]
+[gd_scene format=3 uid="uid://ti48hgigqlh"]
 
 [ext_resource type="Script" path="res://Scripts/Battle/BattleQuickExitController.cs" id="1_script"]
 

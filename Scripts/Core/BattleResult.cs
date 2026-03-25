@@ -1,7 +1,7 @@
 using Godot;
 using System;
 
-public partial class BattleResult : RefCounted
+public partial class LegacyBattleResult : RefCounted
 {
 	public string result_id { get; set; } = Guid.NewGuid().ToString("N");
 	public string request_id { get; set; } = string.Empty;

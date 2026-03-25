@@ -12,6 +12,7 @@ public partial class BattleAnimatedViewBase : Node2D
 	private Vector2 _motionOffset;
 	private Tween? _motionTween;
 	private Tween? _pulseTween;
+	private Tween? _boardMoveTween;
 
 	public BattleObjectState? State { get; private set; }
 
@@ -42,8 +43,25 @@ public partial class BattleAnimatedViewBase : Node2D
 
 	public void SetBoardPosition(Vector2 localCenter)
 	{
+		_boardMoveTween?.Kill();
 		_boardAnchor = localCenter;
 		ApplyVisualPosition();
+	}
+
+	public async System.Threading.Tasks.Task TweenBoardPositionAsync(Vector2 localCenter, double duration)
+	{
+		if (duration <= 0.0d)
+		{
+			SetBoardPosition(localCenter);
+			return;
+		}
+
+		_boardMoveTween?.Kill();
+		_boardMoveTween = CreateTween();
+		_boardMoveTween.SetEase(Tween.EaseType.InOut);
+		_boardMoveTween.SetTrans(Tween.TransitionType.Sine);
+		_boardMoveTween.TweenProperty(this, nameof(BoardAnchor), localCenter, duration);
+		await ToSignal(_boardMoveTween, Tween.SignalName.Finished);
 	}
 
 	public virtual void PlayIdle() => PlayCue("idle");
@@ -87,6 +105,16 @@ public partial class BattleAnimatedViewBase : Node2D
 		set
 		{
 			_motionOffset = value;
+			ApplyVisualPosition();
+		}
+	}
+
+	public Vector2 BoardAnchor
+	{
+		get => _boardAnchor;
+		set
+		{
+			_boardAnchor = value;
 			ApplyVisualPosition();
 		}
 	}

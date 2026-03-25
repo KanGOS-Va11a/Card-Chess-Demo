@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading.Tasks;
 using Godot;
 using CardChessDemo.Battle.Board;
 using CardChessDemo.Battle.Rooms;
@@ -78,6 +79,27 @@ public sealed class BattlePieceViewManager
             // 当前移动表现只有本地动画切换，没有位移补间或行动时序。
             view.PlayMove();
         }
+    }
+
+    public async Task<bool> PlayMovePathAsync(
+        string objectId,
+        IReadOnlyList<Vector2I> cellPath,
+        BattleRoomTemplate room,
+        double secondsPerCell)
+    {
+        if (!_views.TryGetValue(objectId, out BattleAnimatedViewBase? view) || cellPath.Count == 0)
+        {
+            return false;
+        }
+
+        view.PlayMove();
+        foreach (Vector2I cell in cellPath.Skip(1))
+        {
+            await view.TweenBoardPositionAsync(room.CellToLocalCenter(cell), secondsPerCell);
+        }
+
+        view.PlayIdle();
+        return true;
     }
 
     public void PlayAction(string objectId)

@@ -106,7 +106,7 @@ public partial class Enemy : InteractableTemplate
         GameSession session = GetNodeOrNull<GameSession>("/root/GameSession");
         GlobalBattleContext context = GetNodeOrNull<GlobalBattleContext>("/root/GlobalBattleContext");
 
-        BattleRequest request = BuildBattleRequest(session);
+        LegacyBattleRequest request = BuildBattleRequest(session);
         Node currentScene = GetTree().CurrentScene;
         string returnScenePath = currentScene?.SceneFilePath ?? string.Empty;
         Vector2 returnPlayerPos = player?.GlobalPosition ?? Vector2.Zero;
@@ -171,9 +171,9 @@ public partial class Enemy : InteractableTemplate
         return path;
     }
 
-    private BattleRequest BuildBattleRequest(GameSession session)
+    private LegacyBattleRequest BuildBattleRequest(GameSession session)
     {
-        var request = new BattleRequest();
+        var request = new LegacyBattleRequest();
 
         if (session == null)
         {

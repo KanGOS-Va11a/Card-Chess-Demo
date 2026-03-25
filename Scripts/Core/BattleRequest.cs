@@ -1,7 +1,7 @@
 using Godot;
 using System;
 
-public partial class BattleRequest : RefCounted
+public partial class LegacyBattleRequest : RefCounted
 {
 	public string snapshot_id { get; set; } = Guid.NewGuid().ToString("N");
 	public int player_hp { get; set; } = 100;

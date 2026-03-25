@@ -43,8 +43,6 @@ public partial class Player : CharacterBody2D
 		{
 			var fallbackUi = new CanvasLayer();
 			fallbackUi.Name = "RuntimeUI";
-			AddSibling(fallbackUi);
-
 			_interactionHintLabel = new Label();
 			_interactionHintLabel.Name = "InteractionHintLabel";
 			_interactionHintLabel.Visible = false;
@@ -53,6 +51,17 @@ public partial class Player : CharacterBody2D
 			_interactionHintLabel.AddThemeColorOverride("font_outline_color", new Color(0, 0, 0, 1));
 			_interactionHintLabel.AddThemeConstantOverride("outline_size", 3);
 			fallbackUi.AddChild(_interactionHintLabel);
+
+			Node parentNode = GetParent();
+			if (parentNode != null)
+			{
+				parentNode.CallDeferred("add_child", fallbackUi);
+			}
+			else
+			{
+				CallDeferred("add_child", fallbackUi);
+			}
+
 			GD.PushWarning("Player: 未找到提示文本节点，已创建运行时提示 UI。请检查 InteractionHintLabelPath 配置。");
 		}
 

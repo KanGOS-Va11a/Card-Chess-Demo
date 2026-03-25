@@ -86,6 +86,11 @@ public partial class BattleSceneController : Node2D
 	private bool _battleResultCommitted;
 	private bool _isArakawaWheelOpen;
 	private ArakawaAbilityMode _arakawaAbilityMode = ArakawaAbilityMode.None;
+	private BattleRequest? _activeBattleRequest;
+	private bool _retreatPending;
+	private int _retreatTurnIndex = -1;
+	private int _retreatStartHp = -1;
+	private bool _isPlayerMoveResolving;
 
 	public override void _Ready()
 	{
@@ -103,13 +108,17 @@ public partial class BattleSceneController : Node2D
 		QueryService = new BoardQueryService(BoardState, Registry);
 		TurnState = new TurnActionState();
 		TurnState.StartNewTurn(1);
+		IReadOnlyList<BattleCardDefinition> prototypeDeck = BuildPrototypePlayerDeck();
+		BattleDeckRuntimeInit? deckRuntimeInit = BuildDeckRuntimeInit(prototypeDeck);
+		IReadOnlyList<BattleCardDefinition> battleDeckSource = ResolveBattleDeckSource(prototypeDeck, deckRuntimeInit);
 		_playerDeck = new BattleDeckState(
-			BuildPrototypePlayerDeck(),
+			battleDeckSource,
 			(ulong)Math.Max(RandomSeed, 1),
 			PlayerHandSize,
-			PlayerEnergyPerTurn);
+			PlayerEnergyPerTurn,
+			deckRuntimeInit);
 		TurnState.ConfigureEnergyRechargeInterval(_playerDeck.EnergyRegenIntervalTurns);
-		_playerDeck.DrawCards(PlayerHandSize);
+		_playerDeck.DrawCards(ResolveOpeningDrawCount(deckRuntimeInit, _playerDeck.HandSize));
 		_playerDeck.StartPlayerTurn();
 
 		CurrentRoom = InstantiateSelectedRoom();
@@ -135,7 +144,7 @@ public partial class BattleSceneController : Node2D
 		_pieceViewManager = new BattlePieceViewManager(GetNode<Node>("RoomContainer/PieceRoot"), BattlePrefabLibrary);
 		_pieceViewManager.Rebuild(Registry, StateManager, CurrentRoom);
 		_floatingTextLayer = GetNodeOrNull<BattleFloatingTextLayer>("RoomContainer/FloatingTextLayer");
-		_actionService = new BattleActionService(BoardState, Registry, QueryService, StateManager, _pieceViewManager, CurrentRoom, GlobalSession, _floatingTextLayer);
+		_actionService = new BattleActionService(BoardState, Registry, QueryService, Pathfinder, StateManager, _pieceViewManager, CurrentRoom, GlobalSession, _floatingTextLayer);
 		_enemyTurnResolver = new EnemyTurnResolver(
 			Registry,
 			StateManager,
@@ -154,6 +163,7 @@ public partial class BattleSceneController : Node2D
 			_hud.Bind(TurnState);
 			_hud.AttackRequested += OnAttackRequested;
 			_hud.DefendRequested += OnDefendRequested;
+			_hud.RetreatRequested += OnRetreatRequested;
 			_hud.ArakawaWheelRequested += OnArakawaWheelRequested;
 			_hud.ArakawaAbilityRequested += OnArakawaAbilityRequested;
 			_hud.ArakawaCancelRequested += OnArakawaCancelRequested;
@@ -185,6 +195,7 @@ public partial class BattleSceneController : Node2D
 		{
 			_hud.AttackRequested -= OnAttackRequested;
 			_hud.DefendRequested -= OnDefendRequested;
+			_hud.RetreatRequested -= OnRetreatRequested;
 			_hud.ArakawaWheelRequested -= OnArakawaWheelRequested;
 			_hud.ArakawaAbilityRequested -= OnArakawaAbilityRequested;
 			_hud.ArakawaCancelRequested -= OnArakawaCancelRequested;
@@ -246,6 +257,15 @@ public partial class BattleSceneController : Node2D
 		BattleBoardOverlay? overlay = GetNodeOrNull<BattleBoardOverlay>("RoomContainer/BoardOverlay");
 		if (overlay == null)
 		{
+			return;
+		}
+
+		if (_isPlayerMoveResolving)
+		{
+			overlay.SetReachableCells(Array.Empty<Vector2I>());
+			overlay.SetAttackTargetCells(Array.Empty<Vector2I>());
+			overlay.SetSupportTargetCells(Array.Empty<Vector2I>());
+			overlay.SetPreviewPath(Array.Empty<Vector2I>());
 			return;
 		}
 
@@ -322,6 +342,11 @@ public partial class BattleSceneController : Node2D
 	public override void _UnhandledInput(InputEvent @event)
 	{
 		if (_battleFailureSequenceStarted)
+		{
+			return;
+		}
+
+		if (_isPlayerMoveResolving)
 		{
 			return;
 		}
@@ -427,7 +452,7 @@ public partial class BattleSceneController : Node2D
 			return;
 		}
 
-		TryMoveObject(playerState.ObjectId, targetCell, out _);
+		_ = TryMoveObjectAsync(playerState.ObjectId, targetCell);
 	}
 
 	public bool TryMoveObject(string objectId, Vector2I targetCell, out string failureReason)
@@ -461,6 +486,44 @@ public partial class BattleSceneController : Node2D
 		return moved;
 	}
 
+	public async System.Threading.Tasks.Task<bool> TryMoveObjectAsync(string objectId, Vector2I targetCell)
+	{
+		if (_actionService == null || StateManager == null)
+		{
+			return false;
+		}
+
+		BattleObjectState? playerState = StateManager.GetPrimaryPlayerState();
+		bool isPlayerObject = playerState?.ObjectId == objectId;
+		if (isPlayerObject && !CanPlayerMoveThisTurn())
+		{
+			return false;
+		}
+
+		if (isPlayerObject)
+		{
+			_isPlayerMoveResolving = true;
+		}
+
+		try
+		{
+			bool moved = await _actionService.TryMoveObjectAsync(objectId, targetCell);
+			if (moved && isPlayerObject)
+			{
+				TurnState?.MarkMoved();
+			}
+
+			return moved;
+		}
+		finally
+		{
+			if (isPlayerObject)
+			{
+				_isPlayerMoveResolving = false;
+			}
+		}
+	}
+
 	private void OnPlayerRuntimeChanged()
 	{
 		StateManager?.SyncPlayerFromSession();
@@ -477,12 +540,22 @@ public partial class BattleSceneController : Node2D
 			return;
 		}
 
+		if (_isPlayerMoveResolving)
+		{
+			return;
+		}
+
 		EndPlayerTurn();
 	}
 
 	private void OnAttackRequested()
 	{
 		if (_battleFailureSequenceStarted || TurnState == null)
+		{
+			return;
+		}
+
+		if (_isPlayerMoveResolving)
 		{
 			return;
 		}
@@ -504,6 +577,11 @@ public partial class BattleSceneController : Node2D
 	private void OnCardRequested(string cardInstanceId)
 	{
 		if (_battleFailureSequenceStarted || TurnState == null || _playerDeck == null || StateManager == null)
+		{
+			return;
+		}
+
+		if (_isPlayerMoveResolving)
 		{
 			return;
 		}
@@ -557,6 +635,11 @@ public partial class BattleSceneController : Node2D
 			return;
 		}
 
+		if (_isPlayerMoveResolving)
+		{
+			return;
+		}
+
 		if (!TurnState.CanSelectCard)
 		{
 			return;
@@ -571,6 +654,11 @@ public partial class BattleSceneController : Node2D
 	private async void OnDefendRequested()
 	{
 		if (_battleFailureSequenceStarted || TurnState == null || StateManager == null || _actionService == null)
+		{
+			return;
+		}
+
+		if (_isPlayerMoveResolving)
 		{
 			return;
 		}
@@ -592,6 +680,37 @@ public partial class BattleSceneController : Node2D
 		}
 
 		await _actionService.ApplyDefenseActionAsync(playerState.ObjectId, BasicDefenseAction, TurnState.TurnIndex);
+		TurnState.MarkActed();
+		ResolveTurnPostPhase();
+	}
+
+	private void OnRetreatRequested()
+	{
+		if (_battleFailureSequenceStarted || TurnState == null || GlobalSession == null)
+		{
+			return;
+		}
+
+		if (_isPlayerMoveResolving)
+		{
+			return;
+		}
+
+		if (!CanAttemptRetreatThisTurn())
+		{
+			return;
+		}
+
+		if (TurnState.IsAttackTargeting || TurnState.IsCardTargeting)
+		{
+			TurnState.CancelTargeting();
+		}
+
+		CancelArakawaAbilityMode();
+		_isArakawaWheelOpen = false;
+		_retreatPending = true;
+		_retreatTurnIndex = TurnState.TurnIndex;
+		_retreatStartHp = GlobalSession.PlayerCurrentHp;
 		TurnState.MarkActed();
 		ResolveTurnPostPhase();
 	}
@@ -655,6 +774,23 @@ public partial class BattleSceneController : Node2D
 			&& GlobalSession.ArakawaCurrentEnergy > 0;
 	}
 
+	private bool CanAttemptRetreatThisTurn()
+	{
+		if (TurnState?.CanRetreat != true || GlobalSession == null)
+		{
+			return false;
+		}
+
+		if (_activeBattleRequest != null
+			&& _activeBattleRequest.RuntimeModifiers.TryGetValue("allow_retreat", out Variant allowRetreatVariant)
+			&& allowRetreatVariant.VariantType == Variant.Type.Bool)
+		{
+			return allowRetreatVariant.AsBool();
+		}
+
+		return true;
+	}
+
 	private void BeginArakawaAbilityMode(ArakawaAbilityMode abilityMode)
 	{
 		if (TurnState?.IsAttackTargeting == true || TurnState?.IsCardTargeting == true)
@@ -683,6 +819,11 @@ public partial class BattleSceneController : Node2D
 	private void EndPlayerTurn()
 	{
 		if (_battleFailureSequenceStarted || TurnState == null)
+		{
+			return;
+		}
+
+		if (_isPlayerMoveResolving)
 		{
 			return;
 		}
@@ -893,6 +1034,11 @@ public partial class BattleSceneController : Node2D
 			return;
 		}
 
+		if (TryResolveRetreatSuccess())
+		{
+			return;
+		}
+
 		TurnState.AdvanceToNextTurn();
 		if (_playerDeck != null)
 		{
@@ -907,6 +1053,28 @@ public partial class BattleSceneController : Node2D
 		_actionService?.ResolveTurnStart(BoardObjectFaction.Player, TurnState.TurnIndex);
 	}
 
+	private bool TryResolveRetreatSuccess()
+	{
+		if (!_retreatPending || TurnState == null || GlobalSession == null)
+		{
+			return false;
+		}
+
+		bool isSameTurnRetreatWindow = _retreatTurnIndex == TurnState.TurnIndex;
+		bool hpWasPreserved = _retreatStartHp >= 0 && GlobalSession.PlayerCurrentHp >= _retreatStartHp;
+		_retreatPending = false;
+		_retreatTurnIndex = -1;
+		_retreatStartHp = -1;
+
+		if (!isSameTurnRetreatWindow || !hpWasPreserved)
+		{
+			return false;
+		}
+
+		CommitBattleResult(BattleOutcome.Retreat);
+		return true;
+	}
+
 	private void ApplyPendingBattleRequest()
 	{
 		if (GlobalSession == null)
@@ -914,8 +1082,23 @@ public partial class BattleSceneController : Node2D
 			return;
 		}
 
-		BattleRequest? request = GlobalSession.ConsumePendingBattleRequest();
-		request?.ApplyToSession(GlobalSession);
+		_activeBattleRequest = GlobalSession.ConsumePendingBattleRequest();
+		_activeBattleRequest?.ApplyToSession(GlobalSession);
+		if (_activeBattleRequest == null)
+		{
+			return;
+		}
+
+		if (!string.IsNullOrWhiteSpace(_activeBattleRequest.EncounterId))
+		{
+			EncounterId = _activeBattleRequest.EncounterId;
+		}
+
+		if (_activeBattleRequest.RandomSeed > 0)
+		{
+			RandomSeed = _activeBattleRequest.RandomSeed;
+			_rng.Seed = (ulong)_activeBattleRequest.RandomSeed;
+		}
 	}
 
 	private void ApplyPendingEncounterId()
@@ -948,7 +1131,7 @@ public partial class BattleSceneController : Node2D
 
 		if (_battleFailOverlay == null || _battleFailFlash == null || _battleFailLabel == null)
 		{
-			CommitBattleResult(true);
+			CommitBattleResult(BattleOutcome.Defeat);
 			return;
 		}
 
@@ -966,10 +1149,10 @@ public partial class BattleSceneController : Node2D
 		tween.TweenProperty(_battleFailFlash, "color", new Color(0.45f, 0.04f, 0.06f, 0.82f), 0.18f);
 		tween.TweenProperty(_battleFailLabel, "modulate:a", 1.0f, 0.16f).SetDelay(0.08f);
 		tween.TweenProperty(_battleFailLabel, "scale", Vector2.One, 0.22f).SetDelay(0.08f);
-		tween.Finished += () => CommitBattleResult(true);
+		tween.Finished += () => CommitBattleResult(BattleOutcome.Defeat);
 	}
 
-	private void CommitBattleResult(bool didPlayerFail)
+	private void CommitBattleResult(BattleOutcome outcome)
 	{
 		if (_battleResultCommitted || GlobalSession == null)
 		{
@@ -977,8 +1160,116 @@ public partial class BattleSceneController : Node2D
 		}
 
 		_battleResultCommitted = true;
-		GlobalSession.CompleteBattle(BattleResult.FromSession(GlobalSession, didPlayerFail));
+		GlobalSession.CompleteBattle(BattleResult.FromSession(
+			GlobalSession,
+			outcome,
+			_activeBattleRequest?.RequestId ?? string.Empty,
+			EncounterId,
+			outcome == BattleOutcome.Victory ? EncounterId : string.Empty));
 		ReturnToPendingMapSceneIfAny();
+	}
+
+	private BattleDeckRuntimeInit? BuildDeckRuntimeInit(IReadOnlyList<BattleCardDefinition> prototypeDeck)
+	{
+		if (_activeBattleRequest == null)
+		{
+			return null;
+		}
+
+		Dictionary<string, BattleCardDefinition> definitionMap = prototypeDeck
+			.GroupBy(definition => definition.CardId, StringComparer.Ordinal)
+			.ToDictionary(group => group.Key, group => group.First(), StringComparer.Ordinal);
+
+		BattleCardDefinition[] buildCards = ResolveCardDefinitionsFromSnapshot(_activeBattleRequest.DeckBuildSnapshot, "card_ids", definitionMap);
+		BattleCardDefinition[] startingHandCards = ResolveCardDefinitionsFromSnapshot(_activeBattleRequest.DeckRuntimeInitOverrides, "starting_hand_card_ids", definitionMap);
+		BattleCardDefinition[] startingDrawPileCards = ResolveCardDefinitionsFromSnapshot(_activeBattleRequest.DeckRuntimeInitOverrides, "starting_draw_pile_card_ids", definitionMap);
+		BattleCardDefinition[] startingDiscardPileCards = ResolveCardDefinitionsFromSnapshot(_activeBattleRequest.DeckRuntimeInitOverrides, "starting_discard_pile_card_ids", definitionMap);
+		BattleCardDefinition[] startingExhaustPileCards = ResolveCardDefinitionsFromSnapshot(_activeBattleRequest.DeckRuntimeInitOverrides, "starting_exhaust_pile_card_ids", definitionMap);
+		int handSizeOverride = ReadIntOverride(_activeBattleRequest.DeckRuntimeInitOverrides, "hand_size_override");
+		int maxEnergyOverride = ReadIntOverride(_activeBattleRequest.DeckRuntimeInitOverrides, "max_energy_override");
+		int initialEnergy = ReadIntOverride(_activeBattleRequest.DeckRuntimeInitOverrides, "initial_energy");
+		int openingDrawCount = ReadIntOverride(_activeBattleRequest.DeckRuntimeInitOverrides, "opening_draw_count");
+
+		if (buildCards.Length == 0
+			&& startingHandCards.Length == 0
+			&& startingDrawPileCards.Length == 0
+			&& startingDiscardPileCards.Length == 0
+			&& startingExhaustPileCards.Length == 0
+			&& handSizeOverride < 0
+			&& maxEnergyOverride < 0
+			&& initialEnergy < 0
+			&& openingDrawCount < 0)
+		{
+			return null;
+		}
+
+		return new BattleDeckRuntimeInit
+		{
+			BuildCards = buildCards,
+			StartingHandCards = startingHandCards,
+			StartingDrawPileCards = startingDrawPileCards,
+			StartingDiscardPileCards = startingDiscardPileCards,
+			StartingExhaustPileCards = startingExhaustPileCards,
+			HandSizeOverride = handSizeOverride,
+			MaxEnergyOverride = maxEnergyOverride,
+			InitialEnergy = initialEnergy,
+			OpeningDrawCount = openingDrawCount,
+		};
+	}
+
+	private static IReadOnlyList<BattleCardDefinition> ResolveBattleDeckSource(
+		IReadOnlyList<BattleCardDefinition> prototypeDeck,
+		BattleDeckRuntimeInit? runtimeInit)
+	{
+		if (runtimeInit == null || runtimeInit.BuildCards.Length == 0)
+		{
+			return prototypeDeck;
+		}
+
+		return runtimeInit.BuildCards;
+	}
+
+	private static int ResolveOpeningDrawCount(BattleDeckRuntimeInit? runtimeInit, int defaultCount)
+	{
+		if (runtimeInit == null)
+		{
+			return defaultCount;
+		}
+
+		if (runtimeInit.OpeningDrawCount >= 0)
+		{
+			return runtimeInit.OpeningDrawCount;
+		}
+
+		return runtimeInit.HasExplicitStartingHand ? 0 : defaultCount;
+	}
+
+	private static BattleCardDefinition[] ResolveCardDefinitionsFromSnapshot(
+		Godot.Collections.Dictionary snapshot,
+		string key,
+		IReadOnlyDictionary<string, BattleCardDefinition> definitionMap)
+	{
+		if (!snapshot.TryGetValue(key, out Variant value) || value.Obj is not Godot.Collections.Array rawArray)
+		{
+			return Array.Empty<BattleCardDefinition>();
+		}
+
+		List<BattleCardDefinition> resolved = new();
+		foreach (Variant item in rawArray)
+		{
+			string cardId = item.AsString();
+			if (!string.IsNullOrWhiteSpace(cardId) && definitionMap.TryGetValue(cardId, out BattleCardDefinition? definition))
+			{
+				resolved.Add(definition);
+			}
+		}
+
+		return resolved.ToArray();
+	}
+
+	private static int ReadIntOverride(Godot.Collections.Dictionary snapshot, string key)
+	{
+		return snapshot.TryGetValue(key, out Variant value) ? value.AsInt32() : -1;
 	}
 
 	private void ReturnToPendingMapSceneIfAny()

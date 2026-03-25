@@ -47,6 +47,8 @@ public sealed class TurnActionState
 
     public bool CanSelectCard => IsPlayerTurn && !HasActed;
 
+    public bool CanRetreat => IsPlayerTurn && !HasActed;
+
     public bool IsAttackTargeting => Phase == TurnPhase.PlayerAction && InputMode == TurnInputMode.AttackTargeting;
 
     public bool IsCardTargeting => Phase == TurnPhase.PlayerAction

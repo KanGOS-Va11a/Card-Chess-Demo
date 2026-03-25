@@ -14,6 +14,7 @@ public partial class BattleHudController : CanvasLayer
 	[Signal] public delegate void EndTurnRequestedEventHandler();
 	[Signal] public delegate void AttackRequestedEventHandler();
 	[Signal] public delegate void DefendRequestedEventHandler();
+	[Signal] public delegate void RetreatRequestedEventHandler();
 	[Signal] public delegate void ArakawaWheelRequestedEventHandler();
 	[Signal] public delegate void ArakawaAbilityRequestedEventHandler(string abilityId);
 	[Signal] public delegate void ArakawaCancelRequestedEventHandler();
@@ -65,6 +66,7 @@ public partial class BattleHudController : CanvasLayer
 	private Button _attackButton = null!;
 	private Button _defendButton = null!;
 	private Button _meditateButton = null!;
+	private Button _retreatButton = null!;
 	private Button _endTurnButton = null!;
 	private Control _arakawaWheel = null!;
 	private Button _arakawaBuildButton = null!;
@@ -117,6 +119,7 @@ public partial class BattleHudController : CanvasLayer
 
 		_attackButton.Pressed -= OnAttackPressed;
 		_defendButton.Pressed -= OnDefendPressed;
+		_retreatButton.Pressed -= OnRetreatPressed;
 		_arakawaButton.Pressed -= OnArakawaButtonPressed;
 		_arakawaBuildButton.Pressed -= OnArakawaBuildPressed;
 		_arakawaEnhanceButton.Pressed -= OnArakawaEnhancePressed;
@@ -246,6 +249,7 @@ public partial class BattleHudController : CanvasLayer
 		_attackButton.Disabled = !_turnState.CanEnterAttackTargeting && !_turnState.IsAttackTargeting;
 		_defendButton.Disabled = !_turnState.CanSelectCard;
 		_meditateButton.Disabled = !_turnState.CanSelectCard;
+		_retreatButton.Disabled = !_turnState.CanRetreat;
 		_endTurnButton.Disabled = !_turnState.IsPlayerTurn && !_turnState.IsAttackTargeting && !_turnState.IsCardTargeting;
 
 		RefreshHandViews();
@@ -457,6 +461,7 @@ public partial class BattleHudController : CanvasLayer
 		_attackButton = GetNodeOrNull<Button>("RightControls/AttackButton");
 		_defendButton = GetNodeOrNull<Button>("RightControls/DefendButton");
 		_meditateButton = GetNodeOrNull<Button>("RightControls/MeditateButton");
+		_retreatButton = GetNodeOrNull<Button>("RightControls/RetreatButton");
 		_endTurnButton = GetNodeOrNull<Button>("RightControls/EndTurnButton");
 		_arakawaWheel = GetNodeOrNull<Control>("ArakawaWheel");
 		_arakawaBuildButton = GetNodeOrNull<Button>("ArakawaWheel/BuildButton");
@@ -484,6 +489,7 @@ public partial class BattleHudController : CanvasLayer
 			&& _attackButton != null
 			&& _defendButton != null
 			&& _meditateButton != null
+			&& _retreatButton != null
 			&& _endTurnButton != null
 			&& _arakawaWheel != null
 			&& _arakawaBuildButton != null
@@ -505,6 +511,7 @@ public partial class BattleHudController : CanvasLayer
 		ApplyCompactButtonStyle(_exhaustPileButton);
 		ApplyCompactButtonStyle(_attackButton);
 		ApplyCompactButtonStyle(_defendButton);
+		ApplyCompactButtonStyle(_retreatButton);
 		ApplyCompactButtonStyle(_arakawaButton);
 		ApplyCompactButtonStyle(_arakawaBuildButton);
 		ApplyCompactButtonStyle(_arakawaEnhanceButton);
@@ -514,6 +521,7 @@ public partial class BattleHudController : CanvasLayer
 
 		_attackButton.Pressed += OnAttackPressed;
 		_defendButton.Pressed += OnDefendPressed;
+		_retreatButton.Pressed += OnRetreatPressed;
 		_arakawaButton.Pressed += OnArakawaButtonPressed;
 		_arakawaBuildButton.Pressed += OnArakawaBuildPressed;
 		_arakawaEnhanceButton.Pressed += OnArakawaEnhancePressed;
@@ -578,6 +586,12 @@ public partial class BattleHudController : CanvasLayer
 	{
 		_pilePopup.Visible = false;
 		EmitSignal(SignalName.DefendRequested);
+	}
+
+	private void OnRetreatPressed()
+	{
+		_pilePopup.Visible = false;
+		EmitSignal(SignalName.RetreatRequested);
 	}
 
 	private void OnEndTurnPressed()

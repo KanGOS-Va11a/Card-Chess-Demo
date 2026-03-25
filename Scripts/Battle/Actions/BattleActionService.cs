@@ -18,6 +18,7 @@ public sealed class BattleActionService
     private readonly BoardState _boardState;
     private readonly BoardObjectRegistry _registry;
     private readonly BoardQueryService _queryService;
+    private readonly BoardPathfinder _pathfinder;
     private readonly BattleObjectStateManager _stateManager;
     private readonly BattlePieceViewManager _pieceViewManager;
     private readonly BattleRoomTemplate _room;
@@ -25,7 +26,7 @@ public sealed class BattleActionService
     private readonly BattleFloatingTextLayer? _floatingTextLayer;
     private readonly SceneTree _sceneTree;
 
-    public const double MovePresentationDurationSeconds = 0.16d;
+    public const double MovePresentationDurationSeconds = 0.12d;
     public const double AttackPresentationDurationSeconds = 0.24d;
     public const double ImpactPresentationDurationSeconds = 0.18d;
     public const double DefensePresentationDurationSeconds = 0.22d;
@@ -35,6 +36,7 @@ public sealed class BattleActionService
         BoardState boardState,
         BoardObjectRegistry registry,
         BoardQueryService queryService,
+        BoardPathfinder pathfinder,
         BattleObjectStateManager stateManager,
         BattlePieceViewManager pieceViewManager,
         BattleRoomTemplate room,
@@ -45,6 +47,7 @@ public sealed class BattleActionService
         _boardState = boardState;
         _registry = registry;
         _queryService = queryService;
+        _pathfinder = pathfinder;
         _stateManager = stateManager;
         _pieceViewManager = pieceViewManager;
         _room = room;
@@ -72,13 +75,26 @@ public sealed class BattleActionService
 
     public async Task<bool> TryMoveObjectAsync(string objectId, Vector2I targetCell)
     {
-        bool moved = TryMoveObject(objectId, targetCell, out _);
+        if (!_registry.TryGet(objectId, out BoardObject? movingObject) || movingObject == null)
+        {
+            return false;
+        }
+
+        IReadOnlyList<Vector2I> path = BuildMovePath(objectId, movingObject.Cell, targetCell);
+        bool moved = _queryService.TryMoveObject(objectId, targetCell, out _);
         if (!moved)
         {
             return false;
         }
 
-        await WaitSeconds(MovePresentationDurationSeconds);
+        bool animated = await _pieceViewManager.PlayMovePathAsync(objectId, path, _room, MovePresentationDurationSeconds);
+        SyncPresentation();
+        if (!animated)
+        {
+            _pieceViewManager.PlayMove(objectId);
+            await WaitSeconds(MovePresentationDurationSeconds);
+        }
+
         return true;
     }
 
@@ -454,5 +470,16 @@ public sealed class BattleActionService
     private static int GetManhattanDistance(Vector2I a, Vector2I b)
     {
         return Mathf.Abs(a.X - b.X) + Mathf.Abs(a.Y - b.Y);
+    }
+
+    private IReadOnlyList<Vector2I> BuildMovePath(string objectId, Vector2I startCell, Vector2I targetCell)
+    {
+        if (_pathfinder.TryFindPath(objectId, startCell, targetCell, int.MaxValue / 8, out IReadOnlyList<Vector2I> path, out _)
+            && path.Count > 0)
+        {
+            return path;
+        }
+
+        return new[] { startCell, targetCell };
     }
 }
