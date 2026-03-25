@@ -4,7 +4,7 @@ using CardChessDemo.Battle.Shared;
 
 public partial class MapSceneController : Node2D
 {
-    [Export] public NodePath PlayerPath { get; set; } = NodePath.Empty;
+    [Export] public NodePath PlayerPath { get; set; } = new NodePath();
 
     private GlobalGameSession? _globalSession;
 

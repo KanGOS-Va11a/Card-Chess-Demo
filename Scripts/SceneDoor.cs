@@ -1,7 +1,4 @@
 using Godot;
-using CardChessDemo.Battle.Boundary;
-using CardChessDemo.Battle.Shared;
-
 public partial class SceneDoor : InteractableTemplate
 {
 	[Export] public PackedScene? NextScene;
@@ -95,33 +92,11 @@ public partial class SceneDoor : InteractableTemplate
 
 	private void EnterBattle(Player player)
 	{
-		if (BattleScene == null && string.IsNullOrWhiteSpace(BattleScenePath))
-		{
-			GD.PushError("SceneDoor: battle scene is not configured.");
-			return;
-		}
-
-		GlobalGameSession? globalSession = GetNodeOrNull<GlobalGameSession>("/root/GlobalGameSession");
-		if (globalSession == null)
-		{
-			GD.PushError("SceneDoor: GlobalGameSession is missing.");
-			return;
-		}
-
-		string currentScenePath = GetTree().CurrentScene?.SceneFilePath ?? string.Empty;
-		globalSession.BeginBattle(BattleRequest.FromSession(globalSession));
-		globalSession.SetPendingBattleEncounterId(BattleEncounterId);
-		globalSession.SetPendingMapResumeContext(new MapResumeContext(currentScenePath, player.GlobalPosition));
-
 		_isTransitioning = true;
-		Error result = BattleScene != null
-			? GetTree().ChangeSceneToPacked(BattleScene)
-			: GetTree().ChangeSceneToFile(BattleScenePath.Trim());
-
-		if (result != Error.Ok)
+		if (!MapBattleTransitionHelper.TryEnterBattle(this, player, BattleScene, BattleScenePath, BattleEncounterId, out string failureReason))
 		{
 			_isTransitioning = false;
-			GD.PushError($"SceneDoor: battle scene change failed, error={result}");
+			GD.PushError($"SceneDoor: {failureReason}");
 		}
 	}
 }
