@@ -8,6 +8,7 @@
   </PropertyGroup>
 
   <ItemGroup>
+<<<<<<< Updated upstream
     <Compile Include="Scripts\**\*.cs" />
 =======
 >>>>>>> Stashed changes
