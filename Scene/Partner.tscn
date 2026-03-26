@@ -9,7 +9,7 @@ radius = 163.0276
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_partner_body"]
 size = Vector2(126, 127)
 
-[node name="PartnerScene" type="Node2D" unique_id=1140342373]
+[node name="Partner" type="Node2D" unique_id=1140342373]
 
 [node name="Partner" type="StaticBody2D" parent="." unique_id=725196503]
 collision_layer = 2
