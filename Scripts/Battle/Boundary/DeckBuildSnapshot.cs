@@ -10,6 +10,8 @@ public sealed class DeckBuildSnapshot
 
 	public string[] RelicIds { get; set; } = Array.Empty<string>();
 
+	public string BuildName { get; set; } = "default";
+
 	public bool TryValidate(out string failureReason)
 	{
 		if (CardIds.Any(string.IsNullOrWhiteSpace))
@@ -32,6 +34,7 @@ public sealed class DeckBuildSnapshot
 	{
 		return new Godot.Collections.Dictionary
 		{
+			["build_name"] = BuildName,
 			["card_ids"] = ToVariantArray(CardIds),
 			["relic_ids"] = ToVariantArray(RelicIds),
 		};
@@ -46,6 +49,7 @@ public sealed class DeckBuildSnapshot
 
 		return new DeckBuildSnapshot
 		{
+			BuildName = dictionary.TryGetValue("build_name", out Variant buildName) ? buildName.AsString() : "default",
 			CardIds = dictionary.TryGetValue("card_ids", out Variant cardIds) ? ToStringArray(cardIds) : Array.Empty<string>(),
 			RelicIds = dictionary.TryGetValue("relic_ids", out Variant relicIds) ? ToStringArray(relicIds) : Array.Empty<string>(),
 		};

@@ -245,7 +245,7 @@ public partial class BattleCardView : Button
 		return definition.Category switch
 		{
 			BattleCardCategory.Attack => definition.TargetingMode == BattleCardTargetingMode.StraightLineEnemy ? "射" : "斩",
-			_ => definition.EnergyGain > 0 ? "能" : definition.DrawCount > 0 ? "抽" : "技",
+			_ => definition.HealingAmount > 0 ? "愈" : definition.EnergyGain > 0 ? "能" : definition.DrawCount > 0 ? "抽" : "技",
 		};
 	}
 
@@ -302,7 +302,7 @@ public partial class BattleCardView : Button
 			}
 		}
 
-		string cacheKey = $"{definition.CardId}:{definition.Category}:{definition.TargetingMode}:{definition.DrawCount}:{definition.EnergyGain}:{definition.ExhaustsOnPlay}";
+		string cacheKey = $"{definition.CardId}:{definition.Category}:{definition.TargetingMode}:{definition.DrawCount}:{definition.EnergyGain}:{definition.HealingAmount}:{definition.ExhaustsOnPlay}";
 		if (ArtTextures.TryGetValue(cacheKey, out Texture2D? cached))
 		{
 			return cached;
@@ -313,6 +313,8 @@ public partial class BattleCardView : Button
 			: new Color(0.16f, 0.36f, 0.57f);
 		Color colorB = definition.TargetingMode == BattleCardTargetingMode.StraightLineEnemy
 			? new Color(0.92f, 0.76f, 0.27f)
+			: definition.HealingAmount > 0
+				? new Color(0.36f, 0.88f, 0.56f)
 			: definition.DrawCount > 0
 				? new Color(0.36f, 0.84f, 0.71f)
 				: definition.EnergyGain > 0

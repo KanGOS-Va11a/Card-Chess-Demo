@@ -18,6 +18,18 @@ public sealed class ProgressionSnapshot
 
 	public string[] ArakawaUnlockIds { get; set; } = Array.Empty<string>();
 
+	public string[] UnlockedCardIds { get; set; } = Array.Empty<string>();
+
+	public string[] TalentBranchTags { get; set; } = Array.Empty<string>();
+
+	public int DeckPointBudgetBonus { get; set; }
+
+	public int DeckMinCardCountDelta { get; set; }
+
+	public int DeckMaxCardCountDelta { get; set; }
+
+	public int DeckMaxCopiesPerCardBonus { get; set; }
+
 	public bool TryValidate(out string failureReason)
 	{
 		if (PlayerLevel <= 0)
@@ -46,6 +58,12 @@ public sealed class ProgressionSnapshot
 			["arakawa_growth_level"] = ArakawaGrowthLevel,
 			["talent_ids"] = ToVariantArray(TalentIds),
 			["arakawa_unlock_ids"] = ToVariantArray(ArakawaUnlockIds),
+			["unlocked_card_ids"] = ToVariantArray(UnlockedCardIds),
+			["talent_branch_tags"] = ToVariantArray(TalentBranchTags),
+			["deck_point_budget_bonus"] = DeckPointBudgetBonus,
+			["deck_min_card_count_delta"] = DeckMinCardCountDelta,
+			["deck_max_card_count_delta"] = DeckMaxCardCountDelta,
+			["deck_max_copies_per_card_bonus"] = DeckMaxCopiesPerCardBonus,
 		};
 	}
 
@@ -64,6 +82,12 @@ public sealed class ProgressionSnapshot
 			ArakawaGrowthLevel = dictionary.TryGetValue("arakawa_growth_level", out Variant arakawaGrowthLevel) ? Math.Max(1, arakawaGrowthLevel.AsInt32()) : 1,
 			TalentIds = dictionary.TryGetValue("talent_ids", out Variant talentIds) ? ToStringArray(talentIds) : Array.Empty<string>(),
 			ArakawaUnlockIds = dictionary.TryGetValue("arakawa_unlock_ids", out Variant arakawaUnlockIds) ? ToStringArray(arakawaUnlockIds) : Array.Empty<string>(),
+			UnlockedCardIds = dictionary.TryGetValue("unlocked_card_ids", out Variant unlockedCardIds) ? ToStringArray(unlockedCardIds) : Array.Empty<string>(),
+			TalentBranchTags = dictionary.TryGetValue("talent_branch_tags", out Variant talentBranchTags) ? ToStringArray(talentBranchTags) : Array.Empty<string>(),
+			DeckPointBudgetBonus = dictionary.TryGetValue("deck_point_budget_bonus", out Variant deckPointBudgetBonus) ? deckPointBudgetBonus.AsInt32() : 0,
+			DeckMinCardCountDelta = dictionary.TryGetValue("deck_min_card_count_delta", out Variant minDelta) ? minDelta.AsInt32() : 0,
+			DeckMaxCardCountDelta = dictionary.TryGetValue("deck_max_card_count_delta", out Variant maxDelta) ? maxDelta.AsInt32() : 0,
+			DeckMaxCopiesPerCardBonus = dictionary.TryGetValue("deck_max_copies_per_card_bonus", out Variant maxCopiesBonus) ? maxCopiesBonus.AsInt32() : 0,
 		};
 	}
 

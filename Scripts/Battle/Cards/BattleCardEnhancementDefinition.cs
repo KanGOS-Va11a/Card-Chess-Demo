@@ -8,6 +8,7 @@ public sealed class BattleCardEnhancementDefinition
         int costDelta = 0,
         int rangeDelta = 0,
         int damageDelta = 0,
+        int healingDelta = 0,
         int drawCountDelta = 0,
         int energyGainDelta = 0,
         int shieldGainDelta = 0,
@@ -19,6 +20,7 @@ public sealed class BattleCardEnhancementDefinition
         CostDelta = costDelta;
         RangeDelta = rangeDelta;
         DamageDelta = damageDelta;
+        HealingDelta = healingDelta;
         DrawCountDelta = drawCountDelta;
         EnergyGainDelta = energyGainDelta;
         ShieldGainDelta = shieldGainDelta;
@@ -31,6 +33,7 @@ public sealed class BattleCardEnhancementDefinition
     public int CostDelta { get; }
     public int RangeDelta { get; }
     public int DamageDelta { get; }
+    public int HealingDelta { get; }
     public int DrawCountDelta { get; }
     public int EnergyGainDelta { get; }
     public int ShieldGainDelta { get; }

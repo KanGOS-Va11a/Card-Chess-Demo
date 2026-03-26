@@ -52,6 +52,8 @@ public partial class BattleSceneController : Node2D
 	[Export] public BattleRoomPoolDefinition? BattleRoomPools { get; set; }
 	[Export] public BattlePrefabLibrary? BattlePrefabLibrary { get; set; }
 	[Export] public BattleEncounterLibrary? EncounterLibrary { get; set; }
+	[Export] public BattleCardLibrary? BattleCardLibrary { get; set; }
+	[Export] public BattleDeckBuildRules? BattleDeckBuildRules { get; set; }
 	[Export] public string EncounterId { get; set; } = string.Empty;
 	[Export] public string[] EncounterEnemyTypeIds { get; set; } = { "grunt" };
 	[Export] public string EncounterEnemyDefinitionId { get; set; } = "battle_enemy";
@@ -101,6 +103,9 @@ public partial class BattleSceneController : Node2D
 		ApplyPendingEncounterId();
 		BattlePrefabLibrary ??= GD.Load<BattlePrefabLibrary>("res://Resources/Battle/Presentation/DefaultBattlePrefabLibrary.tres");
 		EncounterLibrary ??= GD.Load<BattleEncounterLibrary>("res://Resources/Battle/Encounters/DebugBattleEncounterLibrary.tres");
+		BattleCardLibrary ??= GD.Load<BattleCardLibrary>("res://Resources/Battle/Cards/DefaultBattleCardLibrary.tres");
+		BattleDeckBuildRules ??= GD.Load<BattleDeckBuildRules>("res://Resources/Battle/Cards/DefaultBattleDeckBuildRules.tres");
+		GlobalSession?.EnsureDeckBuildInitialized(BattleCardLibrary);
 		ResolveEncounterConfiguration();
 
 		BoardState = new BoardState();
@@ -108,7 +113,7 @@ public partial class BattleSceneController : Node2D
 		QueryService = new BoardQueryService(BoardState, Registry);
 		TurnState = new TurnActionState();
 		TurnState.StartNewTurn(1);
-		IReadOnlyList<BattleCardDefinition> prototypeDeck = BuildPrototypePlayerDeck();
+		IReadOnlyList<BattleCardDefinition> prototypeDeck = BuildAvailableCardCatalog();
 		BattleDeckRuntimeInit? deckRuntimeInit = BuildDeckRuntimeInit(prototypeDeck);
 		IReadOnlyList<BattleCardDefinition> battleDeckSource = ResolveBattleDeckSource(prototypeDeck, deckRuntimeInit);
 		_playerDeck = new BattleDeckState(
@@ -300,8 +305,17 @@ public partial class BattleSceneController : Node2D
 		if (TurnState?.IsCardTargeting == true)
 		{
 			overlay.SetReachableCells(Array.Empty<Vector2I>());
-			overlay.SetAttackTargetCells(BuildSelectedCardTargetCells(playerState.ObjectId), playerState.Cell);
-			overlay.SetSupportTargetCells(Array.Empty<Vector2I>());
+			BattleCardDefinition? selectedDefinition = GetSelectedCardDefinition();
+			if (selectedDefinition?.TargetingMode == BattleCardTargetingMode.FriendlyUnit)
+			{
+				overlay.SetAttackTargetCells(Array.Empty<Vector2I>());
+				overlay.SetSupportTargetCells(BuildSelectedCardTargetCells(playerState.ObjectId), playerState.Cell);
+			}
+			else
+			{
+				overlay.SetAttackTargetCells(BuildSelectedCardTargetCells(playerState.ObjectId), playerState.Cell);
+				overlay.SetSupportTargetCells(Array.Empty<Vector2I>());
+			}
 			overlay.SetPreviewPath(Array.Empty<Vector2I>());
 			return;
 		}
@@ -854,16 +868,22 @@ public partial class BattleSceneController : Node2D
 
 	private BoardObject? GetCardTargetAtCell(string sourceObjectId, Vector2I targetCell, BattleCardDefinition cardDefinition)
 	{
-		BoardObject? enemyTarget = GetEnemyUnitAtCell(sourceObjectId, targetCell);
-		if (enemyTarget == null || Registry == null || !Registry.TryGet(sourceObjectId, out BoardObject? sourceObject) || sourceObject == null)
+		if (Registry == null || !Registry.TryGet(sourceObjectId, out BoardObject? sourceObject) || sourceObject == null)
 		{
 			return null;
 		}
 
 		return cardDefinition.TargetingMode switch
 		{
-			BattleCardTargetingMode.EnemyUnit => GetManhattanTarget(sourceObject, enemyTarget, cardDefinition.Range),
-			BattleCardTargetingMode.StraightLineEnemy => GetStraightLineTarget(sourceObjectId, enemyTarget, cardDefinition.Range),
+			BattleCardTargetingMode.EnemyUnit => GetEnemyUnitAtCell(sourceObjectId, targetCell) is BoardObject enemyTarget
+				? GetManhattanTarget(sourceObject, enemyTarget, cardDefinition.Range)
+				: null,
+			BattleCardTargetingMode.StraightLineEnemy => GetEnemyUnitAtCell(sourceObjectId, targetCell) is BoardObject lineEnemyTarget
+				? GetStraightLineTarget(sourceObjectId, lineEnemyTarget, cardDefinition.Range)
+				: null,
+			BattleCardTargetingMode.FriendlyUnit => GetFriendlyUnitAtCell(sourceObjectId, targetCell) is BoardObject friendlyTarget
+				? GetManhattanTarget(sourceObject, friendlyTarget, cardDefinition.Range)
+				: null,
 			_ => null,
 		};
 	}
@@ -882,6 +902,24 @@ public partial class BattleSceneController : Node2D
 	{
 		BoardObject? attackableObject = GetAttackableObjectAtCell(sourceObjectId, targetCell);
 		return attackableObject?.ObjectType == BoardObjectType.Unit ? attackableObject : null;
+	}
+
+	private BoardObject? GetFriendlyUnitAtCell(string sourceObjectId, Vector2I targetCell)
+	{
+		if (Registry == null || !Registry.TryGet(sourceObjectId, out BoardObject? sourceObject) || sourceObject == null || QueryService == null)
+		{
+			return null;
+		}
+
+		foreach (BoardObject boardObject in QueryService.GetObjectsAtCell(targetCell))
+		{
+			if (boardObject.ObjectType == BoardObjectType.Unit && boardObject.Faction == sourceObject.Faction)
+			{
+				return boardObject;
+			}
+		}
+
+		return null;
 	}
 
 	private bool TryPlayCard(string attackerId, string cardInstanceId, string? targetId, out string failureReason)
@@ -957,6 +995,23 @@ public partial class BattleSceneController : Node2D
 			if (!string.IsNullOrWhiteSpace(shieldFailureReason))
 			{
 				failureReason = shieldFailureReason;
+				return false;
+			}
+		}
+
+		if (cardInstance.Definition.HealingAmount > 0)
+		{
+			if (_actionService == null)
+			{
+				failureReason = "Battle action service is not initialized.";
+				return false;
+			}
+
+			string healingTargetId = targetObject?.ObjectId ?? attackerId;
+			_actionService.ApplyHealingToTarget(healingTargetId, cardInstance.Definition.HealingAmount, out string healingFailureReason);
+			if (!string.IsNullOrWhiteSpace(healingFailureReason))
+			{
+				failureReason = healingFailureReason;
 				return false;
 			}
 		}
@@ -1227,6 +1282,20 @@ public partial class BattleSceneController : Node2D
 		}
 
 		return runtimeInit.BuildCards;
+	}
+
+	private IReadOnlyList<BattleCardDefinition> BuildAvailableCardCatalog()
+	{
+		if (BattleCardLibrary != null && BattleCardLibrary.Entries.Length > 0)
+		{
+			ProgressionSnapshot progression = GlobalSession?.BuildProgressionSnapshotModel() ?? new ProgressionSnapshot();
+			return BattleCardLibrary.Entries
+				.Where(template => template != null && template.IsUnlocked(progression))
+				.Select(template => template.BuildRuntimeDefinition())
+				.ToArray();
+		}
+
+		return BuildPrototypePlayerDeck();
 	}
 
 	private static int ResolveOpeningDrawCount(BattleDeckRuntimeInit? runtimeInit, int defaultCount)
@@ -1598,8 +1667,34 @@ public partial class BattleSceneController : Node2D
 		{
 			BattleCardTargetingMode.EnemyUnit => BuildAttackTargetCells(sourceObjectId, sourceObject.Cell, cardDefinition.Range),
 			BattleCardTargetingMode.StraightLineEnemy => BuildStraightLineTargetCells(sourceObject.Cell, cardDefinition.Range),
+			BattleCardTargetingMode.FriendlyUnit => BuildFriendlyTargetCells(sourceObject.Cell, cardDefinition.Range),
 			_ => new List<Vector2I>(),
 		};
+	}
+
+	private List<Vector2I> BuildFriendlyTargetCells(Vector2I origin, int range)
+	{
+		List<Vector2I> cells = new();
+		if (Registry == null || CurrentRoom == null)
+		{
+			return cells;
+		}
+
+		foreach (BoardObject boardObject in Registry.AllObjects)
+		{
+			if (boardObject.ObjectType != BoardObjectType.Unit || boardObject.Faction != BoardObjectFaction.Player)
+			{
+				continue;
+			}
+
+			int distance = Mathf.Abs(boardObject.Cell.X - origin.X) + Mathf.Abs(boardObject.Cell.Y - origin.Y);
+			if (distance <= range)
+			{
+				cells.Add(boardObject.Cell);
+			}
+		}
+
+		return cells;
 	}
 
 	private List<Vector2I> BuildStraightLineTargetCells(Vector2I origin, int range)
@@ -1702,6 +1797,21 @@ public partial class BattleSceneController : Node2D
 
 				return true;
 
+			case BattleCardTargetingMode.FriendlyUnit:
+				if (targetObject.ObjectType != BoardObjectType.Unit || attacker.Faction != targetObject.Faction)
+				{
+					failureReason = "Friendly unit target is invalid.";
+					return false;
+				}
+
+				if (GetManhattanTarget(attacker, targetObject, cardDefinition.Range) == null)
+				{
+					failureReason = $"Friendly target is out of range. Range={cardDefinition.Range}.";
+					return false;
+				}
+
+				return true;
+
 			default:
 				failureReason = "Unsupported card targeting mode.";
 				return false;
@@ -1712,6 +1822,18 @@ public partial class BattleSceneController : Node2D
 	{
 		int distance = Mathf.Abs(attacker.Cell.X - target.Cell.X) + Mathf.Abs(attacker.Cell.Y - target.Cell.Y);
 		return distance <= range ? target : null;
+	}
+
+	private BattleCardDefinition? GetSelectedCardDefinition()
+	{
+		if (_playerDeck == null || TurnState == null)
+		{
+			return null;
+		}
+
+		return _playerDeck.TryGetHandCard(TurnState.SelectedCardInstanceId, out BattleCardInstance? selectedCard) && selectedCard != null
+			? selectedCard.Definition
+			: null;
 	}
 
 	private BoardObject? GetStraightLineTarget(string attackerId, BoardObject target, int range)
@@ -1908,6 +2030,15 @@ public partial class BattleSceneController : Node2D
 				BattleCardTargetingMode.None,
 				shieldGain: 2,
 				isQuick: true),
+			new BattleCardDefinition(
+				"field_patch",
+				"现场包扎",
+				"2 格内友方回复 3 点生命",
+				1,
+				BattleCardCategory.Skill,
+				BattleCardTargetingMode.FriendlyUnit,
+				range: 2,
+				healingAmount: 3),
 		};
 	}
 }
