@@ -53,8 +53,10 @@ public partial class BattleHudController : CanvasLayer
 	private PanelContainer _hoveredCardPanel = null!;
 	private Label _hoveredCardTitle = null!;
 	private Label _hoveredCardStats = null!;
+	private Button _pileDismissButton = null!;
 	private PanelContainer _pilePopup = null!;
 	private Label _pilePopupTitle = null!;
+	private Button _pilePopupCloseButton = null!;
 	private RichTextLabel _pilePopupBody = null!;
 	private ScrollContainer _pileScroll = null!;
 	private GridContainer _pileGrid = null!;
@@ -132,6 +134,8 @@ public partial class BattleHudController : CanvasLayer
 		_drawPileButton.Pressed -= OnDrawPilePressed;
 		_discardPileButton.Pressed -= OnDiscardPilePressed;
 		_exhaustPileButton.Pressed -= OnExhaustPilePressed;
+		_pileDismissButton.Pressed -= OnPilePopupClosePressed;
+		_pilePopupCloseButton.Pressed -= OnPilePopupClosePressed;
 		_handArea.Resized -= OnHandAreaResized;
 		_signalsHooked = false;
 	}
@@ -436,7 +440,23 @@ public partial class BattleHudController : CanvasLayer
 		}
 
 		_pilePopupTitle.Text = title;
+		_pileDismissButton.Visible = true;
 		_pilePopup.Visible = true;
+	}
+
+	private void ClosePilePopup()
+	{
+		foreach (BattleCardView cardView in _pileCardViews)
+		{
+			if (IsInstanceValid(cardView))
+			{
+				cardView.QueueFree();
+			}
+		}
+
+		_pileCardViews.Clear();
+		_pileDismissButton.Visible = false;
+		_pilePopup.Visible = false;
 	}
 
 	private bool EnsureNodes()
@@ -452,8 +472,10 @@ public partial class BattleHudController : CanvasLayer
 		_hoveredCardPanel = GetNodeOrNull<PanelContainer>("CardHoverPanel");
 		_hoveredCardTitle = GetNodeOrNull<Label>("CardHoverPanel/Margin/VBox/HoverTitle");
 		_hoveredCardStats = GetNodeOrNull<Label>("CardHoverPanel/Margin/VBox/HoverStats");
+		_pileDismissButton = GetNodeOrNull<Button>("PileDismissButton");
 		_pilePopup = GetNodeOrNull<PanelContainer>("PilePopup");
 		_pilePopupTitle = GetNodeOrNull<Label>("PilePopup/Margin/VBox/TitleLabel");
+		_pilePopupCloseButton = GetNodeOrNull<Button>("PilePopup/Margin/VBox/CloseButton");
 		_pilePopupBody = GetNodeOrNull<RichTextLabel>("PilePopup/Margin/VBox/BodyLabel");
 		_pileScroll = GetNodeOrNull<ScrollContainer>("PilePopup/Margin/VBox/PileScroll");
 		_pileGrid = GetNodeOrNull<GridContainer>("PilePopup/Margin/VBox/PileScroll/PileGrid");
@@ -482,8 +504,10 @@ public partial class BattleHudController : CanvasLayer
 			&& _hoveredCardPanel != null
 			&& _hoveredCardTitle != null
 			&& _hoveredCardStats != null
+			&& _pileDismissButton != null
 			&& _pilePopup != null
 			&& _pilePopupTitle != null
+			&& _pilePopupCloseButton != null
 			&& _pilePopupBody != null
 			&& _pileScroll != null
 			&& _pileGrid != null
@@ -539,6 +563,8 @@ public partial class BattleHudController : CanvasLayer
 		_drawPileButton.Pressed += OnDrawPilePressed;
 		_discardPileButton.Pressed += OnDiscardPilePressed;
 		_exhaustPileButton.Pressed += OnExhaustPilePressed;
+		_pileDismissButton.Pressed += OnPilePopupClosePressed;
+		_pilePopupCloseButton.Pressed += OnPilePopupClosePressed;
 		_handArea.Resized += OnHandAreaResized;
 		_signalsHooked = true;
 	}
@@ -642,6 +668,11 @@ public partial class BattleHudController : CanvasLayer
 	private void OnExhaustPilePressed()
 	{
 		ShowPilePopup("Exhaust Pile", _exhaustPileCards);
+	}
+
+	private void OnPilePopupClosePressed()
+	{
+		ClosePilePopup();
 	}
 
 	private string BuildTurnLabel()
