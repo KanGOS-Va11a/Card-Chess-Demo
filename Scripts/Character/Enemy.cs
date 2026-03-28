@@ -1,4 +1,6 @@
 using Godot;
+using CardChessDemo.Battle.Boundary;
+using CardChessDemo.Battle.Shared;
 
 public partial class Enemy : InteractableTemplate
 {
@@ -101,33 +103,27 @@ public partial class Enemy : InteractableTemplate
             return;
         }
 
+        GlobalGameSession globalSession = GetNodeOrNull<GlobalGameSession>("/root/GlobalGameSession");
+        if (globalSession == null)
+        {
+            GD.PushError("Enemy: 未找到 /root/GlobalGameSession，无法构建 BattleRequest。");
+            return;
+        }
+
         _isTransitioning = true;
-
-        GameSession session = GetNodeOrNull<GameSession>("/root/GameSession");
-        GlobalBattleContext context = GetNodeOrNull<GlobalBattleContext>("/root/GlobalBattleContext");
-
-        LegacyBattleRequest request = BuildBattleRequest(session);
         Node currentScene = GetTree().CurrentScene;
         string returnScenePath = currentScene?.SceneFilePath ?? string.Empty;
         Vector2 returnPlayerPos = player?.GlobalPosition ?? Vector2.Zero;
+        string encounterId = EncounterId.ToString();
 
-        if (session != null)
-        {
-            session.current_map_id = new StringName(returnScenePath);
-        }
-
-        if (context != null)
-        {
-            context.set_pending_battle(request, EncounterId, returnScenePath, returnPlayerPos);
-        }
-        else
-        {
-            GD.PushWarning("Enemy: 未找到 /root/GlobalBattleContext，将只切场景不传输战斗上下文。");
-        }
+        globalSession.BeginBattle(BattleRequest.FromSession(globalSession, encounterId));
+        globalSession.SetPendingBattleEncounterId(encounterId);
+        globalSession.SetPendingMapResumeContext(new MapResumeContext(returnScenePath, returnPlayerPos));
 
         Error result = ChangeToBattleScene();
         if (result != Error.Ok)
         {
+            globalSession.CancelPendingBattleTransition();
             _isTransitioning = false;
             GD.PushError($"Enemy: 切换战斗场景失败，错误码={result}，BattleScenePath='{BattleScenePath}'");
         }
@@ -169,42 +165,6 @@ public partial class Enemy : InteractableTemplate
         }
 
         return path;
-    }
-
-    private LegacyBattleRequest BuildBattleRequest(GameSession session)
-    {
-        var request = new LegacyBattleRequest();
-
-        if (session == null)
-        {
-            return request;
-        }
-
-        request.player_hp = session.player_runtime.hp_current;
-        request.player_stat_modifiers = CopyDict(session.player_runtime.stat_modifiers);
-        request.deck_runtime_seed = session.deck_state.deck_runtime_seed;
-        request.arakawa_energy = session.arakawa_state.energy_current;
-        request.suitcase_fuel = session.suitcase_state.fuel_current;
-        request.active_flags = CopyDict(session.world_flags);
-
-        return request;
-    }
-
-    private Godot.Collections.Dictionary<StringName, Variant> CopyDict(
-        Godot.Collections.Dictionary<StringName, Variant> src)
-    {
-        var copy = new Godot.Collections.Dictionary<StringName, Variant>();
-        if (src == null)
-        {
-            return copy;
-        }
-
-        foreach (StringName key in src.Keys)
-        {
-            copy[key] = src[key];
-        }
-
-        return copy;
     }
 
     private void AdvancePatrolIndex()

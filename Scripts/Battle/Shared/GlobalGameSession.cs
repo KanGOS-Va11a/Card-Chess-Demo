@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using Godot;
 using CardChessDemo.Battle.Boundary;
+using CardChessDemo.Battle.Cards;
 
 namespace CardChessDemo.Battle.Shared;
 
@@ -25,6 +26,13 @@ public partial class GlobalGameSession : Node
 	[Export] public int ArakawaGrowthLevel { get; set; } = 1;
 	[Export] public string[] TalentIds { get; set; } = Array.Empty<string>();
 	[Export] public string[] ArakawaUnlockIds { get; set; } = Array.Empty<string>();
+	[Export] public string[] UnlockedCardIds { get; set; } = Array.Empty<string>();
+	[Export] public string[] TalentBranchTags { get; set; } = Array.Empty<string>();
+	[Export] public int DeckPointBudgetBonus { get; set; } = 0;
+	[Export] public int DeckMinCardCountDelta { get; set; } = 0;
+	[Export] public int DeckMaxCardCountDelta { get; set; } = 0;
+	[Export] public int DeckMaxCopiesPerCardBonus { get; set; } = 0;
+	[Export] public string DeckBuildName { get; set; } = "default";
 	[Export] public string[] DeckCardIds { get; set; } = Array.Empty<string>();
 	[Export] public string[] DeckRelicIds { get; set; } = Array.Empty<string>();
 	[Export] public string LastCheckpointSaveId { get; set; } = string.Empty;
@@ -114,6 +122,23 @@ public partial class GlobalGameSession : Node
 
 		PendingBattleRequest = resolvedRequest;
 		LastBattleResult = null;
+	}
+
+	public void EnsureDeckBuildInitialized(BattleCardLibrary? cardLibrary)
+	{
+		if (DeckBuildState.CardIds.Length > 0)
+		{
+			return;
+		}
+
+		string[] starterDeck = cardLibrary?.BuildStarterDeckCardIds() ?? Array.Empty<string>();
+		if (starterDeck.Length == 0)
+		{
+			return;
+		}
+
+		DeckBuildState.CardIds = starterDeck;
+		SyncFieldsFromCompositeState();
 	}
 
 	public void CancelPendingBattleTransition()
@@ -220,6 +245,12 @@ public partial class GlobalGameSession : Node
 			ArakawaGrowthLevel = ProgressionState.ArakawaGrowthLevel,
 			TalentIds = ProgressionState.TalentIds,
 			ArakawaUnlockIds = ProgressionState.ArakawaUnlockIds,
+			UnlockedCardIds = ProgressionState.UnlockedCardIds,
+			TalentBranchTags = ProgressionState.TalentBranchTags,
+			DeckPointBudgetBonus = ProgressionState.DeckPointBudgetBonus,
+			DeckMinCardCountDelta = ProgressionState.DeckMinCardCountDelta,
+			DeckMaxCardCountDelta = ProgressionState.DeckMaxCardCountDelta,
+			DeckMaxCopiesPerCardBonus = ProgressionState.DeckMaxCopiesPerCardBonus,
 		};
 	}
 
@@ -232,6 +263,7 @@ public partial class GlobalGameSession : Node
 	{
 		return new DeckBuildSnapshot
 		{
+			BuildName = DeckBuildState.BuildName,
 			CardIds = DeckBuildState.CardIds,
 			RelicIds = DeckBuildState.RelicIds,
 		};
@@ -334,6 +366,12 @@ public partial class GlobalGameSession : Node
 		ProgressionState.ArakawaGrowthLevel = progression.ArakawaGrowthLevel;
 		ProgressionState.TalentIds = progression.TalentIds;
 		ProgressionState.ArakawaUnlockIds = progression.ArakawaUnlockIds;
+		ProgressionState.UnlockedCardIds = progression.UnlockedCardIds;
+		ProgressionState.TalentBranchTags = progression.TalentBranchTags;
+		ProgressionState.DeckPointBudgetBonus = progression.DeckPointBudgetBonus;
+		ProgressionState.DeckMinCardCountDelta = progression.DeckMinCardCountDelta;
+		ProgressionState.DeckMaxCardCountDelta = progression.DeckMaxCardCountDelta;
+		ProgressionState.DeckMaxCopiesPerCardBonus = progression.DeckMaxCopiesPerCardBonus;
 
 		SyncFieldsFromCompositeState();
 	}
@@ -341,6 +379,7 @@ public partial class GlobalGameSession : Node
 	public void ApplyDeckBuildSnapshot(Godot.Collections.Dictionary snapshot)
 	{
 		DeckBuildSnapshot deckBuild = DeckBuildSnapshot.FromDictionary(snapshot);
+		DeckBuildState.BuildName = string.IsNullOrWhiteSpace(deckBuild.BuildName) ? "default" : deckBuild.BuildName;
 		DeckBuildState.CardIds = deckBuild.CardIds;
 		DeckBuildState.RelicIds = deckBuild.RelicIds;
 
@@ -544,7 +583,14 @@ public partial class GlobalGameSession : Node
 		ProgressionState.ArakawaGrowthLevel = ArakawaGrowthLevel;
 		ProgressionState.TalentIds = TalentIds;
 		ProgressionState.ArakawaUnlockIds = ArakawaUnlockIds;
+		ProgressionState.UnlockedCardIds = UnlockedCardIds;
+		ProgressionState.TalentBranchTags = TalentBranchTags;
+		ProgressionState.DeckPointBudgetBonus = DeckPointBudgetBonus;
+		ProgressionState.DeckMinCardCountDelta = DeckMinCardCountDelta;
+		ProgressionState.DeckMaxCardCountDelta = DeckMaxCardCountDelta;
+		ProgressionState.DeckMaxCopiesPerCardBonus = DeckMaxCopiesPerCardBonus;
 
+		DeckBuildState.BuildName = DeckBuildName;
 		DeckBuildState.CardIds = DeckCardIds;
 		DeckBuildState.RelicIds = DeckRelicIds;
 
@@ -575,7 +621,14 @@ public partial class GlobalGameSession : Node
 		PlayerMasteryPoints = ProgressionState.PlayerMasteryPoints;
 		TalentIds = ProgressionState.TalentIds;
 		ArakawaUnlockIds = ProgressionState.ArakawaUnlockIds;
+		UnlockedCardIds = ProgressionState.UnlockedCardIds;
+		TalentBranchTags = ProgressionState.TalentBranchTags;
+		DeckPointBudgetBonus = ProgressionState.DeckPointBudgetBonus;
+		DeckMinCardCountDelta = ProgressionState.DeckMinCardCountDelta;
+		DeckMaxCardCountDelta = ProgressionState.DeckMaxCardCountDelta;
+		DeckMaxCopiesPerCardBonus = ProgressionState.DeckMaxCopiesPerCardBonus;
 
+		DeckBuildName = DeckBuildState.BuildName;
 		DeckCardIds = DeckBuildState.CardIds;
 		DeckRelicIds = DeckBuildState.RelicIds;
 

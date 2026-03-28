@@ -10,6 +10,8 @@ public abstract partial class InteractableTemplate : StaticBody2D, IInteractable
 	[Export] public string PromptText = "交互";
 	[Export] public float CooldownSeconds = 0.0f;
 	[Export] public bool IsDisabled = false;
+	[Export] public string CompletedFlowNodeId = "";
+	[Export] public string NextActiveFlowNodeId = "";
 
 	protected ulong _nextAvailableTimeMs = 0;
 
@@ -62,6 +64,7 @@ public abstract partial class InteractableTemplate : StaticBody2D, IInteractable
 
 		OnInteract(player);
 		ApplyCooldown();
+		ApplyFlowProgressState();
 	}
 
 	/// <summary>
@@ -79,6 +82,25 @@ public abstract partial class InteractableTemplate : StaticBody2D, IInteractable
 		if (CooldownSeconds > 0.0f)
 		{
 			_nextAvailableTimeMs = Time.GetTicksMsec() + (ulong)(CooldownSeconds * 1000.0f);
+		}
+	}
+
+	private void ApplyFlowProgressState()
+	{
+		GameSession? session = GetNodeOrNull<GameSession>("/root/GameSession");
+		if (session == null)
+		{
+			return;
+		}
+
+		if (!string.IsNullOrWhiteSpace(CompletedFlowNodeId))
+		{
+			session.set_flag(new StringName($"flow.completed.{CompletedFlowNodeId.Trim()}"), true);
+		}
+
+		if (!string.IsNullOrWhiteSpace(NextActiveFlowNodeId))
+		{
+			session.set_flag(new StringName("flow.active_node"), NextActiveFlowNodeId.Trim());
 		}
 	}
 }

@@ -15,4 +15,16 @@ public sealed class ProgressionRuntimeState
 	public string[] TalentIds { get; set; } = Array.Empty<string>();
 
 	public string[] ArakawaUnlockIds { get; set; } = Array.Empty<string>();
+
+	public string[] UnlockedCardIds { get; set; } = Array.Empty<string>();
+
+	public string[] TalentBranchTags { get; set; } = Array.Empty<string>();
+
+	public int DeckPointBudgetBonus { get; set; }
+
+	public int DeckMinCardCountDelta { get; set; }
+
+	public int DeckMaxCardCountDelta { get; set; }
+
+	public int DeckMaxCopiesPerCardBonus { get; set; }
 }

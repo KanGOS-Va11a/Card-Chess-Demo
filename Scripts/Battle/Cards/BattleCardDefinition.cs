@@ -11,6 +11,7 @@ public enum BattleCardTargetingMode
     None = 0,
     EnemyUnit = 1,
     StraightLineEnemy = 2,
+    FriendlyUnit = 3,
 }
 
 public sealed class BattleCardDefinition
@@ -24,6 +25,7 @@ public sealed class BattleCardDefinition
         BattleCardTargetingMode targetingMode,
         int range = 0,
         int damage = 0,
+        int healingAmount = 0,
         int drawCount = 0,
         int energyGain = 0,
         int shieldGain = 0,
@@ -38,6 +40,7 @@ public sealed class BattleCardDefinition
         TargetingMode = targetingMode;
         Range = range < 0 ? 0 : range;
         Damage = damage < 0 ? 0 : damage;
+        HealingAmount = healingAmount < 0 ? 0 : healingAmount;
         DrawCount = drawCount < 0 ? 0 : drawCount;
         EnergyGain = energyGain < 0 ? 0 : energyGain;
         ShieldGain = shieldGain < 0 ? 0 : shieldGain;
@@ -60,6 +63,8 @@ public sealed class BattleCardDefinition
     public int Range { get; }
 
     public int Damage { get; }
+
+    public int HealingAmount { get; }
 
     public int DrawCount { get; }
 
@@ -89,6 +94,7 @@ public sealed class BattleCardDefinition
             targetingMode: TargetingMode,
             range: Range + enhancement.RangeDelta,
             damage: Damage + enhancement.DamageDelta,
+            healingAmount: HealingAmount + enhancement.HealingDelta,
             drawCount: DrawCount + enhancement.DrawCountDelta,
             energyGain: EnergyGain + enhancement.EnergyGainDelta,
             shieldGain: ShieldGain + enhancement.ShieldGainDelta,

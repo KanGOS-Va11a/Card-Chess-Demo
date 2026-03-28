@@ -18,7 +18,7 @@ public partial class SceneDoor : InteractableTemplate
 	{
 		if (!HasValidDestination())
 		{
-			GD.PushWarning($"SceneDoor: no valid destination is configured at '{GetPath()}'. Set NextScene/NextScenePath (or BattleScene/BattleScenePath when StartsBattle=true).");
+			GD.PushWarning("SceneDoor: no valid destination is configured.");
 		}
 	}
 
