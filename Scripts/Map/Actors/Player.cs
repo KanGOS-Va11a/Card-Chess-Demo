@@ -23,7 +23,7 @@ public partial class Player : CharacterBody2D
 	private Area2D _interactionArea;
 	private Area2D _lastInteractedArea;
 	private ulong _lastInteractTimeMs;
-	private GlobalGameSession? _globalSession;
+	private GlobalGameSession _globalSession;
 
 	public override void _Ready()
 	{
@@ -41,6 +41,7 @@ public partial class Player : CharacterBody2D
 	public override void _PhysicsProcess(double delta)
 	{
 		Vector2 inputDirection = Input.GetVector("move_left", "move_right", "move_up", "move_down");
+		float deltaF = (float)delta;
 
 		if (inputDirection != Vector2.Zero)
 		{
@@ -49,7 +50,14 @@ public partial class Player : CharacterBody2D
 		}
 		else
 		{
-			Velocity = Velocity.Lerp(Vector2.Zero, Friction);
+			// Keep friction behavior stable across physics FPS and stop residual drift.
+			float stopWeight = Mathf.Clamp(Friction * 60.0f * deltaF, 0.0f, 1.0f);
+			Velocity = Velocity.Lerp(Vector2.Zero, stopWeight);
+
+			if (Velocity.LengthSquared() < 1.0f)
+			{
+				Velocity = Vector2.Zero;
+			}
 		}
 
 		MoveAndSlide();

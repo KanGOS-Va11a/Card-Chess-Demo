@@ -16,6 +16,8 @@ script = ExtResource("1_enemy")
 EncounterId = &"debug_grunt"
 PromptText = "战斗"
 BattleScenePath = "res://Scene/Battle.tscn"
+CompletedFlowNodeId = "maze_fight_1"
+NextActiveFlowNodeId = "maze_event_1"
 
 [node name="Sprite2D" type="Sprite2D" parent="." unique_id=1523731312]
 position = Vector2(-3.500002, -1.5000019)

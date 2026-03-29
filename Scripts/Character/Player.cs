@@ -4,10 +4,12 @@ public partial class Player : CharacterBody2D
 {
 	[Export] public float Speed = 300.0f;
 	[Export] public float Friction = 0.2f;
-	[Export(PropertyHint.Range, "16,240,1")] public float InteractionRange = 96.0f;
+	[Export(PropertyHint.Range, "16,240,1")] public float InteractionRange = 160.0f;
 	[Export(PropertyHint.Range, "10,89,1")] public float ViewConeHalfAngleDeg = 45.0f;
 	[Export] public NodePath InteractionHintLabelPath = "../UI/InteractionHintLabel";
 	[Export] public string InteractionHintSuffix = " [E]";
+	[Export] public bool AlwaysShowInteractionHint = true;
+	[Export] public string NoTargetHintText = "附近无可交互对象";
 	[Export] public bool RequireLineOfSight = false;
 	[Export] public uint InteractionObstacleMask = uint.MaxValue;
 	[Export] public float InteractionStickyWindow = 0.35f;
@@ -101,6 +103,7 @@ public partial class Player : CharacterBody2D
 	public override void _PhysicsProcess(double delta)
 	{
 		Vector2 inputDirection = Input.GetVector("move_left", "move_right", "move_up", "move_down");
+		float deltaF = (float)delta;
 
 		if (inputDirection != Vector2.Zero)
 		{
@@ -109,7 +112,13 @@ public partial class Player : CharacterBody2D
 		}
 		else
 		{
-			Velocity = Velocity.Lerp(Vector2.Zero, Friction);
+			float stopWeight = Mathf.Clamp(Friction * 60.0f * deltaF, 0.0f, 1.0f);
+			Velocity = Velocity.Lerp(Vector2.Zero, stopWeight);
+
+			if (Velocity.LengthSquared() < 1.0f)
+			{
+				Velocity = Vector2.Zero;
+			}
 		}
 
 		MoveAndSlide();
@@ -231,13 +240,64 @@ public partial class Player : CharacterBody2D
 
 		if (bestTarget == null)
 		{
-			_interactionHintLabel.Visible = false;
-			_interactionHintLabel.Text = "";
+			TryGetNearestInteractableFallback(out bestTarget);
+		}
+
+		if (bestTarget == null)
+		{
+			if (AlwaysShowInteractionHint)
+			{
+				_interactionHintLabel.Visible = true;
+				_interactionHintLabel.Text = NoTargetHintText;
+			}
+			else
+			{
+				_interactionHintLabel.Visible = false;
+				_interactionHintLabel.Text = "";
+			}
 			return;
 		}
 
 		_interactionHintLabel.Visible = true;
 		_interactionHintLabel.Text = bestTarget.GetInteractText(this) + InteractionHintSuffix;
+	}
+
+	private void TryGetNearestInteractableFallback(out IInteractable bestTarget)
+	{
+		bestTarget = null;
+
+		Node currentScene = GetTree().CurrentScene;
+		if (currentScene == null)
+		{
+			return;
+		}
+
+		float maxDistSq = InteractionRange * InteractionRange;
+		float bestDistSq = float.PositiveInfinity;
+		TryCollectNearestInteractable(currentScene, maxDistSq, ref bestDistSq, ref bestTarget);
+	}
+
+	private void TryCollectNearestInteractable(Node node, float maxDistSq, ref float bestDistSq, ref IInteractable bestTarget)
+	{
+		if (node is IInteractable item && node is Node2D node2D)
+		{
+			if (item.CanInteract(this))
+			{
+				float distSq = node2D.GlobalPosition.DistanceSquaredTo(GlobalPosition);
+				if (distSq <= maxDistSq && distSq < bestDistSq)
+				{
+					bestDistSq = distSq;
+					bestTarget = item;
+				}
+			}
+		}
+
+		int childCount = node.GetChildCount();
+		for (int i = 0; i < childCount; i++)
+		{
+			Node child = node.GetChild(i);
+			TryCollectNearestInteractable(child, maxDistSq, ref bestDistSq, ref bestTarget);
+		}
 	}
 
 	private void TryGetBestHintTarget(bool enforceViewCone, out IInteractable bestTarget)
@@ -251,6 +311,7 @@ public partial class Player : CharacterBody2D
 
 		var areas = _interactionArea.GetOverlappingAreas();
 		float minDot = Mathf.Cos(Mathf.DegToRad(ViewConeHalfAngleDeg));
+		float maxDistSq = InteractionRange * InteractionRange;
 		float bestScore = float.NegativeInfinity;
 
 		foreach (Area2D area in areas)
@@ -278,7 +339,13 @@ public partial class Player : CharacterBody2D
 				continue;
 			}
 
-			float score = dot;
+			if (distSq > maxDistSq)
+			{
+				continue;
+			}
+
+			float normalizedDistance = distSq / Mathf.Max(maxDistSq, 1.0f);
+			float score = (enforceViewCone ? dot : 0.0f) - normalizedDistance * 0.75f;
 
 			if (score > bestScore)
 			{
@@ -300,6 +367,7 @@ public partial class Player : CharacterBody2D
 
 		var areas = _interactionArea.GetOverlappingAreas();
 		ulong nowMs = Time.GetTicksMsec();
+		float maxDistSq = InteractionRange * InteractionRange;
 		float minDot = Mathf.Cos(Mathf.DegToRad(ViewConeHalfAngleDeg));
 		float bestScore = float.NegativeInfinity;
 
@@ -333,7 +401,13 @@ public partial class Player : CharacterBody2D
 				continue;
 			}
 
-			float score = dot;
+			if (distSq > maxDistSq)
+			{
+				continue;
+			}
+
+			float normalizedDistance = distSq / Mathf.Max(maxDistSq, 1.0f);
+			float score = (enforceViewCone ? dot : 0.0f) - normalizedDistance * 0.75f;
 
 			if (area == _lastInteractedArea && nowMs - _lastInteractTimeMs <= (ulong)(InteractionStickyWindow * 1000.0f))
 			{
