@@ -1,20 +1,19 @@
-[gd_scene format=3 uid="uid://ti48hgigqlh"]
+[gd_scene format=3 uid="uid://c6ni3kbmbssj4"]
 
 [ext_resource type="Script" path="res://Scripts/Battle/BattleQuickExitController.cs" id="1_script"]
 
 [node name="Battle" type="Node2D" unique_id=990095149]
 script = ExtResource("1_script")
 
-[node name="Camera2D" type="Camera2D" parent="."]
+[node name="Camera2D" type="Camera2D" parent="." unique_id=429745747]
 position = Vector2(160, 88)
-enabled = true
 
-[node name="BattlePlaceholder" type="ColorRect" parent="."]
+[node name="BattlePlaceholder" type="ColorRect" parent="." unique_id=1799415799]
 offset_right = 320.0
 offset_bottom = 176.0
 color = Color(0.08, 0.1, 0.14, 1)
 
-[node name="InfoLabel" type="Label" parent="."]
+[node name="InfoLabel" type="Label" parent="." unique_id=1582580511]
 offset_left = 16.0
 offset_top = 16.0
 offset_right = 300.0

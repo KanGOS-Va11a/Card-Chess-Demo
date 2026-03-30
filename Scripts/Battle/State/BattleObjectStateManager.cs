@@ -4,6 +4,7 @@ using System.Linq;
 using CardChessDemo.Battle.Board;
 using CardChessDemo.Battle.Presentation;
 using CardChessDemo.Battle.Shared;
+using CardChessDemo.Battle.Stats;
 
 namespace CardChessDemo.Battle.State;
 
@@ -90,20 +91,23 @@ public sealed class BattleObjectStateManager
             return;
         }
 
+        ResolvedPlayerStats resolvedStats = _session.ResolvePlayerStats();
+
         // 玩家单位的显示名、生命和移动力以全局 session 为准，
         // 这样 HUD 调试改动能立即反馈到战斗表现。
         playerState.DisplayName = _session.PlayerDisplayName;
-        playerState.MaxHp = _session.GetResolvedPlayerMaxHp();
+        playerState.MaxHp = resolvedStats.MaxHp;
         playerState.CurrentHp = _session.PlayerCurrentHp;
-        playerState.MovePointsPerTurn = _session.GetResolvedPlayerMovePointsPerTurn();
-        playerState.AttackRange = _session.PlayerAttackRange;
-        playerState.AttackDamage = _session.GetResolvedPlayerAttackDamage();
+        playerState.MovePointsPerTurn = resolvedStats.MovePointsPerTurn;
+        playerState.AttackRange = resolvedStats.AttackRange;
+        playerState.AttackDamage = resolvedStats.AttackDamage;
     }
 
     private BattleObjectState CreateState(BoardObject boardObject)
     {
         BattlePrefabEntry? prefabEntry = _prefabLibrary.FindEntry(boardObject.DefinitionId);
         bool isPlayer = boardObject.HasTag("player");
+        ResolvedPlayerStats resolvedStats = _session.ResolvePlayerStats();
 
         BattleObjectState state = new(
             boardObject.ObjectId,
@@ -131,11 +135,11 @@ public sealed class BattleObjectStateManager
             // 玩家是当前唯一会被外部全局状态覆盖的对象。
             // 敌人和障碍物暂时没有独立持久化来源。
             state.DisplayName = _session.PlayerDisplayName;
-            state.MaxHp = _session.GetResolvedPlayerMaxHp();
+            state.MaxHp = resolvedStats.MaxHp;
             state.CurrentHp = _session.PlayerCurrentHp;
-            state.MovePointsPerTurn = _session.GetResolvedPlayerMovePointsPerTurn();
-            state.AttackRange = _session.PlayerAttackRange;
-            state.AttackDamage = _session.GetResolvedPlayerAttackDamage();
+            state.MovePointsPerTurn = resolvedStats.MovePointsPerTurn;
+            state.AttackRange = resolvedStats.AttackRange;
+            state.AttackDamage = resolvedStats.AttackDamage;
         }
 
         return state;
@@ -148,8 +152,9 @@ public sealed class BattleObjectStateManager
 
         if (isPlayer)
         {
+            ResolvedPlayerStats resolvedStats = _session.ResolvePlayerStats();
             boardObject.SyncCombatStats(
-                _session.GetResolvedPlayerMaxHp(),
+                resolvedStats.MaxHp,
                 _session.PlayerCurrentHp,
                 boardObject.MaxShield,
                 boardObject.CurrentShield);

@@ -4,7 +4,9 @@ using System.Linq;
 using Godot;
 using CardChessDemo.Battle.Boundary;
 using CardChessDemo.Battle.Cards;
+using CardChessDemo.Battle.Equipment;
 using CardChessDemo.Battle.Shared;
+using RuntimeEquipmentDefinition = CardChessDemo.Battle.Equipment.EquipmentDefinition;
 
 namespace CardChessDemo.Map;
 
@@ -73,12 +75,12 @@ public partial class SystemFeatureLabController : CanvasLayer
 	private BattleDeckConstructionService? _constructionService;
 	private BattleCardTemplate[] _availableTemplates = Array.Empty<BattleCardTemplate>();
 	private BattleCardTemplate[] _codexTemplates = Array.Empty<BattleCardTemplate>();
-	private EquipmentDefinition[] _visibleEquipmentCandidates = Array.Empty<EquipmentDefinition>();
+	private RuntimeEquipmentDefinition[] _visibleEquipmentCandidates = Array.Empty<RuntimeEquipmentDefinition>();
 	private List<string> _workingDeck = new();
 	private int _baseMasteryPoints = 6;
-	private string _selectedEquipmentSlotId = "weapon";
+	private string _selectedEquipmentSlotId = EquipmentSlotIds.Weapon;
 
-	private static readonly string[] EquipmentSlotOrder = { "weapon", "armor", "accessory" };
+	private static readonly string[] EquipmentSlotOrder = EquipmentSlotIds.All;
 
 	private readonly EquipmentDefinition[] _equipmentDefinitions =
 	{
@@ -603,13 +605,12 @@ public partial class SystemFeatureLabController : CanvasLayer
 			_statusEquipmentSlotList.Select(selectedSlotIndex);
 		}
 
-		_visibleEquipmentCandidates = _equipmentDefinitions
-			.Where(definition => string.Equals(definition.SlotId, _selectedEquipmentSlotId, StringComparison.Ordinal)
-				&& _session.IsEquipmentOwned(definition.ItemId))
+		_visibleEquipmentCandidates = _session.GetEquipmentDefinitionsForSlot(_selectedEquipmentSlotId)
+			.Where(definition => _session.IsEquipmentOwned(definition.ItemId))
 			.ToArray();
 
 		_statusEquipmentCandidateList.Clear();
-		foreach (EquipmentDefinition definition in _visibleEquipmentCandidates)
+		foreach (RuntimeEquipmentDefinition definition in _visibleEquipmentCandidates)
 		{
 			string suffix = string.Equals(_session.GetEquippedItemId(_selectedEquipmentSlotId), definition.ItemId, StringComparison.Ordinal)
 				? " [已装备]"
@@ -630,7 +631,7 @@ public partial class SystemFeatureLabController : CanvasLayer
 		RefreshEquipmentDetail(_visibleEquipmentCandidates[0]);
 	}
 
-	private void RefreshEquipmentDetail(EquipmentDefinition definition)
+	private void RefreshEquipmentDetail(RuntimeEquipmentDefinition definition)
 	{
 		if (_session == null)
 		{
@@ -647,7 +648,7 @@ public partial class SystemFeatureLabController : CanvasLayer
 			$"部位: {GetEquipmentSlotDisplayName(definition.SlotId)}",
 			$"拥有数量: {ownedCount}",
 			$"状态: {(equipped ? "已装备" : "未装备")}",
-			$"效果: {definition.BonusSummary}",
+			$"效果: {definition.BuildModifierSummary()}",
 			string.Empty,
 			definition.Description,
 		});
@@ -1046,9 +1047,9 @@ public partial class SystemFeatureLabController : CanvasLayer
 		}
 
 		_session.InventoryState.ItemCounts.Clear();
-		_session.UnequipItem("weapon");
-		_session.UnequipItem("armor");
-		_session.UnequipItem("accessory");
+		_session.UnequipItem(EquipmentSlotIds.Weapon);
+		_session.UnequipItem(EquipmentSlotIds.Armor);
+		_session.UnequipItem(EquipmentSlotIds.Accessory);
 		RefreshStatusView();
 		RefreshBagView();
 	}
@@ -1087,7 +1088,7 @@ public partial class SystemFeatureLabController : CanvasLayer
 			return;
 		}
 
-		EquipmentDefinition definition = _visibleEquipmentCandidates[selectedIndex];
+		RuntimeEquipmentDefinition definition = _visibleEquipmentCandidates[selectedIndex];
 		if (!_session.TryEquipItem(_selectedEquipmentSlotId, definition.ItemId, out _))
 		{
 			return;
@@ -1277,9 +1278,9 @@ public partial class SystemFeatureLabController : CanvasLayer
 		_session.DeckMaxCopiesPerCardBonus = copiesBonus;
 	}
 
-	private EquipmentDefinition? FindEquipmentDefinition(string itemId)
+	private RuntimeEquipmentDefinition? FindEquipmentDefinition(string itemId)
 	{
-		return _equipmentDefinitions.FirstOrDefault(definition => string.Equals(definition.ItemId, itemId, StringComparison.Ordinal));
+		return _session?.FindEquipmentDefinition(itemId);
 	}
 
 	private string GetEquipmentDisplayName(string itemId)
@@ -1296,9 +1297,9 @@ public partial class SystemFeatureLabController : CanvasLayer
 	{
 		return slotId switch
 		{
-			"weapon" => "武器",
-			"armor" => "护甲",
-			"accessory" => "饰品",
+			EquipmentSlotIds.Weapon => "武器",
+			EquipmentSlotIds.Armor => "护甲",
+			EquipmentSlotIds.Accessory => "饰品",
 			_ => slotId,
 		};
 	}

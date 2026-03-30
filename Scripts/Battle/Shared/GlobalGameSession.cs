@@ -2,8 +2,11 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using Godot;
+using CardChessDemo.Battle.Equipment;
 using CardChessDemo.Battle.Boundary;
 using CardChessDemo.Battle.Cards;
+using CardChessDemo.Battle.Progression;
+using CardChessDemo.Battle.Stats;
 
 namespace CardChessDemo.Battle.Shared;
 
@@ -56,17 +59,24 @@ public partial class GlobalGameSession : Node
 	public ProgressionRuntimeState ProgressionState { get; } = new();
 	public DeckBuildState DeckBuildState { get; } = new();
 	public InventoryRuntimeState InventoryState { get; } = new();
+	public EquipmentLoadoutState EquipmentLoadoutState { get; } = new();
 	public SaveRuntimeState SaveState { get; } = new();
+	public EquipmentCatalog RuntimeEquipmentCatalog { get; } = EquipmentCatalog.CreateFromConfiguredResources();
+	public ProgressionRuleSet RuntimeProgressionRuleSet { get; } = ProgressionRuleSet.CreateFromConfiguredRules();
 	public Godot.Collections.Dictionary InventoryItemCounts => InventoryState.ItemCounts;
+
+	private EquipmentService _equipmentService = null!;
+	private PlayerStatResolver _playerStatResolver = null!;
 
 	public override void _Ready()
 	{
+		EnsureCompositionServices();
 		SyncCompositeStateFromFields();
 	}
 
 	public void SetPlayerCurrentHp(int value)
 	{
-		PartyState.Player.CurrentHp = Mathf.Clamp(value, 0, Math.Max(PartyState.Player.MaxHp, 0));
+		PartyState.Player.CurrentHp = Mathf.Clamp(value, 0, GetResolvedPlayerMaxHp());
 		SyncFieldsFromCompositeState();
 		EmitSignal(SignalName.PlayerRuntimeChanged);
 	}
@@ -118,111 +128,99 @@ public partial class GlobalGameSession : Node
 
 	public int GetResolvedPlayerAttackDamage()
 	{
-		return Math.Max(0, PlayerAttackDamage + SumTalentScalarBonuses("stat.attack_bonus.") + GetEquipmentAttackBonus());
+		return ResolvePlayerStats().AttackDamage;
 	}
 
 	public int GetResolvedPlayerDefenseDamageReductionPercent()
 	{
-		return Mathf.Clamp(
-			PlayerDefenseDamageReductionPercent + SumTalentScalarBonuses("stat.defense_reduction_bonus.") + GetEquipmentDefenseReductionBonus(),
-			0,
-			100);
+		return ResolvePlayerStats().DefenseDamageReductionPercent;
 	}
 
 	public int GetResolvedPlayerDefenseShieldGain()
 	{
-		return Math.Max(0, PlayerDefenseShieldGain + SumTalentScalarBonuses("stat.defense_shield_bonus.") + GetEquipmentDefenseShieldBonus());
+		return ResolvePlayerStats().DefenseShieldGain;
 	}
 
 	public int GetResolvedPlayerMaxHp()
 	{
-		return Math.Max(1, PlayerMaxHp + GetEquipmentMaxHpBonus());
+		return ResolvePlayerStats().MaxHp;
 	}
 
 	public int GetResolvedPlayerMovePointsPerTurn()
 	{
-		return Math.Max(0, PlayerMovePointsPerTurn + GetEquipmentMoveBonus());
+		return ResolvePlayerStats().MovePointsPerTurn;
+	}
+
+	public ResolvedPlayerStats ResolvePlayerStats()
+	{
+		EnsureCompositionServices();
+		return _playerStatResolver.Resolve(
+			PartyState.Player,
+			ProgressionState,
+			EquipmentLoadoutState,
+			PlayerDefenseDamageReductionPercent,
+			PlayerDefenseShieldGain);
 	}
 
 	public bool IsEquipmentOwned(string itemId)
 	{
-		if (string.IsNullOrWhiteSpace(itemId))
-		{
-			return false;
-		}
-
-		return InventoryItemCounts.TryGetValue(itemId, out Variant amount) && amount.AsInt32() > 0;
+		EnsureCompositionServices();
+		return _equipmentService.IsOwned(InventoryState, itemId);
 	}
 
 	public string GetEquippedItemId(string slotId)
 	{
-		return NormalizeEquipmentSlotId(slotId) switch
-		{
-			"weapon" => EquippedWeaponItemId,
-			"armor" => EquippedArmorItemId,
-			"accessory" => EquippedAccessoryItemId,
-			_ => string.Empty,
-		};
+		EnsureCompositionServices();
+		return _equipmentService.GetEquippedItemId(EquipmentLoadoutState, slotId);
 	}
 
 	public bool TryEquipItem(string slotId, string itemId, out string failureReason)
 	{
-		string normalizedSlotId = NormalizeEquipmentSlotId(slotId);
-		if (string.IsNullOrWhiteSpace(normalizedSlotId))
+		EnsureCompositionServices();
+		bool equipped = _equipmentService.TryEquipItem(EquipmentLoadoutState, InventoryState, slotId, itemId, out failureReason);
+		if (equipped)
 		{
-			failureReason = "unknown_slot";
-			return false;
+			SyncFieldsFromCompositeState();
+			EmitSignal(SignalName.PlayerRuntimeChanged);
 		}
 
-		string normalizedItemId = itemId?.Trim() ?? string.Empty;
-		if (string.IsNullOrWhiteSpace(normalizedItemId))
-		{
-			failureReason = "missing_item";
-			return false;
-		}
-
-		if (!IsEquipmentOwned(normalizedItemId))
-		{
-			failureReason = "item_not_owned";
-			return false;
-		}
-
-		if (!CanEquipItemInSlot(normalizedItemId, normalizedSlotId))
-		{
-			failureReason = "slot_mismatch";
-			return false;
-		}
-
-		SetEquippedItemId(normalizedSlotId, normalizedItemId);
-		failureReason = string.Empty;
-		return true;
+		return equipped;
 	}
 
 	public void UnequipItem(string slotId)
 	{
-		string normalizedSlotId = NormalizeEquipmentSlotId(slotId);
-		if (string.IsNullOrWhiteSpace(normalizedSlotId))
-		{
-			return;
-		}
+		EnsureCompositionServices();
+		_equipmentService.UnequipItem(EquipmentLoadoutState, slotId);
+		SyncFieldsFromCompositeState();
+		EmitSignal(SignalName.PlayerRuntimeChanged);
+	}
 
-		SetEquippedItemId(normalizedSlotId, string.Empty);
+	public EquipmentDefinition? FindEquipmentDefinition(string itemId)
+	{
+		EnsureCompositionServices();
+		return RuntimeEquipmentCatalog.FindDefinition(itemId);
+	}
+
+	public EquipmentDefinition[] GetEquipmentDefinitionsForSlot(string slotId)
+	{
+		EnsureCompositionServices();
+		return RuntimeEquipmentCatalog.GetDefinitionsForSlot(slotId);
 	}
 
 	public int GetExperienceRequiredForNextLevel()
 	{
-		return GetExperienceRequirementForLevel(PlayerLevel);
+		return RuntimeProgressionRuleSet.GetExperienceRequirementForLevel(PlayerLevel);
 	}
 
 	public int GetExperienceProgressWithinLevel()
 	{
-		int currentLevelFloor = GetAccumulatedExperienceForLevel(PlayerLevel);
+		int currentLevelFloor = RuntimeProgressionRuleSet.GetAccumulatedExperienceForLevel(PlayerLevel);
 		return Math.Max(0, PlayerExperience - currentLevelFloor);
 	}
 
 	public int GetExperienceNeededToLevelUp()
 	{
-		int target = GetAccumulatedExperienceForLevel(PlayerLevel + 1);
+		int target = RuntimeProgressionRuleSet.GetAccumulatedExperienceForLevel(PlayerLevel + 1);
 		return Math.Max(0, target - PlayerExperience);
 	}
 
@@ -323,11 +321,16 @@ public partial class GlobalGameSession : Node
 		return new Godot.Collections.Dictionary
 		{
 			["display_name"] = PartyState.Player.DisplayName,
+			["base_max_hp"] = PartyState.Player.MaxHp,
 			["max_hp"] = GetResolvedPlayerMaxHp(),
 			["current_hp"] = PartyState.Player.CurrentHp,
+			["base_move_points_per_turn"] = PartyState.Player.MovePointsPerTurn,
 			["move_points_per_turn"] = GetResolvedPlayerMovePointsPerTurn(),
 			["attack_range"] = PartyState.Player.AttackRange,
+			["base_attack_damage"] = PartyState.Player.AttackDamage,
 			["attack_damage"] = GetResolvedPlayerAttackDamage(),
+			["base_defense_damage_reduction_percent"] = PlayerDefenseDamageReductionPercent,
+			["base_defense_shield_gain"] = PlayerDefenseShieldGain,
 			["arakawa_max_energy"] = PartyState.Arakawa.MaxEnergy,
 			["arakawa_current_energy"] = PartyState.Arakawa.CurrentEnergy,
 		};
@@ -411,8 +414,13 @@ public partial class GlobalGameSession : Node
 			PartyState.Player.DisplayName = displayName.AsString();
 		}
 
-		if (snapshot.TryGetValue("max_hp", out Variant maxHp))
+		if (snapshot.TryGetValue("base_max_hp", out Variant baseMaxHp))
 		{
+			PartyState.Player.MaxHp = baseMaxHp.AsInt32();
+		}
+		else if (snapshot.TryGetValue("max_hp", out Variant maxHp))
+		{
+			// 兼容旧快照：如果没有显式基础值，只能退回到历史字段。
 			PartyState.Player.MaxHp = maxHp.AsInt32();
 		}
 
@@ -421,8 +429,13 @@ public partial class GlobalGameSession : Node
 			PartyState.Player.CurrentHp = currentHp.AsInt32();
 		}
 
-		if (snapshot.TryGetValue("move_points_per_turn", out Variant movePoints))
+		if (snapshot.TryGetValue("base_move_points_per_turn", out Variant baseMovePoints))
 		{
+			PartyState.Player.MovePointsPerTurn = baseMovePoints.AsInt32();
+		}
+		else if (snapshot.TryGetValue("move_points_per_turn", out Variant movePoints))
+		{
+			// 兼容旧快照：如果没有显式基础值，只能退回到历史字段。
 			PartyState.Player.MovePointsPerTurn = movePoints.AsInt32();
 		}
 
@@ -431,9 +444,24 @@ public partial class GlobalGameSession : Node
 			PartyState.Player.AttackRange = attackRange.AsInt32();
 		}
 
-		if (snapshot.TryGetValue("attack_damage", out Variant attackDamage))
+		if (snapshot.TryGetValue("base_attack_damage", out Variant baseAttackDamage))
 		{
+			PartyState.Player.AttackDamage = baseAttackDamage.AsInt32();
+		}
+		else if (snapshot.TryGetValue("attack_damage", out Variant attackDamage))
+		{
+			// 兼容旧快照：如果没有显式基础值，只能退回到历史字段。
 			PartyState.Player.AttackDamage = attackDamage.AsInt32();
+		}
+
+		if (snapshot.TryGetValue("base_defense_damage_reduction_percent", out Variant baseDefenseReduction))
+		{
+			PlayerDefenseDamageReductionPercent = baseDefenseReduction.AsInt32();
+		}
+
+		if (snapshot.TryGetValue("base_defense_shield_gain", out Variant baseDefenseShieldGain))
+		{
+			PlayerDefenseShieldGain = baseDefenseShieldGain.AsInt32();
 		}
 
 		if (snapshot.TryGetValue("arakawa_max_energy", out Variant arakawaMaxEnergy))
@@ -677,138 +705,10 @@ public partial class GlobalGameSession : Node
 		return clone;
 	}
 
-	private int SumTalentScalarBonuses(string prefix)
+	private void EnsureCompositionServices()
 	{
-		if (string.IsNullOrWhiteSpace(prefix))
-		{
-			return 0;
-		}
-
-		int total = 0;
-		foreach (string talentId in ProgressionState.TalentIds)
-		{
-			if (string.IsNullOrWhiteSpace(talentId) || !talentId.StartsWith(prefix, StringComparison.OrdinalIgnoreCase))
-			{
-				continue;
-			}
-
-			string valueText = talentId[prefix.Length..];
-			if (int.TryParse(valueText, out int value))
-			{
-				total += value;
-			}
-		}
-
-		return total;
-	}
-
-	private static string NormalizeEquipmentSlotId(string? slotId)
-	{
-		return slotId?.Trim().ToLowerInvariant() switch
-		{
-			"weapon" => "weapon",
-			"armor" => "armor",
-			"accessory" => "accessory",
-			_ => string.Empty,
-		};
-	}
-
-	private static bool CanEquipItemInSlot(string itemId, string slotId)
-	{
-		return NormalizeEquipmentSlotId(slotId) switch
-		{
-			"weapon" => itemId is "rusted_blade" or "ion_pistol",
-			"armor" => itemId is "patched_coat" or "reactive_plate",
-			"accessory" => itemId is "signal_charm" or "tactical_chip",
-			_ => false,
-		};
-	}
-
-	private void SetEquippedItemId(string slotId, string itemId)
-	{
-		switch (NormalizeEquipmentSlotId(slotId))
-		{
-			case "weapon":
-				EquippedWeaponItemId = itemId;
-				break;
-			case "armor":
-				EquippedArmorItemId = itemId;
-				break;
-			case "accessory":
-				EquippedAccessoryItemId = itemId;
-				break;
-		}
-	}
-
-	private int GetEquipmentAttackBonus()
-	{
-		return GetEquippedItemId("weapon") switch
-		{
-			"rusted_blade" => 1,
-			"ion_pistol" => 2,
-			_ => 0,
-		};
-	}
-
-	private int GetEquipmentDefenseReductionBonus()
-	{
-		int bonus = 0;
-		bonus += GetEquippedItemId("armor") switch
-		{
-			"patched_coat" => 5,
-			"reactive_plate" => 10,
-			_ => 0,
-		};
-		bonus += GetEquippedItemId("accessory") switch
-		{
-			"tactical_chip" => 5,
-			_ => 0,
-		};
-		return bonus;
-	}
-
-	private int GetEquipmentDefenseShieldBonus()
-	{
-		return GetEquippedItemId("armor") switch
-		{
-			"reactive_plate" => 1,
-			_ => 0,
-		};
-	}
-
-	private int GetEquipmentMaxHpBonus()
-	{
-		return GetEquippedItemId("armor") switch
-		{
-			"patched_coat" => 4,
-			"reactive_plate" => 2,
-			_ => 0,
-		};
-	}
-
-	private int GetEquipmentMoveBonus()
-	{
-		return GetEquippedItemId("accessory") switch
-		{
-			"signal_charm" => 1,
-			_ => 0,
-		};
-	}
-
-	private static int GetExperienceRequirementForLevel(int level)
-	{
-		return Math.Max(10, 10 + (Math.Max(1, level) - 1) * 5);
-	}
-
-	private static int GetAccumulatedExperienceForLevel(int level)
-	{
-		int total = 0;
-		for (int current = 1; current < Math.Max(1, level); current++)
-		{
-			total += GetExperienceRequirementForLevel(current);
-		}
-
-		return total;
+		_equipmentService ??= new EquipmentService(RuntimeEquipmentCatalog);
+		_playerStatResolver ??= new PlayerStatResolver(RuntimeEquipmentCatalog);
 	}
 
 	private void SyncCompositeStateFromFields()
@@ -842,6 +742,10 @@ public partial class GlobalGameSession : Node
 		DeckBuildState.BuildName = DeckBuildName;
 		DeckBuildState.CardIds = DeckCardIds;
 		DeckBuildState.RelicIds = DeckRelicIds;
+
+		EquipmentLoadoutState.WeaponItemId = EquippedWeaponItemId;
+		EquipmentLoadoutState.ArmorItemId = EquippedArmorItemId;
+		EquipmentLoadoutState.AccessoryItemId = EquippedAccessoryItemId;
 
 		SaveState.LastCheckpointSaveId = LastCheckpointSaveId;
 		SaveState.LastManualSaveId = LastManualSaveId;
@@ -880,6 +784,9 @@ public partial class GlobalGameSession : Node
 		DeckBuildName = DeckBuildState.BuildName;
 		DeckCardIds = DeckBuildState.CardIds;
 		DeckRelicIds = DeckBuildState.RelicIds;
+		EquippedWeaponItemId = EquipmentLoadoutState.WeaponItemId;
+		EquippedArmorItemId = EquipmentLoadoutState.ArmorItemId;
+		EquippedAccessoryItemId = EquipmentLoadoutState.AccessoryItemId;
 
 		LastCheckpointSaveId = SaveState.LastCheckpointSaveId;
 		LastManualSaveId = SaveState.LastManualSaveId;
