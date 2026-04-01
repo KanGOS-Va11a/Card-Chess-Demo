@@ -378,8 +378,11 @@ public partial class BattleHudController : CanvasLayer
 	{
 		panel.ResetSize();
 		Vector2 panelSize = panel.GetCombinedMinimumSize();
-		panel.Size = panelSize;
 		Vector2 viewportSize = GetViewport().GetVisibleRect().Size;
+		panelSize = new Vector2(
+			Mathf.Min(panelSize.X, Math.Max(1.0f, viewportSize.X - ScreenMargin * 2.0f)),
+			Mathf.Min(panelSize.Y, Math.Max(1.0f, viewportSize.Y - ScreenMargin * 2.0f)));
+		panel.Size = panelSize;
 		Vector2 desiredPosition = screenPosition + new Vector2(HoverOffsetX, HoverOffsetY);
 
 		if (desiredPosition.X + panelSize.X > viewportSize.X - ScreenMargin)
@@ -392,8 +395,10 @@ public partial class BattleHudController : CanvasLayer
 			desiredPosition.Y = screenPosition.Y - panelSize.Y - 8.0f;
 		}
 
-		desiredPosition.X = Mathf.Clamp(desiredPosition.X, ScreenMargin, viewportSize.X - panelSize.X - ScreenMargin);
-		desiredPosition.Y = Mathf.Clamp(desiredPosition.Y, ScreenMargin, viewportSize.Y - panelSize.Y - ScreenMargin);
+		float maxX = Mathf.Max(ScreenMargin, viewportSize.X - panelSize.X - ScreenMargin);
+		float maxY = Mathf.Max(ScreenMargin, viewportSize.Y - panelSize.Y - ScreenMargin);
+		desiredPosition.X = Mathf.Clamp(desiredPosition.X, ScreenMargin, maxX);
+		desiredPosition.Y = Mathf.Clamp(desiredPosition.Y, ScreenMargin, maxY);
 		panel.Position = desiredPosition;
 	}
 

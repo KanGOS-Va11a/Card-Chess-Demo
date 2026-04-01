@@ -2,7 +2,7 @@
 
 [ext_resource type="Script" uid="uid://ctf2skdl317o6" path="res://Scripts/Battle/Presentation/BattlePrefabLibrary.cs" id="1_lib"]
 [ext_resource type="Script" uid="uid://bchuddjflp8v6" path="res://Scripts/Battle/Presentation/BattlePrefabEntry.cs" id="2_entry"]
-[ext_resource type="PackedScene" path="res://Scene/Battle/Tiles/BattlePlayerToken.tscn" id="3_player"]
+[ext_resource type="PackedScene" uid="uid://dydvrvbhiocuj" path="res://Scene/Battle/Tiles/BattlePlayerToken.tscn" id="3_player"]
 [ext_resource type="PackedScene" path="res://Scene/Battle/Tiles/BattleEnemyToken.tscn" id="4_enemy"]
 [ext_resource type="PackedScene" path="res://Scene/Battle/Tiles/BattleObstacleToken.tscn" id="5_obstacle"]
 

@@ -1,16 +1,10 @@
-[gd_scene load_steps=3 format=3]
+[gd_scene format=3 uid="uid://dydvrvbhiocuj"]
 
-[ext_resource type="Script" path="res://Scripts/Battle/Presentation/BattlePlayerView.cs" id="1_player"]
-[ext_resource type="Texture2D" path="res://Assets/Character/Battle/Player/Idle/Idle_Right_Down-Sheet-sheet_alt.png" id="2_idle_sheet"]
+[ext_resource type="Script" uid="uid://ddfyn2nwvtqea" path="res://Scripts/Battle/Presentation/BattlePlayerView.cs" id="1_player"]
+[ext_resource type="Texture2D" uid="uid://bjjbci0xlxupv" path="res://Assets/Character/Battle/Player/Idle/Idle_Right_Down-Sheet-sheet_alt.png" id="2_idle_sheet"]
 
-[node name="BattlePlayerToken" type="Node2D"]
+[node name="BattlePlayerToken" type="Node2D" unique_id=179402680]
 script = ExtResource("1_player")
 IdleSpriteSheet = ExtResource("2_idle_sheet")
-FrameWidth = 48
-FrameHeight = 64
-FrameCount = 7
-CellFootOffsetY = 8
-SpriteDrawOffset = Vector2(-24, -48)
 
-[node name="AnimatedSprite2D" type="AnimatedSprite2D" parent="."]
-centered = true
+[node name="AnimatedSprite2D" type="AnimatedSprite2D" parent="." unique_id=1634525671]
