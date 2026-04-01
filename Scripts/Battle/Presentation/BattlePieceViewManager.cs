@@ -93,9 +93,12 @@ public sealed class BattlePieceViewManager
         }
 
         view.PlayMove();
+        Vector2I previousCell = cellPath[0];
         foreach (Vector2I cell in cellPath.Skip(1))
         {
+            view.FaceDirection(cell - previousCell);
             await view.TweenBoardPositionAsync(room.CellToLocalCenter(cell), secondsPerCell);
+            previousCell = cell;
         }
 
         view.PlayIdle();
@@ -124,6 +127,7 @@ public sealed class BattlePieceViewManager
 
         if (_views.TryGetValue(attackerId, out BattleAnimatedViewBase? attackerView))
         {
+            attackerView.FaceDirection(normalizedDirection);
             attackerView.PlayAction();
             attackerView.PlayMotionOffset(normalizedDirection * 3.0f, 0.05d, 0.10d);
         }

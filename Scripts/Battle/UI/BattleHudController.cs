@@ -53,6 +53,11 @@ public partial class BattleHudController : CanvasLayer
 	private PanelContainer _hoveredCardPanel = null!;
 	private Label _hoveredCardTitle = null!;
 	private Label _hoveredCardStats = null!;
+	private Button _actionLogDismissButton = null!;
+	private PanelContainer _actionLogPopup = null!;
+	private Label _actionLogTitle = null!;
+	private Button _actionLogCloseButton = null!;
+	private RichTextLabel _actionLogBodyText = null!;
 	private Button _pileDismissButton = null!;
 	private PanelContainer _pilePopup = null!;
 	private Label _pilePopupTitle = null!;
@@ -64,6 +69,7 @@ public partial class BattleHudController : CanvasLayer
 	private Label _resourceLabel = null!;
 	private Label _arakawaEnergyLabel = null!;
 	private Button _arakawaButton = null!;
+	private Button _actionLogButton = null!;
 	private Button _drawPileButton = null!;
 	private Button _discardPileButton = null!;
 	private Button _exhaustPileButton = null!;
@@ -91,12 +97,17 @@ public partial class BattleHudController : CanvasLayer
 	private BattleCardInstance[] _drawPileCards = Array.Empty<BattleCardInstance>();
 	private BattleCardInstance[] _discardPileCards = Array.Empty<BattleCardInstance>();
 	private BattleCardInstance[] _exhaustPileCards = Array.Empty<BattleCardInstance>();
+	private string[] _currentTurnActionLogEntries = Array.Empty<string>();
+	private string[] _previousTurnActionLogEntries = Array.Empty<string>();
+	private int _currentTurnActionLogTurnIndex;
+	private int _previousTurnActionLogTurnIndex;
 	private int _currentEnergy;
 	private int _maxEnergy;
 	private int _arakawaCurrentEnergy;
 	private int _arakawaMaxEnergy;
 	private bool _canUseArakawa;
 	private bool _isArakawaWheelOpen;
+	private bool _isActionLogOpen;
 	private string _selectedArakawaAbilityId = string.Empty;
 	private int _energyRechargeProgress;
 	private int _energyRechargeInterval = 3;
@@ -126,6 +137,7 @@ public partial class BattleHudController : CanvasLayer
 		_defendButton.Pressed -= OnDefendPressed;
 		_retreatButton.Pressed -= OnRetreatPressed;
 		_arakawaButton.Pressed -= OnArakawaButtonPressed;
+		_actionLogButton.Pressed -= OnActionLogPressed;
 		_arakawaBuildButton.Pressed -= OnArakawaBuildPressed;
 		_arakawaEnhanceButton.Pressed -= OnArakawaEnhancePressed;
 		_arakawaCancelButton.Pressed -= OnArakawaCancelPressed;
@@ -134,6 +146,8 @@ public partial class BattleHudController : CanvasLayer
 		_drawPileButton.Pressed -= OnDrawPilePressed;
 		_discardPileButton.Pressed -= OnDiscardPilePressed;
 		_exhaustPileButton.Pressed -= OnExhaustPilePressed;
+		_actionLogDismissButton.Pressed -= OnActionLogClosePressed;
+		_actionLogCloseButton.Pressed -= OnActionLogClosePressed;
 		_pileDismissButton.Pressed -= OnPilePopupClosePressed;
 		_pilePopupCloseButton.Pressed -= OnPilePopupClosePressed;
 		_handArea.Resized -= OnHandAreaResized;
@@ -178,6 +192,18 @@ public partial class BattleHudController : CanvasLayer
 		_canUseArakawa = canUse;
 		_isArakawaWheelOpen = isWheelOpen;
 		_selectedArakawaAbilityId = selectedAbilityId ?? string.Empty;
+	}
+
+	public void SetActionLogState(
+		int currentTurnIndex,
+		IReadOnlyList<string> currentTurnEntries,
+		int previousTurnIndex,
+		IReadOnlyList<string> previousTurnEntries)
+	{
+		_currentTurnActionLogTurnIndex = currentTurnIndex;
+		_previousTurnActionLogTurnIndex = previousTurnIndex;
+		_currentTurnActionLogEntries = currentTurnEntries?.ToArray() ?? Array.Empty<string>();
+		_previousTurnActionLogEntries = previousTurnEntries?.ToArray() ?? Array.Empty<string>();
 	}
 
 	public void SetHoveredUnitState(BattleObjectState? hoveredUnitState, Vector2 screenPosition)
@@ -248,6 +274,9 @@ public partial class BattleHudController : CanvasLayer
 		_arakawaWheel.Visible = _isArakawaWheelOpen;
 		_arakawaBuildButton.Disabled = !_canUseArakawa || _arakawaCurrentEnergy <= 0;
 		_arakawaEnhanceButton.Disabled = !_canUseArakawa || _arakawaCurrentEnergy <= 0;
+		_actionLogPopup.Visible = _isActionLogOpen;
+		_actionLogDismissButton.Visible = _isActionLogOpen;
+		_actionLogButton.Text = "Log";
 		_drawPileButton.Text = $"D{_drawPileCards.Length}";
 		_discardPileButton.Text = $"G{_discardPileCards.Length}";
 		_exhaustPileButton.Text = $"X{_exhaustPileCards.Length}";
@@ -262,6 +291,7 @@ public partial class BattleHudController : CanvasLayer
 		RefreshHandViews();
 		RefreshHoveredUnit();
 		RefreshHoveredCard();
+		RefreshActionLogPopup();
 	}
 
 	private void RefreshHoveredUnit()
@@ -307,6 +337,41 @@ public partial class BattleHudController : CanvasLayer
 		_hoveredCardTitle.Text = $"{_hoveredCard.Definition.DisplayName} C{_hoveredCard.Definition.Cost}";
 		_hoveredCardStats.Text = line.ToString();
 		PositionFloatingPanel(_hoveredCardPanel, _hoveredCardScreenPosition);
+	}
+
+	private void RefreshActionLogPopup()
+	{
+		if (!_isActionLogOpen)
+		{
+			return;
+		}
+
+		List<string> lines = new();
+		if (_currentTurnActionLogEntries.Length > 0)
+		{
+			lines.Add($"[b]本回合 T{_currentTurnActionLogTurnIndex}[/b]");
+			lines.AddRange(_currentTurnActionLogEntries);
+		}
+		else
+		{
+			lines.Add($"[b]本回合 T{_currentTurnActionLogTurnIndex}[/b]");
+			lines.Add("暂无动作记录");
+		}
+
+		lines.Add(string.Empty);
+		lines.Add($"[b]上一回合 T{_previousTurnActionLogTurnIndex}[/b]");
+		if (_previousTurnActionLogEntries.Length > 0)
+		{
+			lines.AddRange(_previousTurnActionLogEntries);
+		}
+		else
+		{
+			lines.Add("暂无动作记录");
+		}
+
+		_actionLogTitle.Text = "战斗记录";
+		_actionLogBodyText.Text = string.Join('\n', lines);
+		_actionLogBodyText.ScrollToLine(Math.Max(0, _actionLogBodyText.GetLineCount() - 1));
 	}
 
 	private void PositionFloatingPanel(Control panel, Vector2 screenPosition)
@@ -406,6 +471,7 @@ public partial class BattleHudController : CanvasLayer
 
 	private void ShowPilePopup(string title, IReadOnlyList<BattleCardInstance> cards)
 	{
+		CloseActionLogPopup();
 		foreach (BattleCardView cardView in _pileCardViews)
 		{
 			if (IsInstanceValid(cardView))
@@ -459,6 +525,22 @@ public partial class BattleHudController : CanvasLayer
 		_pilePopup.Visible = false;
 	}
 
+	private void OpenActionLogPopup()
+	{
+		ClosePilePopup();
+		_isActionLogOpen = true;
+		RefreshActionLogPopup();
+		_actionLogDismissButton.Visible = true;
+		_actionLogPopup.Visible = true;
+	}
+
+	private void CloseActionLogPopup()
+	{
+		_isActionLogOpen = false;
+		_actionLogDismissButton.Visible = false;
+		_actionLogPopup.Visible = false;
+	}
+
 	private bool EnsureNodes()
 	{
 		if (_turnLabel != null)
@@ -472,6 +554,11 @@ public partial class BattleHudController : CanvasLayer
 		_hoveredCardPanel = GetNodeOrNull<PanelContainer>("CardHoverPanel");
 		_hoveredCardTitle = GetNodeOrNull<Label>("CardHoverPanel/Margin/VBox/HoverTitle");
 		_hoveredCardStats = GetNodeOrNull<Label>("CardHoverPanel/Margin/VBox/HoverStats");
+		_actionLogDismissButton = GetNodeOrNull<Button>("ActionLogDismissButton");
+		_actionLogPopup = GetNodeOrNull<PanelContainer>("ActionLogPopup");
+		_actionLogTitle = GetNodeOrNull<Label>("ActionLogPopup/Margin/VBox/Header/TitleLabel");
+		_actionLogCloseButton = GetNodeOrNull<Button>("ActionLogPopup/Margin/VBox/Header/CloseButton");
+		_actionLogBodyText = GetNodeOrNull<RichTextLabel>("ActionLogPopup/Margin/VBox/BodyScroll/BodyText");
 		_pileDismissButton = GetNodeOrNull<Button>("PileDismissButton");
 		_pilePopup = GetNodeOrNull<PanelContainer>("PilePopup");
 		_pilePopupTitle = GetNodeOrNull<Label>("PilePopup/Margin/VBox/TitleLabel");
@@ -483,6 +570,7 @@ public partial class BattleHudController : CanvasLayer
 		_resourceLabel = GetNodeOrNull<Label>("TopBar/LeftInfo/ResourceLabel");
 		_arakawaEnergyLabel = GetNodeOrNull<Label>("TopBar/ArakawaInfo/ArakawaEnergyLabel");
 		_arakawaButton = GetNodeOrNull<Button>("TopBar/ArakawaInfo/ArakawaButton");
+		_actionLogButton = GetNodeOrNull<Button>("RightControls/ActionLogButton");
 		_drawPileButton = GetNodeOrNull<Button>("RightControls/DrawPileButton");
 		_discardPileButton = GetNodeOrNull<Button>("RightControls/DiscardPileButton");
 		_exhaustPileButton = GetNodeOrNull<Button>("RightControls/ExhaustPileButton");
@@ -504,6 +592,11 @@ public partial class BattleHudController : CanvasLayer
 			&& _hoveredCardPanel != null
 			&& _hoveredCardTitle != null
 			&& _hoveredCardStats != null
+			&& _actionLogDismissButton != null
+			&& _actionLogPopup != null
+			&& _actionLogTitle != null
+			&& _actionLogCloseButton != null
+			&& _actionLogBodyText != null
 			&& _pileDismissButton != null
 			&& _pilePopup != null
 			&& _pilePopupTitle != null
@@ -515,6 +608,7 @@ public partial class BattleHudController : CanvasLayer
 			&& _resourceLabel != null
 			&& _arakawaEnergyLabel != null
 			&& _arakawaButton != null
+			&& _actionLogButton != null
 			&& _drawPileButton != null
 			&& _discardPileButton != null
 			&& _exhaustPileButton != null
@@ -541,6 +635,7 @@ public partial class BattleHudController : CanvasLayer
 		ApplyCompactButtonStyle(_drawPileButton);
 		ApplyCompactButtonStyle(_discardPileButton);
 		ApplyCompactButtonStyle(_exhaustPileButton);
+		ApplyCompactButtonStyle(_actionLogButton);
 		ApplyCompactButtonStyle(_attackButton);
 		ApplyCompactButtonStyle(_defendButton);
 		ApplyCompactButtonStyle(_retreatButton);
@@ -555,6 +650,7 @@ public partial class BattleHudController : CanvasLayer
 		_defendButton.Pressed += OnDefendPressed;
 		_retreatButton.Pressed += OnRetreatPressed;
 		_arakawaButton.Pressed += OnArakawaButtonPressed;
+		_actionLogButton.Pressed += OnActionLogPressed;
 		_arakawaBuildButton.Pressed += OnArakawaBuildPressed;
 		_arakawaEnhanceButton.Pressed += OnArakawaEnhancePressed;
 		_arakawaCancelButton.Pressed += OnArakawaCancelPressed;
@@ -563,6 +659,8 @@ public partial class BattleHudController : CanvasLayer
 		_drawPileButton.Pressed += OnDrawPilePressed;
 		_discardPileButton.Pressed += OnDiscardPilePressed;
 		_exhaustPileButton.Pressed += OnExhaustPilePressed;
+		_actionLogDismissButton.Pressed += OnActionLogClosePressed;
+		_actionLogCloseButton.Pressed += OnActionLogClosePressed;
 		_pileDismissButton.Pressed += OnPilePopupClosePressed;
 		_pilePopupCloseButton.Pressed += OnPilePopupClosePressed;
 		_handArea.Resized += OnHandAreaResized;
@@ -606,38 +704,49 @@ public partial class BattleHudController : CanvasLayer
 
 	private void OnAttackPressed()
 	{
-		_pilePopup.Visible = false;
+		CloseTransientPanels();
 		EmitSignal(SignalName.AttackRequested);
 	}
 
 	private void OnMeditatePressed()
 	{
-		_pilePopup.Visible = false;
+		CloseTransientPanels();
 		EmitSignal(SignalName.MeditateRequested);
 	}
 
 	private void OnDefendPressed()
 	{
-		_pilePopup.Visible = false;
+		CloseTransientPanels();
 		EmitSignal(SignalName.DefendRequested);
 	}
 
 	private void OnRetreatPressed()
 	{
-		_pilePopup.Visible = false;
+		CloseTransientPanels();
 		EmitSignal(SignalName.RetreatRequested);
 	}
 
 	private void OnEndTurnPressed()
 	{
-		_pilePopup.Visible = false;
+		CloseTransientPanels();
 		EmitSignal(SignalName.EndTurnRequested);
 	}
 
 	private void OnArakawaButtonPressed()
 	{
-		_pilePopup.Visible = false;
+		CloseTransientPanels();
 		EmitSignal(SignalName.ArakawaWheelRequested);
+	}
+
+	private void OnActionLogPressed()
+	{
+		if (_isActionLogOpen)
+		{
+			CloseActionLogPopup();
+			return;
+		}
+
+		OpenActionLogPopup();
 	}
 
 	private void OnArakawaBuildPressed()
@@ -673,6 +782,17 @@ public partial class BattleHudController : CanvasLayer
 	private void OnPilePopupClosePressed()
 	{
 		ClosePilePopup();
+	}
+
+	private void OnActionLogClosePressed()
+	{
+		CloseActionLogPopup();
+	}
+
+	private void CloseTransientPanels()
+	{
+		ClosePilePopup();
+		CloseActionLogPopup();
 	}
 
 	private string BuildTurnLabel()

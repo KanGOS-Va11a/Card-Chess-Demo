@@ -15,6 +15,8 @@ namespace CardChessDemo.Battle.Actions;
 
 public sealed class BattleActionService
 {
+    public event Action<string>? ActionLogged;
+
     private readonly BoardState _boardState;
     private readonly BoardObjectRegistry _registry;
     private readonly BoardQueryService _queryService;
@@ -25,12 +27,14 @@ public sealed class BattleActionService
     private readonly GlobalGameSession _session;
     private readonly BattleFloatingTextLayer? _floatingTextLayer;
     private readonly SceneTree _sceneTree;
+    private double _lastImpactPresentationDurationSeconds;
 
     public const double MovePresentationDurationSeconds = 0.12d;
     public const double AttackPresentationDurationSeconds = 0.24d;
     public const double ImpactPresentationDurationSeconds = 0.18d;
     public const double DefensePresentationDurationSeconds = 0.22d;
     public const double UtilityPresentationDurationSeconds = 0.24d;
+    public const double ImpactFlowWaitRatio = 0.82d;
 
     public BattleActionService(
         BoardState boardState,
@@ -58,6 +62,8 @@ public sealed class BattleActionService
 
     public bool IsPlayerDefeated => _session.PlayerCurrentHp <= 0;
 
+    public double LastImpactPresentationDurationSeconds => _lastImpactPresentationDurationSeconds;
+
     public bool TryMoveObject(string objectId, Vector2I targetCell, out string failureReason)
     {
         failureReason = string.Empty;
@@ -70,6 +76,7 @@ public sealed class BattleActionService
 
         SyncPresentation();
         _pieceViewManager.PlayMove(objectId);
+        PublishActionLog($"{ResolveObjectDisplayName(objectId)}->({targetCell.X},{targetCell.Y}) 移动");
         return true;
     }
 
@@ -94,6 +101,8 @@ public sealed class BattleActionService
             _pieceViewManager.PlayMove(objectId);
             await WaitSeconds(MovePresentationDurationSeconds);
         }
+
+        PublishActionLog($"{ResolveObjectDisplayName(objectId)}->({targetCell.X},{targetCell.Y}) 移动");
 
         return true;
     }
@@ -127,7 +136,8 @@ public sealed class BattleActionService
         }
 
         PlayAttackPresentation(attacker, target);
-        ApplyDamageToTarget(target, attackerState.AttackDamage);
+        DamageApplicationResult result = ApplyDamageToTarget(target, attackerState.AttackDamage);
+        PublishActionLog($"{ResolveObjectDisplayName(attacker.ObjectId)}->{ResolveObjectDisplayName(target.ObjectId)} 攻击{SumDamageImpactAmount(result)}");
         SyncPresentation();
         return true;
     }
@@ -140,7 +150,7 @@ public sealed class BattleActionService
             return false;
         }
 
-        await WaitSeconds(Math.Max(AttackPresentationDurationSeconds, ImpactPresentationDurationSeconds));
+        await WaitSeconds(Math.Max(AttackPresentationDurationSeconds, GetEffectiveImpactPresentationDurationSeconds()));
         return true;
     }
 
@@ -209,7 +219,7 @@ public sealed class BattleActionService
         return result;
     }
 
-    public bool TryCreateIndestructibleObstacle(Vector2I targetCell, out string createdObjectId, out string failureReason)
+    public bool TryCreateArakawaBarrier(Vector2I targetCell, out string createdObjectId, out string failureReason)
     {
         BoardObjectSpawnDefinition spawn = new()
         {
@@ -218,13 +228,22 @@ public sealed class BattleActionService
             ObjectType = BoardObjectType.Obstacle,
             Cell = targetCell,
             Faction = BoardObjectFaction.World,
-            Tags = new[] { "obstacle", "indestructible", "arakawa_construct" },
+            // 荒川造物需要阻挡站位，但仍应允许被攻击拆除，避免无限堵死敌人导致卡关。
+            Tags = new[] { "obstacle", "destructible", "arakawa_construct" },
+            MaxHp = 3,
+            CurrentHp = 3,
             BlocksMovement = true,
             BlocksLineOfSight = true,
             StackableWithUnit = false,
         };
 
         return TrySpawnBoardObject(spawn, out createdObjectId, out failureReason);
+    }
+
+    public bool TryCreateIndestructibleObstacle(Vector2I targetCell, out string createdObjectId, out string failureReason)
+    {
+        // 兼容旧调用点。当前荒川造墙已改为“可破坏障碍物”实现。
+        return TryCreateArakawaBarrier(targetCell, out createdObjectId, out failureReason);
     }
 
     public bool TrySpawnBoardObject(BoardObjectSpawnDefinition spawn, out string createdObjectId, out string failureReason)
@@ -257,9 +276,9 @@ public sealed class BattleActionService
         return true;
     }
 
-    public async Task<bool> TryCreateIndestructibleObstacleAsync(Vector2I targetCell)
+    public async Task<bool> TryCreateArakawaBarrierAsync(Vector2I targetCell)
     {
-        bool created = TryCreateIndestructibleObstacle(targetCell, out _, out _);
+        bool created = TryCreateArakawaBarrier(targetCell, out _, out _);
         if (!created)
         {
             return false;
@@ -267,6 +286,12 @@ public sealed class BattleActionService
 
         await WaitSeconds(UtilityPresentationDurationSeconds);
         return true;
+    }
+
+    public async Task<bool> TryCreateIndestructibleObstacleAsync(Vector2I targetCell)
+    {
+        // 兼容旧调用点。当前荒川造墙已改为“可破坏障碍物”实现。
+        return await TryCreateArakawaBarrierAsync(targetCell);
     }
 
     public async Task<bool> TrySpawnBoardObjectAsync(BoardObjectSpawnDefinition spawn)
@@ -284,7 +309,7 @@ public sealed class BattleActionService
     public async Task ApplyDefenseActionAsync(string objectId, DefenseActionDefinition definition, int currentTurnIndex)
     {
         ApplyDefenseAction(objectId, definition, currentTurnIndex, out _);
-        await WaitSeconds(DefensePresentationDurationSeconds);
+        await WaitSeconds(Math.Max(DefensePresentationDurationSeconds, GetEffectiveImpactPresentationDurationSeconds()));
     }
 
     public void ResolveTurnStart(BoardObjectFaction activeFaction, int activeTurnIndex)
@@ -409,6 +434,7 @@ public sealed class BattleActionService
     {
         bool isPlayerTarget = target.HasTag("player");
         DamageApplicationResult result = target.ApplyDamage(amount);
+        _lastImpactPresentationDurationSeconds = CalculateImpactPresentationDurationSeconds(result);
 
         ShowImpacts(target, result);
 
@@ -438,8 +464,11 @@ public sealed class BattleActionService
     {
         if (!result.HasAnyImpact)
         {
+            _lastImpactPresentationDurationSeconds = 0.0d;
             return;
         }
+
+        _lastImpactPresentationDurationSeconds = CalculateImpactPresentationDurationSeconds(result);
 
         if (target.HasTag("player"))
         {
@@ -502,5 +531,43 @@ public sealed class BattleActionService
             BoardObjectFaction.Enemy => new Color(0.96f, 0.36f, 0.36f, 1.0f),
             _ => new Color(0.26f, 0.74f, 1.0f, 1.0f),
         };
+    }
+
+    private double GetEffectiveImpactPresentationDurationSeconds()
+    {
+        return Math.Max(ImpactPresentationDurationSeconds, _lastImpactPresentationDurationSeconds * ImpactFlowWaitRatio);
+    }
+
+    private double CalculateImpactPresentationDurationSeconds(DamageApplicationResult result)
+    {
+        if (!result.HasAnyImpact)
+        {
+            return 0.0d;
+        }
+
+        return _floatingTextLayer?.GetImpactSequenceDurationSeconds(result.Impacts)
+            ?? ImpactPresentationDurationSeconds;
+    }
+
+    private void PublishActionLog(string line)
+    {
+        if (string.IsNullOrWhiteSpace(line))
+        {
+            return;
+        }
+
+        ActionLogged?.Invoke(line);
+    }
+
+    private string ResolveObjectDisplayName(string objectId)
+    {
+        return _stateManager.Get(objectId)?.DisplayName ?? objectId;
+    }
+
+    private static int SumDamageImpactAmount(DamageApplicationResult result)
+    {
+        return result.Impacts
+            .Where(impact => impact.ImpactType is CombatImpactType.HealthDamage or CombatImpactType.ShieldDamage)
+            .Sum(impact => impact.Amount);
     }
 }

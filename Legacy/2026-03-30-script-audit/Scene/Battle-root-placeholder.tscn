@@ -1,6 +1,9 @@
-[gd_scene format=3 uid="uid://cttkguaxbg7ts"]
+﻿[gd_scene format=3 uid="uid://c6ni3kbmbssj4"]
+
+[ext_resource type="Script" path="res://legacy/2026-03-30-script-audit/Scripts/Battle/BattleQuickExitController.cs" id="1_script"]
 
 [node name="Battle" type="Node2D" unique_id=990095149]
+script = ExtResource("1_script")
 
 [node name="Camera2D" type="Camera2D" parent="." unique_id=429745747]
 position = Vector2(160, 88)

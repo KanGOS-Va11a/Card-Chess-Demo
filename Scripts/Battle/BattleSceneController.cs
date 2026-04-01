@@ -92,6 +92,10 @@ public partial class BattleSceneController : Node2D
 	private int _retreatTurnIndex = -1;
 	private int _retreatStartHp = -1;
 	private bool _isPlayerMoveResolving;
+	private readonly List<string> _currentTurnActionLogEntries = new();
+	private readonly List<string> _previousTurnActionLogEntries = new();
+	private int _currentTurnActionLogTurnIndex = 1;
+	private int _previousTurnActionLogTurnIndex;
 
 	public override void _Ready()
 	{
@@ -112,6 +116,7 @@ public partial class BattleSceneController : Node2D
 		QueryService = new BoardQueryService(BoardState, Registry);
 		TurnState = new TurnActionState();
 		TurnState.StartNewTurn(1);
+		_currentTurnActionLogTurnIndex = TurnState.TurnIndex;
 		IReadOnlyList<BattleCardDefinition> prototypeDeck = BuildAvailableCardCatalog();
 		BattleDeckRuntimeInit? deckRuntimeInit = BuildDeckRuntimeInit(prototypeDeck);
 		IReadOnlyList<BattleCardDefinition> battleDeckSource = ResolveBattleDeckSource(prototypeDeck, deckRuntimeInit);
@@ -149,6 +154,7 @@ public partial class BattleSceneController : Node2D
 		_pieceViewManager.Rebuild(Registry, StateManager, CurrentRoom);
 		_floatingTextLayer = GetNodeOrNull<BattleFloatingTextLayer>("RoomContainer/FloatingTextLayer");
 		_actionService = new BattleActionService(BoardState, Registry, QueryService, Pathfinder, StateManager, _pieceViewManager, CurrentRoom, GlobalSession, _floatingTextLayer);
+		_actionService.ActionLogged += OnBattleActionLogged;
 		_enemyTurnResolver = new EnemyTurnResolver(
 			Registry,
 			StateManager,
@@ -174,6 +180,7 @@ public partial class BattleSceneController : Node2D
 			_hud.MeditateRequested += OnMeditateRequested;
 			_hud.CardRequested += OnCardRequested;
 			_hud.EndTurnRequested += OnEndTurnRequested;
+			_hud.SetActionLogState(_currentTurnActionLogTurnIndex, _currentTurnActionLogEntries, _previousTurnActionLogTurnIndex, _previousTurnActionLogEntries);
 		}
 
 		_battleFailOverlay = GetNodeOrNull<Control>("BattleFailOverlay");
@@ -206,6 +213,11 @@ public partial class BattleSceneController : Node2D
 			_hud.MeditateRequested -= OnMeditateRequested;
 			_hud.CardRequested -= OnCardRequested;
 			_hud.EndTurnRequested -= OnEndTurnRequested;
+		}
+
+		if (_actionService != null)
+		{
+			_actionService.ActionLogged -= OnBattleActionLogged;
 		}
 	}
 
@@ -256,6 +268,7 @@ public partial class BattleSceneController : Node2D
 				canUseArakawa,
 				_isArakawaWheelOpen,
 				GetCurrentArakawaAbilityId());
+			_hud.SetActionLogState(_currentTurnActionLogTurnIndex, _currentTurnActionLogEntries, _previousTurnActionLogTurnIndex, _previousTurnActionLogEntries);
 		}
 
 		BattleBoardOverlay? overlay = GetNodeOrNull<BattleBoardOverlay>("RoomContainer/BoardOverlay");
@@ -542,6 +555,47 @@ public partial class BattleSceneController : Node2D
 		StateManager?.SyncPlayerFromSession();
 	}
 
+	private void OnBattleActionLogged(string line)
+	{
+		AppendBattleActionLog(line);
+	}
+
+	private void AppendBattleActionLog(string line)
+	{
+		if (string.IsNullOrWhiteSpace(line))
+		{
+			return;
+		}
+
+		_currentTurnActionLogEntries.Add(line);
+	}
+
+	private void AdvanceBattleActionLogTurn(int nextTurnIndex)
+	{
+		_previousTurnActionLogEntries.Clear();
+		_previousTurnActionLogEntries.AddRange(_currentTurnActionLogEntries);
+		_previousTurnActionLogTurnIndex = _currentTurnActionLogTurnIndex;
+		_currentTurnActionLogEntries.Clear();
+		_currentTurnActionLogTurnIndex = nextTurnIndex;
+	}
+
+	private string ResolveObjectDisplayName(string objectId)
+	{
+		return StateManager?.Get(objectId)?.DisplayName ?? objectId;
+	}
+
+	private static int SumImpactAmount(DamageApplicationResult result, params CombatImpactType[] impactTypes)
+	{
+		if (impactTypes == null || impactTypes.Length == 0)
+		{
+			return 0;
+		}
+
+		return result.Impacts
+			.Where(impact => impactTypes.Contains(impact.ImpactType))
+			.Sum(impact => impact.Amount);
+	}
+
 	private void OnArakawaRuntimeChanged()
 	{
 	}
@@ -667,6 +721,10 @@ public partial class BattleSceneController : Node2D
 
 		_playerDeck.DiscardHand();
 		_playerDeck.DrawToHandSize();
+		if (StateManager?.GetPrimaryPlayerState() is BattleObjectState playerState)
+		{
+			AppendBattleActionLog($"{playerState.DisplayName}->{playerState.DisplayName} 冥想");
+		}
 		TurnState.MarkActed();
 		ResolveTurnPostPhase();
 	}
@@ -700,6 +758,10 @@ public partial class BattleSceneController : Node2D
 		}
 
 		await _actionService.ApplyDefenseActionAsync(playerState.ObjectId, BuildPlayerDefenseActionDefinition(), TurnState.TurnIndex);
+		int defenseShieldGain = GlobalSession?.GetResolvedPlayerDefenseShieldGain() ?? 0;
+		AppendBattleActionLog(defenseShieldGain > 0
+			? $"{playerState.DisplayName}->{playerState.DisplayName} 护盾{defenseShieldGain}"
+			: $"{playerState.DisplayName}->{playerState.DisplayName} 防御");
 		TurnState.MarkActed();
 		ResolveTurnPostPhase();
 	}
@@ -731,6 +793,10 @@ public partial class BattleSceneController : Node2D
 		_retreatPending = true;
 		_retreatTurnIndex = TurnState.TurnIndex;
 		_retreatStartHp = GlobalSession.PlayerCurrentHp;
+		if (StateManager?.GetPrimaryPlayerState() is BattleObjectState playerState)
+		{
+			AppendBattleActionLog($"{playerState.DisplayName}->{playerState.DisplayName} 逃跑");
+		}
 		TurnState.MarkActed();
 		ResolveTurnPostPhase();
 	}
@@ -976,11 +1042,17 @@ public partial class BattleSceneController : Node2D
 				return false;
 			}
 
-			_actionService.ApplyDamageToTarget(targetObject.ObjectId, cardInstance.Definition.Damage, out _, out string damageFailureReason);
+			DamageApplicationResult damageResult = _actionService.ApplyDamageToTarget(targetObject.ObjectId, cardInstance.Definition.Damage, out _, out string damageFailureReason);
 			if (!string.IsNullOrWhiteSpace(damageFailureReason))
 			{
 				failureReason = damageFailureReason;
 				return false;
+			}
+
+			int damageAmount = SumImpactAmount(damageResult, CombatImpactType.HealthDamage, CombatImpactType.ShieldDamage);
+			if (damageAmount > 0)
+			{
+				AppendBattleActionLog($"{ResolveObjectDisplayName(attackerId)}->{ResolveObjectDisplayName(targetObject.ObjectId)} 攻击{damageAmount}");
 			}
 		}
 
@@ -997,11 +1069,17 @@ public partial class BattleSceneController : Node2D
 				return false;
 			}
 
-			_actionService.ApplyShieldGainToTarget(attackerId, cardInstance.Definition.ShieldGain, out string shieldFailureReason);
+			DamageApplicationResult shieldResult = _actionService.ApplyShieldGainToTarget(attackerId, cardInstance.Definition.ShieldGain, out string shieldFailureReason);
 			if (!string.IsNullOrWhiteSpace(shieldFailureReason))
 			{
 				failureReason = shieldFailureReason;
 				return false;
+			}
+
+			int shieldGain = SumImpactAmount(shieldResult, CombatImpactType.ShieldGain);
+			if (shieldGain > 0)
+			{
+				AppendBattleActionLog($"{ResolveObjectDisplayName(attackerId)}->{ResolveObjectDisplayName(attackerId)} 护盾{shieldGain}");
 			}
 		}
 
@@ -1014,11 +1092,17 @@ public partial class BattleSceneController : Node2D
 			}
 
 			string healingTargetId = targetObject?.ObjectId ?? attackerId;
-			_actionService.ApplyHealingToTarget(healingTargetId, cardInstance.Definition.HealingAmount, out string healingFailureReason);
+			DamageApplicationResult healingResult = _actionService.ApplyHealingToTarget(healingTargetId, cardInstance.Definition.HealingAmount, out string healingFailureReason);
 			if (!string.IsNullOrWhiteSpace(healingFailureReason))
 			{
 				failureReason = healingFailureReason;
 				return false;
+			}
+
+			int healAmount = SumImpactAmount(healingResult, CombatImpactType.HealthHeal);
+			if (healAmount > 0)
+			{
+				AppendBattleActionLog($"{ResolveObjectDisplayName(attackerId)}->{ResolveObjectDisplayName(healingTargetId)} 治疗{healAmount}");
 			}
 		}
 
@@ -1073,7 +1157,10 @@ public partial class BattleSceneController : Node2D
 
 		if (TurnState.HasActed)
 		{
-			await ToSignal(GetTree().CreateTimer(PlayerActionResolveBufferSeconds), SceneTreeTimer.SignalName.Timeout);
+			double resolveDelay = Math.Max(
+				PlayerActionResolveBufferSeconds,
+				_actionService?.LastImpactPresentationDurationSeconds ?? 0.0d);
+			await ToSignal(GetTree().CreateTimer(resolveDelay), SceneTreeTimer.SignalName.Timeout);
 			if (_battleFailureSequenceStarted || TurnState.Phase != TurnPhase.TurnPost)
 			{
 				return;
@@ -1101,6 +1188,7 @@ public partial class BattleSceneController : Node2D
 		}
 
 		TurnState.AdvanceToNextTurn();
+		AdvanceBattleActionLogTurn(TurnState.TurnIndex);
 		if (_playerDeck != null)
 		{
 			TurnState.ConfigureEnergyRechargeInterval(_playerDeck.EnergyRegenIntervalTurns);
@@ -1638,12 +1726,14 @@ public partial class BattleSceneController : Node2D
 			return;
 		}
 
-		bool created = await _actionService.TryCreateIndestructibleObstacleAsync(targetCell);
+		bool created = await _actionService.TryCreateArakawaBarrierAsync(targetCell);
 		if (!created)
 		{
 			GlobalSession.RestoreArakawaEnergy(BuildWallAbility.EnergyCost);
 			return;
 		}
+
+		AppendBattleActionLog($"荒川->({targetCell.X},{targetCell.Y}) 造墙");
 
 		CancelArakawaAbilityMode();
 	}
@@ -1677,6 +1767,7 @@ public partial class BattleSceneController : Node2D
 		}
 
 		_hud.PlayCardEnhancementEffect(cardInstanceId);
+		AppendBattleActionLog($"荒川->{cardInstance.Definition.DisplayName} 强化");
 		CancelArakawaAbilityMode();
 	}
 

@@ -67,6 +67,19 @@ flat = true
 text = ""
 z_index = 69
 
+[node name="ActionLogDismissButton" type="Button" parent="."]
+visible = false
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 1
+flat = true
+text = ""
+z_index = 71
+
 [node name="PilePopup" type="PanelContainer" parent="."]
 visible = false
 anchor_left = 1.0
@@ -120,6 +133,53 @@ theme_override_constants/h_separation = 4
 theme_override_constants/v_separation = 4
 columns = 4
 
+[node name="ActionLogPopup" type="PanelContainer" parent="."]
+visible = false
+offset_left = 26.0
+offset_top = 20.0
+offset_right = 224.0
+offset_bottom = 154.0
+mouse_filter = 2
+z_index = 72
+
+[node name="Margin" type="MarginContainer" parent="ActionLogPopup"]
+theme_override_constants/margin_left = 4
+theme_override_constants/margin_top = 3
+theme_override_constants/margin_right = 4
+theme_override_constants/margin_bottom = 3
+
+[node name="VBox" type="VBoxContainer" parent="ActionLogPopup/Margin"]
+theme_override_constants/separation = 2
+
+[node name="Header" type="HBoxContainer" parent="ActionLogPopup/Margin/VBox"]
+layout_mode = 2
+theme_override_constants/separation = 4
+
+[node name="TitleLabel" type="Label" parent="ActionLogPopup/Margin/VBox/Header"]
+size_flags_horizontal = 3
+theme_override_font_sizes/font_size = 14
+text = "战斗记录"
+
+[node name="CloseButton" type="Button" parent="ActionLogPopup/Margin/VBox/Header"]
+custom_minimum_size = Vector2(26, 14)
+layout_mode = 2
+theme_override_font_sizes/font_size = 14
+text = "关闭"
+
+[node name="BodyScroll" type="ScrollContainer" parent="ActionLogPopup/Margin/VBox"]
+custom_minimum_size = Vector2(0, 108)
+layout_mode = 2
+size_flags_vertical = 3
+
+[node name="BodyText" type="RichTextLabel" parent="ActionLogPopup/Margin/VBox/BodyScroll"]
+custom_minimum_size = Vector2(180, 108)
+layout_mode = 2
+bbcode_enabled = true
+scroll_active = false
+fit_content = true
+theme_override_font_sizes/normal_font_size = 14
+text = "暂无动作记录"
+
 [node name="CardFxRoot" type="Control" parent="."]
 layout_mode = 1
 anchors_preset = 15
@@ -161,53 +221,60 @@ custom_minimum_size = Vector2(34, 10)
 theme_override_font_sizes/font_size = 16
 text = "Ark"
 
-[node name="RightControls" type="VBoxContainer" parent="."]
+[node name="RightControls" type="GridContainer" parent="."]
 anchor_left = 1.0
-offset_left = -38.0
-offset_top = 0.0
+offset_left = -70.0
+offset_top = 18.0
 offset_right = -2.0
-offset_bottom = 76.0
-theme_override_constants/separation = 0
+offset_bottom = 82.0
+theme_override_constants/h_separation = 2
+theme_override_constants/v_separation = 1
+columns = 2
 z_index = 20
 
+[node name="ActionLogButton" type="Button" parent="RightControls"]
+custom_minimum_size = Vector2(32, 10)
+theme_override_font_sizes/font_size = 14
+text = "Log"
+
 [node name="DrawPileButton" type="Button" parent="RightControls"]
-custom_minimum_size = Vector2(34, 10)
-theme_override_font_sizes/font_size = 16
+custom_minimum_size = Vector2(32, 10)
+theme_override_font_sizes/font_size = 14
 text = "D0"
 
 [node name="DiscardPileButton" type="Button" parent="RightControls"]
-custom_minimum_size = Vector2(34, 10)
-theme_override_font_sizes/font_size = 16
+custom_minimum_size = Vector2(32, 10)
+theme_override_font_sizes/font_size = 14
 text = "G0"
 
 [node name="ExhaustPileButton" type="Button" parent="RightControls"]
-custom_minimum_size = Vector2(34, 10)
-theme_override_font_sizes/font_size = 16
+custom_minimum_size = Vector2(32, 10)
+theme_override_font_sizes/font_size = 14
 text = "X0"
 
 [node name="AttackButton" type="Button" parent="RightControls"]
-custom_minimum_size = Vector2(34, 10)
-theme_override_font_sizes/font_size = 16
+custom_minimum_size = Vector2(32, 10)
+theme_override_font_sizes/font_size = 14
 text = "Atk"
 
 [node name="DefendButton" type="Button" parent="RightControls"]
-custom_minimum_size = Vector2(34, 10)
-theme_override_font_sizes/font_size = 16
+custom_minimum_size = Vector2(32, 10)
+theme_override_font_sizes/font_size = 14
 text = "Def"
 
 [node name="MeditateButton" type="Button" parent="RightControls"]
-custom_minimum_size = Vector2(34, 10)
-theme_override_font_sizes/font_size = 16
+custom_minimum_size = Vector2(32, 10)
+theme_override_font_sizes/font_size = 14
 text = "Med"
 
 [node name="RetreatButton" type="Button" parent="RightControls"]
-custom_minimum_size = Vector2(34, 10)
-theme_override_font_sizes/font_size = 16
+custom_minimum_size = Vector2(32, 10)
+theme_override_font_sizes/font_size = 14
 text = "Run"
 
 [node name="EndTurnButton" type="Button" parent="RightControls"]
-custom_minimum_size = Vector2(34, 10)
-theme_override_font_sizes/font_size = 16
+custom_minimum_size = Vector2(32, 10)
+theme_override_font_sizes/font_size = 14
 text = "End"
 
 [node name="BottomHand" type="Control" parent="."]

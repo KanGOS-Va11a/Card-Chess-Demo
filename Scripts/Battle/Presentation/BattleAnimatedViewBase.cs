@@ -8,6 +8,7 @@ public partial class BattleAnimatedViewBase : Node2D
 	private AnimatedSprite2D? _animatedSprite;
 	// 有些调用会在节点 _Ready 前发生，所以先缓存“想播什么动画”。
 	private string _pendingAnimation = "idle";
+	private int _horizontalFacing = 1;
 	private Vector2 _boardAnchor;
 	private Vector2 _motionOffset;
 	private Tween? _motionTween;
@@ -32,6 +33,8 @@ public partial class BattleAnimatedViewBase : Node2D
 			_animatedSprite.SpriteFrames = BuildFallbackFrames();
 		}
 
+		ConfigureAnimatedSprite(_animatedSprite);
+		ApplySpriteFacing();
 		PlayNamedAnimation(_pendingAnimation);
 	}
 
@@ -73,6 +76,17 @@ public partial class BattleAnimatedViewBase : Node2D
 	public virtual void PlayCue(StringName animationName)
 	{
 		PlayNamedAnimation(animationName.ToString());
+	}
+
+	public virtual void FaceDirection(Vector2 direction)
+	{
+		if (Mathf.Abs(direction.X) < 0.01f)
+		{
+			return;
+		}
+
+		_horizontalFacing = direction.X < 0.0f ? -1 : 1;
+		ApplySpriteFacing();
 	}
 
 	public virtual void PlayTintPulse(Color tintColor)
@@ -153,6 +167,15 @@ public partial class BattleAnimatedViewBase : Node2D
 		return CreateFrames(new Color(0.9f, 0.9f, 0.9f), new Color(1.0f, 1.0f, 1.0f));
 	}
 
+	protected virtual void ConfigureAnimatedSprite(AnimatedSprite2D sprite)
+	{
+	}
+
+	protected virtual Vector2 GetBoardAnchorOffset()
+	{
+		return Vector2.Zero;
+	}
+
 	protected SpriteFrames CreateFrames(Color primary, Color secondary)
 	{
 		SpriteFrames frames = new();
@@ -197,6 +220,16 @@ public partial class BattleAnimatedViewBase : Node2D
 
 	private void ApplyVisualPosition()
 	{
-		Position = _boardAnchor + _motionOffset;
+		Position = _boardAnchor + GetBoardAnchorOffset() + _motionOffset;
+	}
+
+	private void ApplySpriteFacing()
+	{
+		if (_animatedSprite == null)
+		{
+			return;
+		}
+
+		_animatedSprite.FlipH = _horizontalFacing < 0;
 	}
 }

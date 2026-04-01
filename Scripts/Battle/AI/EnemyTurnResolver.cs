@@ -73,7 +73,7 @@ public sealed class EnemyTurnResolver
             EnemyAiDecision decision = strategy.Decide(context);
             await WaitSeconds(PreActionDelaySeconds);
             await ExecuteDecisionAsync(enemyId, decision);
-            await WaitSeconds(PostActionDelaySeconds);
+            await WaitSeconds(Math.Max(PostActionDelaySeconds, _actionService.LastImpactPresentationDurationSeconds));
 
             if (_actionService.IsPlayerDefeated)
             {
