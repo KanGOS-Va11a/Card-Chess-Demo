@@ -91,7 +91,7 @@ public sealed class EnemyTurnResolver
                 break;
 
             case EnemyAiDecisionType.Attack:
-                await _actionService.TryAttackObjectAsync(enemyId, decision.TargetObjectId);
+                await _actionService.TryAttackObjectAsync(enemyId, decision.TargetObjectId, allowKillKnockback: false);
                 break;
 
             case EnemyAiDecisionType.Spawn:

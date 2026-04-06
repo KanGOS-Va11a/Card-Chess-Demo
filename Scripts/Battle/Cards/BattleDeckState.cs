@@ -186,6 +186,31 @@ public sealed class BattleDeckState
         return true;
     }
 
+    public void RollbackPlayedCard(BattleCardInstance? playedCard)
+    {
+        if (playedCard == null)
+        {
+            return;
+        }
+
+        if (_discardPile.Count > 0 && ReferenceEquals(_discardPile[^1], playedCard))
+        {
+            _discardPile.RemoveAt(_discardPile.Count - 1);
+        }
+        else if (_exhaustPile.Count > 0 && ReferenceEquals(_exhaustPile[^1], playedCard))
+        {
+            _exhaustPile.RemoveAt(_exhaustPile.Count - 1);
+        }
+        else
+        {
+            _discardPile.Remove(playedCard);
+            _exhaustPile.Remove(playedCard);
+        }
+
+        _hand.Add(playedCard);
+        CurrentEnergy = Math.Min(MaxEnergyPerTurn, CurrentEnergy + playedCard.Definition.Cost);
+    }
+
     public void GainEnergy(int amount)
     {
         if (amount <= 0)
@@ -194,6 +219,20 @@ public sealed class BattleDeckState
         }
 
         CurrentEnergy = Math.Min(MaxEnergyPerTurn, CurrentEnergy + amount);
+    }
+
+    public BattleCardInstance AddTemporaryCardToHand(BattleCardDefinition definition)
+    {
+        BattleCardInstance instance = CreateInstance(definition);
+        _hand.Add(instance);
+        return instance;
+    }
+
+    public BattleCardInstance AddTemporaryCardToDrawPileTop(BattleCardDefinition definition)
+    {
+        BattleCardInstance instance = CreateInstance(definition);
+        _drawPile.Insert(0, instance);
+        return instance;
     }
 
     public void ModifyEnergyRegenInterval(int delta)

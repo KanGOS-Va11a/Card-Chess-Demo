@@ -26,6 +26,11 @@ public partial class BattleSceneController : Node2D
 	private const double PlayerActionResolveBufferSeconds = 0.24d;
 	private const string DrawRevolverCardId = "draw_revolver";
 	private const string ArcLeakCardId = "card_arc_leak";
+	private const string RamCardId = "card_ram";
+	private const string AimCardId = "card_aim";
+	private const string SnipeCardId = "card_snipe";
+	private const string AlertCardId = "card_alert";
+	private const string RollCallCardId = "card_roll_call";
 	private const string DrawnRevolverWeaponItemId = "drawn_revolver";
 	private const int DrawnRevolverBasicAttackCharges = 6;
 	private const string BattleBackgroundTexturePath = "res://Assets/Background/94180512_p2_master1200.jpg";
@@ -118,8 +123,23 @@ public partial class BattleSceneController : Node2D
 	private bool _isCameraCinematicBusy;
 	private readonly List<string> _currentTurnActionLogEntries = new();
 	private readonly List<string> _previousTurnActionLogEntries = new();
+	private readonly List<PendingDelayedCardEffect> _pendingDelayedCardEffects = new();
 	private int _currentTurnActionLogTurnIndex = 1;
 	private int _previousTurnActionLogTurnIndex;
+
+	private enum PendingDelayedCardEffectKind
+	{
+		AlertStrike = 0,
+	}
+
+	private sealed class PendingDelayedCardEffect
+	{
+		public PendingDelayedCardEffectKind Kind { get; init; }
+		public string SourceObjectId { get; init; } = string.Empty;
+		public int TriggerTurnIndex { get; init; }
+		public int Radius { get; init; }
+		public int Damage { get; init; }
+	}
 
 	public override void _Ready()
 	{
@@ -1211,7 +1231,7 @@ public partial class BattleSceneController : Node2D
 			return false;
 		}
 
-		if (!_playerDeck.CommitPlayedCard(cardInstanceId, out _, out failureReason))
+		if (!_playerDeck.CommitPlayedCard(cardInstanceId, out BattleCardInstance? committedCard, out failureReason))
 		{
 			return false;
 		}
@@ -1219,8 +1239,9 @@ public partial class BattleSceneController : Node2D
 		_hud?.PlayCardUseEffect(cardInstance);
 		_pieceViewManager.PlayAction(attackerId);
 
-		if (!TryResolveSpecialCardEffect(attackerId, cardInstance, targetCell, out failureReason))
+		if (!TryResolveSpecialCardEffect(attackerId, cardInstance, targetObject, targetCell, out failureReason))
 		{
+			_playerDeck.RollbackPlayedCard(committedCard);
 			return false;
 		}
 
@@ -1245,9 +1266,11 @@ public partial class BattleSceneController : Node2D
 				cardInstance.Definition.Damage,
 				knockbackDirection,
 				out bool wasDestroyed,
-				out string damageFailureReason);
+				out string damageFailureReason,
+				allowKillKnockback: true);
 			if (!string.IsNullOrWhiteSpace(damageFailureReason))
 			{
+				_playerDeck.RollbackPlayedCard(committedCard);
 				failureReason = damageFailureReason;
 				return false;
 			}
@@ -1282,6 +1305,7 @@ public partial class BattleSceneController : Node2D
 			DamageApplicationResult shieldResult = _actionService.ApplyShieldGainToTarget(attackerId, cardInstance.Definition.ShieldGain, out string shieldFailureReason);
 			if (!string.IsNullOrWhiteSpace(shieldFailureReason))
 			{
+				_playerDeck.RollbackPlayedCard(committedCard);
 				failureReason = shieldFailureReason;
 				return false;
 			}
@@ -1305,6 +1329,7 @@ public partial class BattleSceneController : Node2D
 			DamageApplicationResult healingResult = _actionService.ApplyHealingToTarget(healingTargetId, cardInstance.Definition.HealingAmount, out string healingFailureReason);
 			if (!string.IsNullOrWhiteSpace(healingFailureReason))
 			{
+				_playerDeck.RollbackPlayedCard(committedCard);
 				failureReason = healingFailureReason;
 				return false;
 			}
@@ -1362,7 +1387,7 @@ public partial class BattleSceneController : Node2D
 			}
 		}
 
-		if (!_actionService.TryAttackObject(attackerId, targetId, out bool wasDestroyed, out failureReason))
+		if (!_actionService.TryAttackObject(attackerId, targetId, out bool wasDestroyed, out failureReason, allowKillKnockback: true))
 		{
 			return false;
 		}
@@ -1443,6 +1468,7 @@ public partial class BattleSceneController : Node2D
 
 		_playerDeck?.StartPlayerTurn();
 		_actionService?.ResolveTurnStart(BoardObjectFaction.Player, TurnState.TurnIndex);
+		ResolvePendingDelayedCardEffectsForTurnStart(TurnState.TurnIndex);
 	}
 
 	private bool TryResolveRetreatSuccess()
@@ -1606,6 +1632,24 @@ public partial class BattleSceneController : Node2D
 		int initialEnergy = ReadIntOverride(_activeBattleRequest.DeckRuntimeInitOverrides, "initial_energy");
 		int openingDrawCount = ReadIntOverride(_activeBattleRequest.DeckRuntimeInitOverrides, "opening_draw_count");
 
+		if (buildCards.Any(definition => string.Equals(definition.CardId, "debug_finisher", StringComparison.Ordinal)))
+		{
+			List<BattleCardDefinition> ensuredStartingHand = startingHandCards.ToList();
+			EnsureDebugStartingHandCard(ensuredStartingHand, definitionMap, "debug_finisher");
+			EnsureDebugStartingHandCard(ensuredStartingHand, definitionMap, DrawRevolverCardId);
+			EnsureDebugStartingHandCard(ensuredStartingHand, definitionMap, ArcLeakCardId);
+			EnsureDebugStartingHandCard(ensuredStartingHand, definitionMap, RamCardId);
+			EnsureDebugStartingHandCard(ensuredStartingHand, definitionMap, AimCardId);
+			EnsureDebugStartingHandCard(ensuredStartingHand, definitionMap, AlertCardId);
+			EnsureDebugStartingHandCard(ensuredStartingHand, definitionMap, RollCallCardId);
+			startingHandCards = ensuredStartingHand.ToArray();
+			if (startingDrawPileCards.Length == 0 && startingDiscardPileCards.Length == 0 && startingExhaustPileCards.Length == 0)
+			{
+				startingDrawPileCards = BuildRemainingDeckCards(buildCards, startingHandCards);
+			}
+			openingDrawCount = 0;
+		}
+
 		if (buildCards.Length == 0
 			&& startingHandCards.Length == 0
 			&& startingDrawPileCards.Length == 0
@@ -1677,6 +1721,66 @@ public partial class BattleSceneController : Node2D
 					range: 3));
 			}
 
+			if (!definitions.Any(definition => string.Equals(definition.CardId, RamCardId, StringComparison.Ordinal)))
+			{
+				definitions.Insert(3, new BattleCardDefinition(
+					RamCardId,
+					"冲撞",
+					"直线 2 格内冲到目标面前，造成 3 伤害；若目标背后受阻，再追加 4 点撞击伤害",
+					1,
+					BattleCardCategory.Attack,
+					BattleCardTargetingMode.StraightLineEnemy,
+					range: 2));
+			}
+
+			if (!definitions.Any(definition => string.Equals(definition.CardId, AimCardId, StringComparison.Ordinal)))
+			{
+				definitions.Add(new BattleCardDefinition(
+					AimCardId,
+					"瞄准",
+					"对直线 4 格目标进行瞄准，并生成 1 张狙击",
+					0,
+					BattleCardCategory.Skill,
+					BattleCardTargetingMode.StraightLineEnemy,
+					range: 4));
+			}
+
+			if (!definitions.Any(definition => string.Equals(definition.CardId, SnipeCardId, StringComparison.Ordinal)))
+			{
+				definitions.Add(new BattleCardDefinition(
+					SnipeCardId,
+					"狙击",
+					"对直线 4 格首个敌人造成 7 伤害",
+					1,
+					BattleCardCategory.Attack,
+					BattleCardTargetingMode.StraightLineEnemy,
+					range: 4,
+					damage: 7,
+					exhaustsOnPlay: true));
+			}
+
+			if (!definitions.Any(definition => string.Equals(definition.CardId, AlertCardId, StringComparison.Ordinal)))
+			{
+				definitions.Add(new BattleCardDefinition(
+					AlertCardId,
+					"戒备",
+					"下回合开始时，对范围 2 格内全部敌人造成 6 伤害",
+					1,
+					BattleCardCategory.Skill,
+					BattleCardTargetingMode.None));
+			}
+
+			if (!definitions.Any(definition => string.Equals(definition.CardId, RollCallCardId, StringComparison.Ordinal)))
+			{
+				definitions.Add(new BattleCardDefinition(
+					RollCallCardId,
+					"点名",
+					"对距离 2 格内生命最低的敌人造成 3 伤害；若击杀则再重复一次",
+					1,
+					BattleCardCategory.Attack,
+					BattleCardTargetingMode.None));
+			}
+
 			return definitions.ToArray();
 		}
 
@@ -1719,6 +1823,34 @@ public partial class BattleSceneController : Node2D
 		}
 
 		return resolved.ToArray();
+	}
+
+	private static void EnsureDebugStartingHandCard(List<BattleCardDefinition> startingHandCards, IReadOnlyDictionary<string, BattleCardDefinition> definitionMap, string cardId)
+	{
+		if (startingHandCards.Any(definition => string.Equals(definition.CardId, cardId, StringComparison.Ordinal)))
+		{
+			return;
+		}
+
+		if (definitionMap.TryGetValue(cardId, out BattleCardDefinition? definition))
+		{
+			startingHandCards.Add(definition);
+		}
+	}
+
+	private static BattleCardDefinition[] BuildRemainingDeckCards(IReadOnlyList<BattleCardDefinition> buildCards, IReadOnlyList<BattleCardDefinition> startingHandCards)
+	{
+		List<BattleCardDefinition> remaining = buildCards.ToList();
+		foreach (BattleCardDefinition startingCard in startingHandCards)
+		{
+			int index = remaining.FindIndex(definition => string.Equals(definition.CardId, startingCard.CardId, StringComparison.Ordinal));
+			if (index >= 0)
+			{
+				remaining.RemoveAt(index);
+			}
+		}
+
+		return remaining.ToArray();
 	}
 
 	private static int ReadIntOverride(Godot.Collections.Dictionary snapshot, string key)
@@ -2268,7 +2400,7 @@ public partial class BattleSceneController : Node2D
 		CancelArakawaAbilityMode();
 	}
 
-	private bool TryResolveSpecialCardEffect(string attackerId, BattleCardInstance cardInstance, Vector2I? targetCell, out string failureReason)
+	private bool TryResolveSpecialCardEffect(string attackerId, BattleCardInstance cardInstance, BoardObject? targetObject, Vector2I? targetCell, out string failureReason)
 	{
 		failureReason = string.Empty;
 
@@ -2280,6 +2412,26 @@ public partial class BattleSceneController : Node2D
 		if (cardInstance.Definition.CardId == ArcLeakCardId)
 		{
 			return TryApplyArcLeakCard(attackerId, targetCell, out failureReason);
+		}
+
+		if (cardInstance.Definition.CardId == AimCardId)
+		{
+			return TryApplyAimCard(attackerId, out failureReason);
+		}
+
+		if (cardInstance.Definition.CardId == AlertCardId)
+		{
+			return TryApplyAlertCard(attackerId, out failureReason);
+		}
+
+		if (cardInstance.Definition.CardId == RollCallCardId)
+		{
+			return TryApplyRollCallCard(attackerId, out failureReason);
+		}
+
+		if (cardInstance.Definition.CardId == RamCardId)
+		{
+			return TryApplyRamCard(attackerId, targetObject, out failureReason);
 		}
 
 		return true;
@@ -2324,6 +2476,338 @@ public partial class BattleSceneController : Node2D
 		}
 
 		AppendBattleActionLog($"{ResolveObjectDisplayName(attackerId)}->({targetCell.Value.X},{targetCell.Value.Y}) 电弧泄露");
+		return true;
+	}
+
+	private bool TryApplyAimCard(string attackerId, out string failureReason)
+	{
+		failureReason = string.Empty;
+		if (_playerDeck == null)
+		{
+			failureReason = "Player deck is not initialized.";
+			return false;
+		}
+
+		BattleCardDefinition snipeDefinition = BuildAvailableCardCatalog()
+			.FirstOrDefault(definition => string.Equals(definition.CardId, SnipeCardId, StringComparison.Ordinal))
+			?? new BattleCardDefinition(SnipeCardId, "狙击", "对直线 4 格首个敌人造成 7 伤害", 1, BattleCardCategory.Attack, BattleCardTargetingMode.StraightLineEnemy, range: 4, damage: 7, exhaustsOnPlay: true);
+		_playerDeck.AddTemporaryCardToHand(snipeDefinition);
+		AppendBattleActionLog($"{ResolveObjectDisplayName(attackerId)}->狙击就绪");
+		return true;
+	}
+
+	private bool TryApplyAlertCard(string attackerId, out string failureReason)
+	{
+		failureReason = string.Empty;
+		if (TurnState == null)
+		{
+			failureReason = "Turn state is not initialized.";
+			return false;
+		}
+
+		_pendingDelayedCardEffects.Add(new PendingDelayedCardEffect
+		{
+			Kind = PendingDelayedCardEffectKind.AlertStrike,
+			SourceObjectId = attackerId,
+			TriggerTurnIndex = TurnState.TurnIndex + 1,
+			Radius = 2,
+			Damage = 6,
+		});
+		AppendBattleActionLog($"{ResolveObjectDisplayName(attackerId)}->戒备待发");
+		return true;
+	}
+
+	private bool TryApplyRollCallCard(string attackerId, out string failureReason)
+	{
+		failureReason = string.Empty;
+		BoardObject? firstTarget = FindLowestHpEnemyInRange(attackerId, 2);
+		if (firstTarget == null)
+		{
+			failureReason = "No valid roll-call target found.";
+			return false;
+		}
+
+		if (!TryResolveRollCallHit(attackerId, firstTarget.ObjectId, out bool firstKilled, out failureReason))
+		{
+			return false;
+		}
+
+		if (!firstKilled)
+		{
+			return true;
+		}
+
+		BoardObject? secondTarget = FindLowestHpEnemyInRange(attackerId, 2);
+		if (secondTarget == null)
+		{
+			return true;
+		}
+
+		return TryResolveRollCallHit(attackerId, secondTarget.ObjectId, out _, out failureReason);
+	}
+
+	private bool TryApplyRamCard(string attackerId, BoardObject? targetObject, out string failureReason)
+	{
+		failureReason = string.Empty;
+		if (_actionService == null || Registry == null || QueryService == null || CurrentRoom == null || targetObject == null)
+		{
+			failureReason = "Ram card systems are not initialized.";
+			return false;
+		}
+
+		if (!Registry.TryGet(attackerId, out BoardObject? attackerObject) || attackerObject == null)
+		{
+			failureReason = "Ram attacker was not found.";
+			return false;
+		}
+
+		Vector2I direction = new(
+			Math.Sign(targetObject.Cell.X - attackerObject.Cell.X),
+			Math.Sign(targetObject.Cell.Y - attackerObject.Cell.Y));
+		if (!CurrentRoom.Topology.TryNormalizeCardinalDirection(direction, out Vector2I normalizedDirection))
+		{
+			failureReason = "Ram requires a straight-line target.";
+			return false;
+		}
+
+		Vector2I standCell = targetObject.Cell - normalizedDirection;
+		if (standCell != attackerObject.Cell)
+		{
+			if (!CurrentRoom.Topology.IsInsideBoard(standCell))
+			{
+				failureReason = "No valid ram landing cell exists.";
+				return false;
+			}
+
+			if (!_actionService.TryMoveObject(attackerId, standCell, out failureReason))
+			{
+				return false;
+			}
+		}
+
+		Vector2 knockbackDirection = new(normalizedDirection.X, normalizedDirection.Y);
+		_pieceViewManager?.PlayAttackExchange(attackerId, knockbackDirection, targetObject.ObjectId);
+		DamageApplicationResult ramResult = _actionService.ApplyDamageToTarget(
+			targetObject.ObjectId,
+			3,
+			knockbackDirection,
+			out _,
+			out string ramFailureReason,
+			allowKillKnockback: false);
+		if (!string.IsNullOrWhiteSpace(ramFailureReason))
+		{
+			failureReason = ramFailureReason;
+			return false;
+		}
+
+		if (targetObject.IsDestroyed)
+		{
+			return true;
+		}
+
+		int ramDamage = SumImpactAmount(ramResult, CombatImpactType.HealthDamage, CombatImpactType.ShieldDamage);
+		if (ramDamage > 0)
+		{
+			AppendBattleActionLog($"{ResolveObjectDisplayName(attackerId)}->{ResolveObjectDisplayName(targetObject.ObjectId)} 冲撞{ramDamage}");
+		}
+
+		List<Vector2I> knockbackPath = new() { targetObject.Cell };
+		BoardObject? collisionObject = null;
+		bool hitBoundary = false;
+		Vector2I currentCell = targetObject.Cell;
+		for (int step = 0; step < 2; step++)
+		{
+			Vector2I nextCell = currentCell + normalizedDirection;
+			if (!CurrentRoom.Topology.IsInsideBoard(nextCell))
+			{
+				hitBoundary = true;
+				break;
+			}
+
+			List<BoardObject> blockers = QueryService.GetObjectsAtCell(nextCell)
+				.Where(boardObject => boardObject.ObjectId != targetObject.ObjectId)
+				.Where(boardObject => boardObject.ObjectType == BoardObjectType.Unit || boardObject.ObjectType == BoardObjectType.Obstacle || boardObject.BlocksMovement || !boardObject.StackableWithUnit)
+				.ToList();
+			if (blockers.Count > 0)
+			{
+				collisionObject = blockers[0];
+				break;
+			}
+
+			if (!QueryService.TryMoveObject(targetObject.ObjectId, nextCell, out _))
+			{
+				collisionObject = QueryService.GetObjectsAtCell(nextCell).FirstOrDefault(boardObject => boardObject.ObjectId != targetObject.ObjectId);
+				break;
+			}
+
+			currentCell = nextCell;
+			knockbackPath.Add(currentCell);
+		}
+
+		if (knockbackPath.Count > 1)
+		{
+			StateManager?.SyncAllFromRegistry();
+			_pieceViewManager?.Sync(Registry, StateManager!, CurrentRoom);
+			_pieceViewManager?.PlayMove(targetObject.ObjectId);
+		}
+
+		if (collisionObject == null && !hitBoundary)
+		{
+			return true;
+		}
+
+		DamageApplicationResult targetCollisionResult = _actionService.ApplyDamageToTarget(
+			targetObject.ObjectId,
+			4,
+			knockbackDirection,
+			out _,
+			out string bonusFailureReason,
+			allowKillKnockback: false);
+		if (!string.IsNullOrWhiteSpace(bonusFailureReason))
+		{
+			failureReason = bonusFailureReason;
+			return false;
+		}
+
+		int targetCollisionDamage = SumImpactAmount(targetCollisionResult, CombatImpactType.HealthDamage, CombatImpactType.ShieldDamage);
+		if (targetCollisionDamage > 0)
+		{
+			AppendBattleActionLog($"{ResolveObjectDisplayName(targetObject.ObjectId)}->撞击{targetCollisionDamage}");
+		}
+
+		if (collisionObject == null)
+		{
+			return true;
+		}
+
+		DamageApplicationResult blockerCollisionResult = _actionService.ApplyDamageToTarget(
+			collisionObject.ObjectId,
+			4,
+			knockbackDirection,
+			out _,
+			out string blockerFailureReason,
+			allowKillKnockback: false);
+		if (!string.IsNullOrWhiteSpace(blockerFailureReason))
+		{
+			failureReason = blockerFailureReason;
+			return false;
+		}
+
+		int blockerCollisionDamage = SumImpactAmount(blockerCollisionResult, CombatImpactType.HealthDamage, CombatImpactType.ShieldDamage);
+		if (blockerCollisionDamage > 0)
+		{
+			AppendBattleActionLog($"{ResolveObjectDisplayName(collisionObject.ObjectId)}->被撞{blockerCollisionDamage}");
+		}
+
+		return true;
+	}
+
+	private void ResolvePendingDelayedCardEffectsForTurnStart(int currentTurnIndex)
+	{
+		if (_actionService == null)
+		{
+			return;
+		}
+
+		for (int index = _pendingDelayedCardEffects.Count - 1; index >= 0; index--)
+		{
+			PendingDelayedCardEffect effect = _pendingDelayedCardEffects[index];
+			if (effect.TriggerTurnIndex != currentTurnIndex)
+			{
+				continue;
+			}
+
+			switch (effect.Kind)
+			{
+				case PendingDelayedCardEffectKind.AlertStrike:
+					ResolveAlertStrike(effect);
+					break;
+			}
+
+			_pendingDelayedCardEffects.RemoveAt(index);
+		}
+	}
+
+	private void ResolveAlertStrike(PendingDelayedCardEffect effect)
+	{
+		if (_actionService == null || Registry == null || !Registry.TryGet(effect.SourceObjectId, out BoardObject? sourceObject) || sourceObject == null)
+		{
+			return;
+		}
+
+		foreach (BoardObject enemy in Registry.AllObjects
+			.Where(boardObject => boardObject.ObjectType == BoardObjectType.Unit && boardObject.Faction == BoardObjectFaction.Enemy)
+			.Where(boardObject => GetManhattanDistance(sourceObject.Cell, boardObject.Cell) <= effect.Radius)
+			.OrderBy(boardObject => boardObject.Cell.Y)
+			.ThenBy(boardObject => boardObject.Cell.X)
+			.ToArray())
+		{
+			DamageApplicationResult result = _actionService.ApplyDamageToTarget(
+				enemy.ObjectId,
+				effect.Damage,
+				Vector2.Zero,
+				out _,
+				out string failureReason,
+				allowKillKnockback: false);
+			if (!string.IsNullOrWhiteSpace(failureReason))
+			{
+				continue;
+			}
+
+			int damageAmount = SumImpactAmount(result, CombatImpactType.HealthDamage, CombatImpactType.ShieldDamage);
+			if (damageAmount > 0)
+			{
+				AppendBattleActionLog($"{ResolveObjectDisplayName(effect.SourceObjectId)}->{ResolveObjectDisplayName(enemy.ObjectId)} 戒备{damageAmount}");
+			}
+		}
+	}
+
+	private BoardObject? FindLowestHpEnemyInRange(string attackerId, int range)
+	{
+		if (Registry == null || StateManager == null || !Registry.TryGet(attackerId, out BoardObject? attackerObject) || attackerObject == null)
+		{
+			return null;
+		}
+
+		return Registry.AllObjects
+			.Where(boardObject => boardObject.ObjectType == BoardObjectType.Unit && boardObject.Faction == BoardObjectFaction.Enemy)
+			.Where(boardObject => GetManhattanDistance(attackerObject.Cell, boardObject.Cell) <= range)
+			.OrderBy(boardObject => StateManager.Get(boardObject.ObjectId)?.CurrentHp ?? int.MaxValue)
+			.ThenBy(boardObject => StateManager.Get(boardObject.ObjectId)?.CurrentShield ?? int.MaxValue)
+			.ThenBy(boardObject => boardObject.Cell.Y)
+			.ThenBy(boardObject => boardObject.Cell.X)
+			.FirstOrDefault();
+	}
+
+	private bool TryResolveRollCallHit(string attackerId, string targetId, out bool killed, out string failureReason)
+	{
+		killed = false;
+		failureReason = string.Empty;
+		if (_actionService == null)
+		{
+			failureReason = "Battle action service is not initialized.";
+			return false;
+		}
+
+		DamageApplicationResult result = _actionService.ApplyDamageToTarget(
+			targetId,
+			3,
+			Vector2.Zero,
+			out bool wasDestroyed,
+			out failureReason,
+			allowKillKnockback: true);
+		if (!string.IsNullOrWhiteSpace(failureReason))
+		{
+			return false;
+		}
+
+		int damageAmount = SumImpactAmount(result, CombatImpactType.HealthDamage, CombatImpactType.ShieldDamage);
+		if (damageAmount > 0)
+		{
+			AppendBattleActionLog($"{ResolveObjectDisplayName(attackerId)}->{ResolveObjectDisplayName(targetId)} 点名{damageAmount}");
+		}
+
+		killed = wasDestroyed;
 		return true;
 	}
 
@@ -2649,6 +3133,14 @@ public partial class BattleSceneController : Node2D
 				BattleCardCategory.Skill,
 				BattleCardTargetingMode.Cell,
 				range: 3),
+			new BattleCardDefinition(
+				RamCardId,
+				"冲撞",
+				"直线 2 格内冲到目标面前，造成 3 伤害；若目标背后受阻，再追加 4 点撞击伤害",
+				1,
+				BattleCardCategory.Attack,
+				BattleCardTargetingMode.StraightLineEnemy,
+				range: 2),
 			new BattleCardDefinition(
 				"cross_slash",
 				"交斩",

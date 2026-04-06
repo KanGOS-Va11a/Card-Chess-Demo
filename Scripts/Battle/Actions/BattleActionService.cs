@@ -133,7 +133,7 @@ public sealed class BattleActionService
         return true;
     }
 
-    public bool TryAttackObject(string attackerId, string targetId, out bool wasDestroyed, out string failureReason)
+    public bool TryAttackObject(string attackerId, string targetId, out bool wasDestroyed, out string failureReason, bool allowKillKnockback = false)
     {
         failureReason = string.Empty;
         wasDestroyed = false;
@@ -164,16 +164,16 @@ public sealed class BattleActionService
 
         Vector2 attackDirection = new(target.Cell.X - attacker.Cell.X, target.Cell.Y - attacker.Cell.Y);
         PlayAttackPresentation(attacker, target, attackDirection);
-        DamageApplicationResult result = ApplyDamageToTarget(target, attackerState.AttackDamage, attackDirection);
+        DamageApplicationResult result = ApplyDamageToTarget(target, attackerState.AttackDamage, attackDirection, allowKillKnockback);
         wasDestroyed = target.IsDestroyed;
         PublishActionLog($"{ResolveObjectDisplayName(attacker.ObjectId)}->{ResolveObjectDisplayName(target.ObjectId)} 鏀诲嚮{SumDamageImpactAmount(result)}");
         SyncPresentation();
         return true;
     }
 
-    public async Task<bool> TryAttackObjectAsync(string attackerId, string targetId)
+    public async Task<bool> TryAttackObjectAsync(string attackerId, string targetId, bool allowKillKnockback = false)
     {
-        bool attacked = TryAttackObject(attackerId, targetId, out _, out _);
+        bool attacked = TryAttackObject(attackerId, targetId, out _, out _, allowKillKnockback);
         if (!attacked)
         {
             return false;
@@ -183,7 +183,7 @@ public sealed class BattleActionService
         return true;
     }
 
-    public DamageApplicationResult ApplyDamageToTarget(string targetId, int amount, Vector2? knockbackDirection, out bool wasDestroyed, out string failureReason)
+    public DamageApplicationResult ApplyDamageToTarget(string targetId, int amount, Vector2? knockbackDirection, out bool wasDestroyed, out string failureReason, bool allowKillKnockback = false)
     {
         failureReason = string.Empty;
         wasDestroyed = false;
@@ -194,7 +194,7 @@ public sealed class BattleActionService
             return new DamageApplicationResult();
         }
 
-        DamageApplicationResult result = ApplyDamageToTarget(target, amount, knockbackDirection ?? Vector2.Zero);
+        DamageApplicationResult result = ApplyDamageToTarget(target, amount, knockbackDirection ?? Vector2.Zero, allowKillKnockback);
         wasDestroyed = target.IsDestroyed;
         return result;
     }
@@ -516,7 +516,7 @@ public sealed class BattleActionService
         _pieceViewManager.Sync(_registry, _stateManager, _room);
     }
 
-    private DamageApplicationResult ApplyDamageToTarget(BoardObject target, int amount, Vector2 knockbackDirection)
+    private DamageApplicationResult ApplyDamageToTarget(BoardObject target, int amount, Vector2 knockbackDirection, bool allowKillKnockback = false)
     {
         bool isPlayerTarget = target.HasTag("player");
         DamageApplicationResult result = target.ApplyDamage(amount);
@@ -537,14 +537,14 @@ public sealed class BattleActionService
                 {
                     _ = _pieceViewManager.PlayKillSequenceAsync(
                         target.ObjectId,
-                        knockbackDirection,
-                        KillKnockbackDistancePixels,
-                        KillKnockbackPresentationDurationSeconds,
+                        allowKillKnockback ? knockbackDirection : Vector2.Zero,
+                        allowKillKnockback ? KillKnockbackDistancePixels : 0.0f,
+                        allowKillKnockback ? KillKnockbackPresentationDurationSeconds : 0.0d,
                         KillWhitenPresentationDurationSeconds,
                         KillShatterPresentationDurationSeconds);
                     _lastImpactPresentationDurationSeconds = Math.Max(
                         _lastImpactPresentationDurationSeconds,
-                        KillKnockbackPresentationDurationSeconds + KillShatterPresentationDurationSeconds);
+                        (allowKillKnockback ? KillKnockbackPresentationDurationSeconds : 0.0d) + KillShatterPresentationDurationSeconds);
                 }
                 else if (target.ObjectType == BoardObjectType.Obstacle)
                 {
@@ -660,7 +660,7 @@ public sealed class BattleActionService
 
     private void ApplyArcTerrainDamage(BoardObject boardObject, string triggerLabel)
     {
-        DamageApplicationResult result = ApplyDamageToTarget(boardObject, ArcTerrainDamage, Vector2.Zero);
+        DamageApplicationResult result = ApplyDamageToTarget(boardObject, ArcTerrainDamage, Vector2.Zero, allowKillKnockback: false);
         int damageAmount = result.Impacts
             .Where(impact => impact.ImpactType is CombatImpactType.HealthDamage or CombatImpactType.ShieldDamage)
             .Sum(impact => impact.Amount);
@@ -672,7 +672,7 @@ public sealed class BattleActionService
 
     private void ApplyFireTerrainDamage(BoardObject boardObject)
     {
-        DamageApplicationResult result = ApplyDamageToTarget(boardObject, FireTerrainDamage, Vector2.Zero);
+        DamageApplicationResult result = ApplyDamageToTarget(boardObject, FireTerrainDamage, Vector2.Zero, allowKillKnockback: false);
         int damageAmount = result.Impacts
             .Where(impact => impact.ImpactType is CombatImpactType.HealthDamage or CombatImpactType.ShieldDamage)
             .Sum(impact => impact.Amount);

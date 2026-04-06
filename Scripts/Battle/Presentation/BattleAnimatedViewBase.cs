@@ -224,11 +224,13 @@ public partial class BattleAnimatedViewBase : Node2D
 		_pulseTween?.Kill();
 		_killTween?.Kill();
 
-		Vector2 resolvedDirection = knockbackDirection == Vector2.Zero
-			? Vector2.Right
-			: knockbackDirection.Normalized();
+		bool hasKnockback = knockbackDirection != Vector2.Zero && knockbackDistance > 0.0f && knockbackDuration > 0.0d;
+		Vector2 resolvedDirection = hasKnockback ? knockbackDirection.Normalized() : Vector2.Zero;
 
-		FaceDirection(resolvedDirection);
+		if (hasKnockback)
+		{
+			FaceDirection(resolvedDirection);
+		}
 		PlayDefeat();
 		_animatedSprite.Stop();
 		_animatedSprite.Pause();
@@ -241,7 +243,7 @@ public partial class BattleAnimatedViewBase : Node2D
 		_killShaderMaterial.SetShaderParameter("shatter_progress", 0.0f);
 		_animatedSprite.Material = _killShaderMaterial;
 
-		Vector2 targetOffset = resolvedDirection * knockbackDistance;
+		Vector2 targetOffset = hasKnockback ? resolvedDirection * knockbackDistance : Vector2.Zero;
 		MotionOffset = Vector2.Zero;
 
 		_killTween = CreateTween();
