@@ -136,10 +136,10 @@ GlobalGameSession
   │    ├─ BuildProgressionSnapshotModel()
   │    └─ BuildDeckBuildSnapshotModel()
   └─ Thin state mutation facade
-       ├─ ApplyProgressionDelta(...)
-       ├─ ApplyInventoryDelta(...)
-       ├─ Equip / Unequip
-       └─ Begin / CompleteBattle
+	   ├─ ApplyProgressionDelta(...)
+	   ├─ ApplyInventoryDelta(...)
+	   ├─ Equip / Unequip
+	   └─ Begin / CompleteBattle
 
 EquipmentCatalog
   └─ 装备定义资源集合
@@ -260,9 +260,9 @@ EquipmentService
 ```csharp
 public sealed class EquipmentLoadoutState
 {
-    public string WeaponItemId { get; set; } = string.Empty;
-    public string ArmorItemId { get; set; } = string.Empty;
-    public string AccessoryItemId { get; set; } = string.Empty;
+	public string WeaponItemId { get; set; } = string.Empty;
+	public string ArmorItemId { get; set; } = string.Empty;
+	public string AccessoryItemId { get; set; } = string.Empty;
 }
 ```
 
@@ -279,12 +279,12 @@ public sealed class EquipmentLoadoutState
 ```csharp
 public sealed class ResolvedPlayerStats
 {
-    public int MaxHp { get; set; }
-    public int MovePointsPerTurn { get; set; }
-    public int AttackRange { get; set; }
-    public int AttackDamage { get; set; }
-    public int DefenseDamageReductionPercent { get; set; }
-    public int DefenseShieldGain { get; set; }
+	public int MaxHp { get; set; }
+	public int MovePointsPerTurn { get; set; }
+	public int AttackRange { get; set; }
+	public int AttackDamage { get; set; }
+	public int DefenseDamageReductionPercent { get; set; }
+	public int DefenseShieldGain { get; set; }
 }
 ```
 
@@ -301,10 +301,10 @@ public sealed class ResolvedPlayerStats
 ```csharp
 public partial class EquipmentDefinition : Resource
 {
-    [Export] public string ItemId { get; set; } = string.Empty;
-    [Export] public string DisplayName { get; set; } = string.Empty;
-    [Export] public string SlotId { get; set; } = string.Empty;
-    [Export] public EquipmentModifierDefinition[] Modifiers { get; set; } = Array.Empty<EquipmentModifierDefinition>();
+	[Export] public string ItemId { get; set; } = string.Empty;
+	[Export] public string DisplayName { get; set; } = string.Empty;
+	[Export] public string SlotId { get; set; } = string.Empty;
+	[Export] public EquipmentModifierDefinition[] Modifiers { get; set; } = Array.Empty<EquipmentModifierDefinition>();
 }
 ```
 
@@ -319,10 +319,10 @@ public partial class EquipmentDefinition : Resource
 ```csharp
 public partial class EquipmentModifierDefinition : Resource
 {
-    [Export] public string ModifierTypeId { get; set; } = string.Empty;
-    [Export] public int IntValue { get; set; }
-    [Export] public float FloatValue { get; set; }
-    [Export] public string StringValue { get; set; } = string.Empty;
+	[Export] public string ModifierTypeId { get; set; } = string.Empty;
+	[Export] public int IntValue { get; set; }
+	[Export] public float FloatValue { get; set; }
+	[Export] public string StringValue { get; set; } = string.Empty;
 }
 ```
 

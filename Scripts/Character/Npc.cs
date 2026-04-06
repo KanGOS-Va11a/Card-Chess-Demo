@@ -16,4 +16,3 @@ public partial class Npc : InteractableTemplate
 		tween.TweenProperty(this, "scale", baseScale, 0.10f);
 	}
 }
-

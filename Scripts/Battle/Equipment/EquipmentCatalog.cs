@@ -56,8 +56,8 @@ public sealed class EquipmentCatalog
 
 	public static EquipmentCatalog CreateFromConfiguredResources()
 	{
-		// TODO: 后续正式版应从 Resource/CSV/JSON 装备表加载，避免把装备定义继续硬编码在运行时逻辑里。
-		// 当前竞赛版先回退到 demo catalog，保证 state/service/resolver 分层先跑通。
+		// TODO: 后续正式版本应从 Resource/CSV/JSON 装备表加载，避免继续把装备定义硬编码在运行时逻辑里。
+		// 当前竞赛版先保留 demo fallback，确保 state / service / resolver 的边界先跑通。
 		return CreateDemoFallback();
 	}
 
@@ -75,8 +75,16 @@ public sealed class EquipmentCatalog
 				"ion_pistol",
 				"脉冲短铳",
 				EquipmentSlotIds.Weapon,
-				"便携式脉冲副武器，输出更高但更依赖供能。",
-				new EquipmentModifierDefinition("player.attack_bonus", 2, "攻击 +2")),
+				"便携式脉冲副武器，牺牲部分稳定性换取更远射程。",
+				new EquipmentModifierDefinition("player.attack_bonus", 1, "攻击 +1"),
+				new EquipmentModifierDefinition("player.attack_range_bonus", 1, "射程 +1")),
+			new EquipmentDefinition(
+				"drawn_revolver",
+				"Drawn Revolver",
+				EquipmentSlotIds.Weapon,
+				"Battle-only temporary sidearm profile used by draw_revolver.",
+				new EquipmentModifierDefinition("player.attack_bonus", 2, "Attack +2"),
+				new EquipmentModifierDefinition("player.attack_range_bonus", 1, "Range +1")),
 			new EquipmentDefinition(
 				"patched_coat",
 				"补丁风衣",

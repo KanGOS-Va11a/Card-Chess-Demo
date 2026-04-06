@@ -9,16 +9,18 @@ namespace CardChessDemo.Battle.Visual;
 public partial class BattleFloatingTextLayer : Node2D
 {
     [Export] public Font? FloatingTextFont { get; set; } = GD.Load<Font>("res://Assets/Fonts/unifont_t-17.0.04.otf");
-    [Export(PropertyHint.Range, "8,32,1")] public int FontSize { get; set; } = 16;
-    [Export(PropertyHint.Range, "0.1,2.0,0.05")] public float LifetimeSeconds { get; set; } = 0.65f;
-    [Export(PropertyHint.Range, "4,48,1")] public float RiseDistancePixels { get; set; } = 18.0f;
-    [Export(PropertyHint.Range, "0,24,1")] public float HorizontalSpreadPixels { get; set; } = 11.0f;
+    [Export(PropertyHint.Range, "8,40,1")] public int FontSize { get; set; } = 22;
+    [Export(PropertyHint.Range, "0.1,2.5,0.05")] public float LifetimeSeconds { get; set; } = 1.05f;
+    [Export(PropertyHint.Range, "4,64,1")] public float RiseDistancePixels { get; set; } = 24.0f;
+    [Export(PropertyHint.Range, "0,32,1")] public float HorizontalSpreadPixels { get; set; } = 13.0f;
     [Export(PropertyHint.Range, "0,18,1")] public float BurstLaneOffsetPixels { get; set; } = 8.0f;
-    [Export(PropertyHint.Range, "0.0,0.25,0.01")] public float ImpactStaggerSeconds { get; set; } = 0.045f;
+    [Export(PropertyHint.Range, "0.0,0.4,0.01")] public float ImpactStaggerSeconds { get; set; } = 0.12f;
+    [Export(PropertyHint.Range, "0.0,0.3,0.01")] public float ImpactTypeChangeExtraStaggerSeconds { get; set; } = 0.06f;
+    [Export(PropertyHint.Range, "0.0,0.4,0.01")] public float SequenceEndPaddingSeconds { get; set; } = 0.03f;
     [Export(PropertyHint.Range, "0,14,1")] public float RandomJitterPixels { get; set; } = 4.0f;
     [Export(PropertyHint.Range, "0.1,1.0,0.05")] public float MinScale { get; set; } = 0.72f;
     [Export(PropertyHint.Range, "0.1,1.0,0.05")] public float ScalePopDurationRatio { get; set; } = 0.35f;
-    [Export(PropertyHint.Range, "0,12,1")] public int OutlineSize { get; set; } = 2;
+    [Export(PropertyHint.Range, "0,12,1")] public int OutlineSize { get; set; } = 3;
     [Export] public Color HealthDamageColor { get; set; } = new(0.98f, 0.24f, 0.24f, 1.0f);
     [Export] public Color ShieldDamageColor { get; set; } = new(0.76f, 0.78f, 0.84f, 1.0f);
     [Export] public Color HealthHealColor { get; set; } = new(0.34f, 0.96f, 0.42f, 1.0f);
@@ -44,6 +46,9 @@ public partial class BattleFloatingTextLayer : Node2D
         float laneOffset = activeBurstCount * BurstLaneOffsetPixels;
         int impactCount = impacts.Count;
 
+        double startOffsetSeconds = 0.0d;
+        CombatImpactType? previousImpactType = null;
+
         for (int index = 0; index < impactCount; index++)
         {
             CombatImpact impact = impacts[index];
@@ -58,10 +63,41 @@ public partial class BattleFloatingTextLayer : Node2D
                 anchorKey,
                 localPosition + new Vector2(horizontalOffset, -laneOffset) + jitter,
                 impact,
-                GetNowSeconds() + index * ImpactStaggerSeconds));
+                GetNowSeconds() + startOffsetSeconds));
+
+            startOffsetSeconds += ImpactStaggerSeconds;
+            if (previousImpactType != null && previousImpactType.Value != impact.ImpactType)
+            {
+                startOffsetSeconds += ImpactTypeChangeExtraStaggerSeconds;
+            }
+
+            previousImpactType = impact.ImpactType;
         }
 
         QueueRedraw();
+    }
+
+    public double GetImpactSequenceDurationSeconds(IReadOnlyList<CombatImpact> impacts)
+    {
+        if (impacts == null || impacts.Count == 0)
+        {
+            return 0.0d;
+        }
+
+        double lastStartOffsetSeconds = 0.0d;
+        CombatImpactType previousImpactType = impacts[0].ImpactType;
+        for (int index = 1; index < impacts.Count; index++)
+        {
+            lastStartOffsetSeconds += ImpactStaggerSeconds;
+            if (previousImpactType != impacts[index].ImpactType)
+            {
+                lastStartOffsetSeconds += ImpactTypeChangeExtraStaggerSeconds;
+            }
+
+            previousImpactType = impacts[index].ImpactType;
+        }
+
+        return lastStartOffsetSeconds + LifetimeSeconds + SequenceEndPaddingSeconds;
     }
 
     public override void _Process(double delta)

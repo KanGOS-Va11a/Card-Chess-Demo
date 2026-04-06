@@ -22,8 +22,6 @@ RandomSeed = 20260320
 [node name="Camera2D" type="Camera2D" parent="." unique_id=41489898]
 position = Vector2(160, 90)
 
-[node name="BackdropRoot" type="Node2D" parent="." unique_id=1528764606]
-
 [node name="RoomContainer" type="Node2D" parent="." unique_id=444181665]
 position = Vector2(32, 26)
 
@@ -31,6 +29,9 @@ position = Vector2(32, 26)
 script = ExtResource("2_7r48u")
 
 [node name="PieceRoot" type="Node2D" parent="RoomContainer" unique_id=1217213128]
+y_sort_enabled = true
+
+[node name="KillFxRoot" type="Node2D" parent="RoomContainer" unique_id=1022043171]
 
 [node name="FloatingTextLayer" type="Node2D" parent="RoomContainer" unique_id=1829250619]
 script = ExtResource("9_float")

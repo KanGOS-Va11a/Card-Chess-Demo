@@ -18,8 +18,8 @@ public sealed class EnemyTurnResolver
     private readonly EnemyAiRegistry _aiRegistry;
     private readonly Node _awaitHost;
 
-    public double PreActionDelaySeconds { get; set; } = 0.08d;
-    public double PostActionDelaySeconds { get; set; } = 0.16d;
+    public double PreActionDelaySeconds { get; set; } = 0.04d;
+    public double PostActionDelaySeconds { get; set; } = 0.05d;
 
     public EnemyTurnResolver(
         BoardObjectRegistry registry,
@@ -73,7 +73,7 @@ public sealed class EnemyTurnResolver
             EnemyAiDecision decision = strategy.Decide(context);
             await WaitSeconds(PreActionDelaySeconds);
             await ExecuteDecisionAsync(enemyId, decision);
-            await WaitSeconds(PostActionDelaySeconds);
+            await WaitSeconds(Math.Max(PostActionDelaySeconds, _actionService.LastImpactPresentationDurationSeconds));
 
             if (_actionService.IsPlayerDefeated)
             {

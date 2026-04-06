@@ -15,6 +15,10 @@ public partial class BattleRoomTemplate : Node2D
 	private static readonly StringName DestructibleObstacleTag = new("destructible");
 	private static readonly StringName IndestructibleObstacleTag = new("indestructible");
 	private static readonly StringName SlowPassObstacleTag = new("slow_pass");
+	private static readonly Vector2I FacingLeft = new(-1, 0);
+	private static readonly Vector2I FacingUp = new(0, -1);
+	private static readonly Vector2I FacingRight = new(1, 0);
+	private static readonly Vector2I FacingDown = new(0, 1);
 
 	[Export] public string LayoutId { get; set; } = "battle_room_debug";
 	[Export] public Vector2I BoardSize { get; set; } = new(16, 8);
@@ -28,17 +32,28 @@ public partial class BattleRoomTemplate : Node2D
 	[Export] public Godot.Collections.Array<Vector2I> DefaultDestructibleObstacleCells { get; set; } = new() { new Vector2I(6, 2) };
 	[Export] public Godot.Collections.Array<Vector2I> DefaultIndestructibleObstacleCells { get; set; } = new() { new Vector2I(7, 5) };
 	[Export] public Godot.Collections.Array<Vector2I> DefaultSlowPassObstacleCells { get; set; } = new() { new Vector2I(9, 3) };
+	[Export] public Godot.Collections.Array<Vector2I> DefaultArcTerrainCells { get; set; } = new();
+	[Export] public Godot.Collections.Array<Vector2I> DefaultFireTerrainCells { get; set; } = new();
+	[Export] public Godot.Collections.Array<Vector2I> DefaultEscapeCells { get; set; } = new();
 	[Export] public int FloorSourceId { get; set; } = 0;
 	[Export] public Vector2I DefaultFloorAtlasCoords { get; set; } = Vector2I.Zero;
 	[Export] public int MarkerSourceId { get; set; } = 1;
+	[Export] public int EscapeSourceId { get; set; } = 1;
 	[Export] public int PlayerMarkerTileId { get; set; } = 1;
 	[Export] public int EnemyMarkerTileId { get; set; } = 2;
 	[Export] public int DestructibleObstacleMarkerTileId { get; set; } = 3;
 	[Export] public int IndestructibleObstacleMarkerTileId { get; set; } = 4;
 	[Export] public int SlowPassObstacleMarkerTileId { get; set; } = 5;
+	[Export] public int EscapeMarkerTileId { get; set; } = 6;
+	[Export] public int FacingLeftTileId { get; set; } = 7;
+	[Export] public int FacingUpTileId { get; set; } = 8;
+	[Export] public int FacingRightTileId { get; set; } = 9;
+	[Export] public int FacingDownTileId { get; set; } = 10;
 
 	private TileMapLayer _floorLayer = null!;
 	private TileMapLayer _markerLayer = null!;
+	private TileMapLayer _escapeLayer = null!;
+	private TileMapLayer _facingLayer = null!;
 	private BoardTopology _topology = null!;
 
 	public BoardTopology Topology => _topology;
@@ -58,7 +73,34 @@ public partial class BattleRoomTemplate : Node2D
 		if (!Engine.IsEditorHint())
 		{
 			_markerLayer.Visible = false;
+			_escapeLayer.Visible = false;
+			_facingLayer.Visible = false;
 		}
+	}
+
+	public IReadOnlyList<Vector2I> GetEscapeCells()
+	{
+		EnsureReferences();
+		EnsureTopology();
+
+		List<Vector2I> cells = new();
+		foreach (Vector2I cell in _escapeLayer.GetUsedCells())
+		{
+			if (!_topology.IsInsideBoard(cell))
+			{
+				continue;
+			}
+
+			int sourceId = _escapeLayer.GetCellSourceId(cell);
+			if (sourceId != EscapeSourceId)
+			{
+				continue;
+			}
+
+			cells.Add(cell);
+		}
+
+		return cells;
 	}
 
 	public RoomLayoutDefinition BuildLayoutDefinition(string enemyDefinitionId = "battle_enemy")
@@ -86,7 +128,7 @@ public partial class BattleRoomTemplate : Node2D
 			{
 				playerCounter++;
 				playerSpawnCells.Add(cell);
-				spawns.Add(CreatePlayerSpawn(playerCounter, cell));
+				spawns.Add(CreatePlayerSpawn(playerCounter, cell, ResolveFacingForCell(cell, FacingRight)));
 				continue;
 			}
 
@@ -94,7 +136,7 @@ public partial class BattleRoomTemplate : Node2D
 			{
 				enemyCounter++;
 				enemySpawnCells.Add(cell);
-				spawns.Add(CreateEnemySpawn(enemyCounter, cell, enemyDefinitionId));
+				spawns.Add(CreateEnemySpawn(enemyCounter, cell, enemyDefinitionId, ResolveFacingForCell(cell, FacingLeft)));
 				continue;
 			}
 
@@ -124,6 +166,8 @@ public partial class BattleRoomTemplate : Node2D
 			BoardSize = BoardSize,
 			DefaultTerrainId = DefaultTerrainId,
 			DefaultMoveCost = DefaultMoveCost,
+			ArcTerrainCells = new Godot.Collections.Array<Vector2I>(DefaultArcTerrainCells),
+			FireTerrainCells = new Godot.Collections.Array<Vector2I>(DefaultFireTerrainCells),
 			Tags = RoomTags,
 			PlayerSpawnCells = playerSpawnCells.ToArray(),
 			EnemySpawnCells = enemySpawnCells.ToArray(),
@@ -206,6 +250,8 @@ public partial class BattleRoomTemplate : Node2D
 	{
 		_floorLayer ??= GetNode<TileMapLayer>("FloorLayer");
 		_markerLayer ??= GetNode<TileMapLayer>("MarkerLayer");
+		_escapeLayer ??= GetNode<TileMapLayer>("EscapeLayer");
+		_facingLayer ??= GetNode<TileMapLayer>("FacingLayer");
 	}
 
 	private void EnsureTopology()
@@ -217,6 +263,14 @@ public partial class BattleRoomTemplate : Node2D
 	{
 		if (_floorLayer.TileSet != null && _markerLayer.TileSet != null)
 		{
+			if (_escapeLayer.TileSet == null)
+			{
+				_escapeLayer.TileSet = _floorLayer.TileSet;
+			}
+			if (_facingLayer.TileSet == null)
+			{
+				_facingLayer.TileSet = _floorLayer.TileSet;
+			}
 			return;
 		}
 
@@ -224,16 +278,28 @@ public partial class BattleRoomTemplate : Node2D
 		PackedScene playerScene = GD.Load<PackedScene>("res://Scene/Battle/Tiles/BattlePlayerToken.tscn");
 		PackedScene enemyScene = GD.Load<PackedScene>("res://Scene/Battle/Tiles/BattleEnemyToken.tscn");
 		PackedScene obstacleScene = GD.Load<PackedScene>("res://Scene/Battle/Tiles/BattleObstacleToken.tscn");
+		PackedScene escapeScene = GD.Load<PackedScene>("res://Scene/Battle/Tiles/BattleEscapeTile.tscn");
+		PackedScene facingLeftScene = GD.Load<PackedScene>("res://Scene/Battle/Tiles/BattleFacingLeftTile.tscn");
+		PackedScene facingUpScene = GD.Load<PackedScene>("res://Scene/Battle/Tiles/BattleFacingUpTile.tscn");
+		PackedScene facingRightScene = GD.Load<PackedScene>("res://Scene/Battle/Tiles/BattleFacingRightTile.tscn");
+		PackedScene facingDownScene = GD.Load<PackedScene>("res://Scene/Battle/Tiles/BattleFacingDownTile.tscn");
 
 		TileSet tileSet = BattleRoomTileSetFactory.CreateTileSet(
 			floorTexture,
 			playerScene,
 			enemyScene,
 			obstacleScene,
+			escapeScene,
+			facingLeftScene,
+			facingUpScene,
+			facingRightScene,
+			facingDownScene,
 			CellSizePixels);
 
 		_floorLayer.TileSet = tileSet;
 		_markerLayer.TileSet = tileSet;
+		_escapeLayer.TileSet = tileSet;
+		_facingLayer.TileSet = tileSet;
 	}
 
 	private void EnsureDefaultPaint()
@@ -273,6 +339,23 @@ public partial class BattleRoomTemplate : Node2D
 				PaintMarker(cell, SlowPassObstacleMarkerTileId);
 			}
 		}
+
+		if (_escapeLayer.GetUsedCells().Count == 0)
+		{
+			foreach (Vector2I cell in DefaultEscapeCells)
+			{
+				PaintEscapeMarker(cell);
+			}
+		}
+
+		if (_facingLayer.GetUsedCells().Count == 0)
+		{
+			PaintFacingMarker(DefaultPlayerCell, FacingRightTileId);
+			foreach (Vector2I cell in DefaultEnemyCells)
+			{
+				PaintFacingMarker(cell, FacingLeftTileId);
+			}
+		}
 	}
 
 	private void PaintMarker(Vector2I cell, int tileId)
@@ -283,6 +366,50 @@ public partial class BattleRoomTemplate : Node2D
 		}
 
 		_markerLayer.SetCell(cell, MarkerSourceId, Vector2I.Zero, tileId);
+	}
+
+	private void PaintEscapeMarker(Vector2I cell)
+	{
+		if (!_topology.IsInsideBoard(cell))
+		{
+			return;
+		}
+
+		_escapeLayer.SetCell(cell, EscapeSourceId, Vector2I.Zero, EscapeMarkerTileId);
+	}
+
+	private void PaintFacingMarker(Vector2I cell, int tileId)
+	{
+		if (!_topology.IsInsideBoard(cell))
+		{
+			return;
+		}
+
+		_facingLayer.SetCell(cell, MarkerSourceId, Vector2I.Zero, tileId);
+	}
+
+	private Vector2I ResolveFacingForCell(Vector2I cell, Vector2I fallbackFacing)
+	{
+		if (!_topology.IsInsideBoard(cell))
+		{
+			return fallbackFacing;
+		}
+
+		int sourceId = _facingLayer.GetCellSourceId(cell);
+		if (sourceId != MarkerSourceId)
+		{
+			return fallbackFacing;
+		}
+
+		int tileId = _facingLayer.GetCellAlternativeTile(cell);
+		return tileId switch
+		{
+			var value when value == FacingLeftTileId => FacingLeft,
+			var value when value == FacingUpTileId => FacingUp,
+			var value when value == FacingRightTileId => FacingRight,
+			var value when value == FacingDownTileId => FacingDown,
+			_ => fallbackFacing,
+		};
 	}
 
 	private int ResolveObstacleMarkerTileId(BoardObject boardObject)
@@ -300,7 +427,7 @@ public partial class BattleRoomTemplate : Node2D
 		return DestructibleObstacleMarkerTileId;
 	}
 
-	private static BoardObjectSpawnDefinition CreatePlayerSpawn(int index, Vector2I cell)
+	private static BoardObjectSpawnDefinition CreatePlayerSpawn(int index, Vector2I cell, Vector2I facing)
 	{
 		return new BoardObjectSpawnDefinition
 		{
@@ -311,10 +438,16 @@ public partial class BattleRoomTemplate : Node2D
 			Faction = BoardObjectFaction.Player,
 			Tags = new[] { PlayerTag.ToString() },
 			StackableWithUnit = false,
+			InitialFacing = facing,
+			InitialStatePayload = new Godot.Collections.Dictionary
+			{
+				["initial_facing_x"] = facing.X,
+				["initial_facing_y"] = facing.Y,
+			},
 		};
 	}
 
-	private static BoardObjectSpawnDefinition CreateEnemySpawn(int index, Vector2I cell, string definitionId)
+	private static BoardObjectSpawnDefinition CreateEnemySpawn(int index, Vector2I cell, string definitionId, Vector2I facing)
 	{
 		string resolvedDefinitionId = string.IsNullOrWhiteSpace(definitionId) ? "battle_enemy" : definitionId;
 
@@ -330,6 +463,12 @@ public partial class BattleRoomTemplate : Node2D
 			MaxShield = 2,
 			CurrentShield = 2,
 			StackableWithUnit = false,
+			InitialFacing = facing,
+			InitialStatePayload = new Godot.Collections.Dictionary
+			{
+				["initial_facing_x"] = facing.X,
+				["initial_facing_y"] = facing.Y,
+			},
 		};
 	}
 

@@ -72,6 +72,20 @@ public sealed class BoardTargetingService
                     return false;
                 }
 
+                if (boardObject.ObjectType == BoardObjectType.Obstacle)
+                {
+                    if (boardObject.HasTag("destructible"))
+                    {
+                        targetObject = boardObject;
+                        return true;
+                    }
+
+                    if (boardObject.BlocksLineOfSight)
+                    {
+                        return false;
+                    }
+                }
+
                 if (boardObject.BlocksLineOfSight)
                 {
                     return false;

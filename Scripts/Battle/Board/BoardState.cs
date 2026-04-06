@@ -56,6 +56,12 @@ public sealed class BoardState
         return _cells.Values;
     }
 
+    public void SetTerrain(Vector2I cell, string terrainId)
+    {
+        BoardCellState cellState = GetCell(cell);
+        cellState.TerrainId = string.IsNullOrWhiteSpace(terrainId) ? string.Empty : terrainId.Trim();
+    }
+
     public void SetRoomTags(IEnumerable<string> tags)
     {
         _roomTags.Clear();

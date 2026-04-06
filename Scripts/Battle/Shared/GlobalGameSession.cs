@@ -131,6 +131,11 @@ public partial class GlobalGameSession : Node
 		return ResolvePlayerStats().AttackDamage;
 	}
 
+	public int GetResolvedPlayerAttackRange()
+	{
+		return ResolvePlayerStats().AttackRange;
+	}
+
 	public int GetResolvedPlayerDefenseDamageReductionPercent()
 	{
 		return ResolvePlayerStats().DefenseDamageReductionPercent;
@@ -151,7 +156,7 @@ public partial class GlobalGameSession : Node
 		return ResolvePlayerStats().MovePointsPerTurn;
 	}
 
-	public ResolvedPlayerStats ResolvePlayerStats()
+	public ResolvedPlayerStats ResolvePlayerStats(string? weaponOverrideItemId = null)
 	{
 		EnsureCompositionServices();
 		return _playerStatResolver.Resolve(
@@ -159,7 +164,8 @@ public partial class GlobalGameSession : Node
 			ProgressionState,
 			EquipmentLoadoutState,
 			PlayerDefenseDamageReductionPercent,
-			PlayerDefenseShieldGain);
+			PlayerDefenseShieldGain,
+			weaponOverrideItemId);
 	}
 
 	public bool IsEquipmentOwned(string itemId)
@@ -239,18 +245,61 @@ public partial class GlobalGameSession : Node
 
 	public void EnsureDeckBuildInitialized(BattleCardLibrary? cardLibrary)
 	{
-		if (DeckBuildState.CardIds.Length > 0)
-		{
-			return;
-		}
-
 		string[] starterDeck = cardLibrary?.BuildStarterDeckCardIds() ?? Array.Empty<string>();
-		if (starterDeck.Length == 0)
+		if (starterDeck.Length == 0 && DeckBuildState.CardIds.Length == 0)
 		{
 			return;
 		}
 
-		DeckBuildState.CardIds = starterDeck;
+		if (DeckBuildState.CardIds.Length == 0)
+		{
+			DeckBuildState.CardIds = starterDeck;
+		}
+		else if (starterDeck.Contains("debug_finisher", StringComparer.Ordinal)
+			&& !DeckBuildState.CardIds.Contains("debug_finisher", StringComparer.Ordinal))
+		{
+			DeckBuildState.CardIds = new[] { "debug_finisher" }.Concat(DeckBuildState.CardIds).ToArray();
+		}
+
+		bool shouldInjectDrawRevolver = DeckBuildState.CardIds.Contains("debug_finisher", StringComparer.Ordinal)
+			|| starterDeck.Contains("draw_revolver", StringComparer.Ordinal);
+		if (shouldInjectDrawRevolver
+			&& !DeckBuildState.CardIds.Contains("draw_revolver", StringComparer.Ordinal))
+		{
+			IEnumerable<string> rebuiltDeck = DeckBuildState.CardIds;
+			if (rebuiltDeck.Contains("debug_finisher", StringComparer.Ordinal))
+			{
+				rebuiltDeck = rebuiltDeck
+					.Take(1)
+					.Concat(new[] { "draw_revolver" })
+					.Concat(rebuiltDeck.Skip(1));
+			}
+			else
+			{
+				rebuiltDeck = new[] { "draw_revolver" }.Concat(rebuiltDeck);
+			}
+
+			DeckBuildState.CardIds = rebuiltDeck.ToArray();
+		}
+
+		bool shouldInjectArcLeak = DeckBuildState.CardIds.Contains("debug_finisher", StringComparer.Ordinal)
+			|| starterDeck.Contains("card_arc_leak", StringComparer.Ordinal);
+		if (shouldInjectArcLeak && !DeckBuildState.CardIds.Contains("card_arc_leak", StringComparer.Ordinal))
+		{
+			IEnumerable<string> rebuiltDeck = DeckBuildState.CardIds;
+			if (rebuiltDeck.Contains("draw_revolver", StringComparer.Ordinal))
+			{
+				List<string> ordered = rebuiltDeck.ToList();
+				int insertIndex = ordered.IndexOf("draw_revolver") + 1;
+				ordered.Insert(insertIndex, "card_arc_leak");
+				DeckBuildState.CardIds = ordered.ToArray();
+			}
+			else
+			{
+				DeckBuildState.CardIds = new[] { "card_arc_leak" }.Concat(rebuiltDeck).ToArray();
+			}
+		}
+
 		SyncFieldsFromCompositeState();
 	}
 
@@ -420,8 +469,7 @@ public partial class GlobalGameSession : Node
 		}
 		else if (snapshot.TryGetValue("max_hp", out Variant maxHp))
 		{
-			// 兼容旧快照：如果没有显式基础值，只能退回到历史字段。
-			PartyState.Player.MaxHp = maxHp.AsInt32();
+			// 鍏煎鏃у揩鐓э細濡傛灉娌℃湁鏄惧紡鍩虹鍊硷紝鍙兘閫€鍥炲埌鍘嗗彶瀛楁銆?			PartyState.Player.MaxHp = maxHp.AsInt32();
 		}
 
 		if (snapshot.TryGetValue("current_hp", out Variant currentHp))
@@ -435,8 +483,7 @@ public partial class GlobalGameSession : Node
 		}
 		else if (snapshot.TryGetValue("move_points_per_turn", out Variant movePoints))
 		{
-			// 兼容旧快照：如果没有显式基础值，只能退回到历史字段。
-			PartyState.Player.MovePointsPerTurn = movePoints.AsInt32();
+			// 鍏煎鏃у揩鐓э細濡傛灉娌℃湁鏄惧紡鍩虹鍊硷紝鍙兘閫€鍥炲埌鍘嗗彶瀛楁銆?			PartyState.Player.MovePointsPerTurn = movePoints.AsInt32();
 		}
 
 		if (snapshot.TryGetValue("attack_range", out Variant attackRange))
@@ -450,8 +497,7 @@ public partial class GlobalGameSession : Node
 		}
 		else if (snapshot.TryGetValue("attack_damage", out Variant attackDamage))
 		{
-			// 兼容旧快照：如果没有显式基础值，只能退回到历史字段。
-			PartyState.Player.AttackDamage = attackDamage.AsInt32();
+			// 鍏煎鏃у揩鐓э細濡傛灉娌℃湁鏄惧紡鍩虹鍊硷紝鍙兘閫€鍥炲埌鍘嗗彶瀛楁銆?			PartyState.Player.AttackDamage = attackDamage.AsInt32();
 		}
 
 		if (snapshot.TryGetValue("base_defense_damage_reduction_percent", out Variant baseDefenseReduction))
@@ -721,7 +767,7 @@ public partial class GlobalGameSession : Node
 		PartyState.Player.AttackDamage = PlayerAttackDamage;
 
 		PartyState.Arakawa.CompanionId = "arakawa";
-		PartyState.Arakawa.DisplayName = "荒川";
+		PartyState.Arakawa.DisplayName = "鑽掑窛";
 		PartyState.Arakawa.GrowthLevel = ArakawaGrowthLevel;
 		PartyState.Arakawa.MaxEnergy = ArakawaMaxEnergy;
 		PartyState.Arakawa.CurrentEnergy = ArakawaCurrentEnergy;

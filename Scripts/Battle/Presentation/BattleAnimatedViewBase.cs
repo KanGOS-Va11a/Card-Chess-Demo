@@ -1,18 +1,24 @@
 ﻿using Godot;
 using CardChessDemo.Battle.State;
 
+using System;
+
 namespace CardChessDemo.Battle.Presentation;
 
 public partial class BattleAnimatedViewBase : Node2D
 {
+	private static readonly Shader KillShatterShader = GD.Load<Shader>("res://Shaders/Battle/KillShatter.gdshader");
 	private AnimatedSprite2D? _animatedSprite;
 	// 有些调用会在节点 _Ready 前发生，所以先缓存“想播什么动画”。
 	private string _pendingAnimation = "idle";
+	private int _horizontalFacing = 1;
 	private Vector2 _boardAnchor;
 	private Vector2 _motionOffset;
 	private Tween? _motionTween;
 	private Tween? _pulseTween;
 	private Tween? _boardMoveTween;
+	private Tween? _killTween;
+	private ShaderMaterial? _killShaderMaterial;
 
 	public BattleObjectState? State { get; private set; }
 
@@ -32,6 +38,17 @@ public partial class BattleAnimatedViewBase : Node2D
 			_animatedSprite.SpriteFrames = BuildFallbackFrames();
 		}
 
+		if (!_animatedSprite.IsConnected(AnimatedSprite2D.SignalName.AnimationFinished, Callable.From(OnAnimationFinished)))
+		{
+			_animatedSprite.AnimationFinished += OnAnimationFinished;
+		}
+
+		if (State == null)
+		{
+			_horizontalFacing = GetDefaultFacingSign();
+		}
+		ConfigureAnimatedSprite(_animatedSprite);
+		ApplySpriteFacing();
 		PlayNamedAnimation(_pendingAnimation);
 	}
 
@@ -39,6 +56,9 @@ public partial class BattleAnimatedViewBase : Node2D
 	{
 		State = state;
 		Name = state.ObjectId;
+		FaceDirection(state.InitialFacing == Vector2.Zero
+			? new Vector2(GetDefaultFacingSign(), 0.0f)
+			: state.InitialFacing);
 	}
 
 	public void SetBoardPosition(Vector2 localCenter)
@@ -70,9 +90,186 @@ public partial class BattleAnimatedViewBase : Node2D
 	public virtual void PlayHit() => PlayCue("hit");
 	public virtual void PlayDefeat() => PlayCue("defeat");
 
+	public Texture2D? CaptureCurrentFrameTexture()
+	{
+		_animatedSprite ??= GetNodeOrNull<AnimatedSprite2D>("AnimatedSprite2D");
+		if (_animatedSprite == null)
+		{
+			return null;
+		}
+
+		if (_animatedSprite.SpriteFrames == null)
+		{
+			_animatedSprite.SpriteFrames = BuildFallbackFrames();
+			ConfigureAnimatedSprite(_animatedSprite);
+			ApplySpriteFacing();
+		}
+
+		string animationName = _animatedSprite.Animation.ToString();
+		if (string.IsNullOrWhiteSpace(animationName))
+		{
+			animationName = "idle";
+		}
+
+		SpriteFrames? frames = _animatedSprite.SpriteFrames;
+		if (frames == null || !frames.HasAnimation(animationName))
+		{
+			return null;
+		}
+
+		int frameCount = frames.GetFrameCount(animationName);
+		if (frameCount <= 0)
+		{
+			return null;
+		}
+
+		int frame = Math.Clamp(_animatedSprite.Frame, 0, frameCount - 1);
+		Texture2D? frameTexture = frames.GetFrameTexture(animationName, frame);
+		return CloneFrameTexture(frameTexture);
+	}
+
+	public Texture2D? CaptureAnimationFrameTexture(string animationName, int frameIndex)
+	{
+		_animatedSprite ??= GetNodeOrNull<AnimatedSprite2D>("AnimatedSprite2D");
+		if (_animatedSprite == null)
+		{
+			return null;
+		}
+
+		if (_animatedSprite.SpriteFrames == null)
+		{
+			_animatedSprite.SpriteFrames = BuildFallbackFrames();
+			ConfigureAnimatedSprite(_animatedSprite);
+			ApplySpriteFacing();
+		}
+
+		SpriteFrames? frames = _animatedSprite.SpriteFrames;
+		if (frames == null || !frames.HasAnimation(animationName))
+		{
+			return null;
+		}
+
+		int frameCount = frames.GetFrameCount(animationName);
+		if (frameCount <= 0)
+		{
+			return null;
+		}
+
+		int safeFrameIndex = Math.Clamp(frameIndex, 0, frameCount - 1);
+		Texture2D? frameTexture = frames.GetFrameTexture(animationName, safeFrameIndex);
+		return CloneFrameTexture(frameTexture);
+	}
+
+	private static Texture2D? CloneFrameTexture(Texture2D? frameTexture)
+	{
+		if (frameTexture == null)
+		{
+			return null;
+		}
+
+		Image image = frameTexture.GetImage();
+		if (image == null || image.IsEmpty())
+		{
+			return frameTexture;
+		}
+
+		return ImageTexture.CreateFromImage(image);
+	}
+
+	public Vector2 CaptureSpriteLocalPosition()
+	{
+		_animatedSprite ??= GetNodeOrNull<AnimatedSprite2D>("AnimatedSprite2D");
+		return _animatedSprite?.Position ?? Vector2.Zero;
+	}
+
+	public bool CaptureSpriteFlipH()
+	{
+		_animatedSprite ??= GetNodeOrNull<AnimatedSprite2D>("AnimatedSprite2D");
+		return _animatedSprite?.FlipH ?? false;
+	}
+
+	public bool CaptureSpriteCentered()
+	{
+		_animatedSprite ??= GetNodeOrNull<AnimatedSprite2D>("AnimatedSprite2D");
+		return _animatedSprite?.Centered ?? true;
+	}
+
+	public virtual async System.Threading.Tasks.Task PlayKillSequenceAsync(
+		Vector2 knockbackDirection,
+		float knockbackDistance,
+		double knockbackDuration,
+		double whiteFlashDuration,
+		double shatterDuration)
+	{
+		_animatedSprite ??= GetNodeOrNull<AnimatedSprite2D>("AnimatedSprite2D");
+		if (_animatedSprite == null)
+		{
+			await ToSignal(GetTree(), SceneTree.SignalName.ProcessFrame);
+			_animatedSprite ??= GetNodeOrNull<AnimatedSprite2D>("AnimatedSprite2D");
+		}
+
+		if (_animatedSprite == null)
+		{
+			return;
+		}
+
+		if (_animatedSprite.SpriteFrames == null)
+		{
+			_animatedSprite.SpriteFrames = BuildFallbackFrames();
+			ConfigureAnimatedSprite(_animatedSprite);
+			ApplySpriteFacing();
+		}
+
+		_motionTween?.Kill();
+		_pulseTween?.Kill();
+		_killTween?.Kill();
+
+		Vector2 resolvedDirection = knockbackDirection == Vector2.Zero
+			? Vector2.Right
+			: knockbackDirection.Normalized();
+
+		FaceDirection(resolvedDirection);
+		PlayDefeat();
+		_animatedSprite.Stop();
+		_animatedSprite.Pause();
+
+		_killShaderMaterial = new ShaderMaterial
+		{
+			Shader = KillShatterShader,
+		};
+		_killShaderMaterial.SetShaderParameter("white_mix", 0.0f);
+		_killShaderMaterial.SetShaderParameter("shatter_progress", 0.0f);
+		_animatedSprite.Material = _killShaderMaterial;
+
+		Vector2 targetOffset = resolvedDirection * knockbackDistance;
+		MotionOffset = Vector2.Zero;
+
+		_killTween = CreateTween();
+		_killTween.SetParallel();
+		_killTween.SetEase(Tween.EaseType.Out);
+		_killTween.SetTrans(Tween.TransitionType.Cubic);
+		_killTween.TweenProperty(this, nameof(MotionOffset), targetOffset, knockbackDuration);
+		_killTween.TweenMethod(Callable.From<float>(SetKillWhiteMix), 0.0f, 1.0f, whiteFlashDuration);
+		_killTween.TweenMethod(Callable.From<float>(SetKillShatterProgress), 0.0f, 1.0f, shatterDuration)
+			.SetDelay(Math.Max(whiteFlashDuration * 0.4d, 0.02d));
+
+		await ToSignal(_killTween, Tween.SignalName.Finished);
+	}
+
 	public virtual void PlayCue(StringName animationName)
 	{
 		PlayNamedAnimation(animationName.ToString());
+	}
+
+	public virtual void FaceDirection(Vector2 direction)
+	{
+		if (Mathf.Abs(direction.X) < 0.01f)
+		{
+			return;
+		}
+
+		_horizontalFacing = direction.X < 0.0f ? -1 : 1;
+		ApplySpriteFacing();
 	}
 
 	public virtual void PlayTintPulse(Color tintColor)
@@ -153,6 +350,25 @@ public partial class BattleAnimatedViewBase : Node2D
 		return CreateFrames(new Color(0.9f, 0.9f, 0.9f), new Color(1.0f, 1.0f, 1.0f));
 	}
 
+	protected virtual void ConfigureAnimatedSprite(AnimatedSprite2D sprite)
+	{
+	}
+
+	protected virtual Vector2 GetBoardAnchorOffset()
+	{
+		return Vector2.Zero;
+	}
+
+	protected virtual int GetSourceArtFacingSign()
+	{
+		return 1;
+	}
+
+	protected virtual int GetDefaultFacingSign()
+	{
+		return 1;
+	}
+
 	protected SpriteFrames CreateFrames(Color primary, Color secondary)
 	{
 		SpriteFrames frames = new();
@@ -197,6 +413,51 @@ public partial class BattleAnimatedViewBase : Node2D
 
 	private void ApplyVisualPosition()
 	{
-		Position = _boardAnchor + _motionOffset;
+		Position = _boardAnchor + GetBoardAnchorOffset() + _motionOffset;
+	}
+
+	private void ApplySpriteFacing()
+	{
+		if (_animatedSprite == null)
+		{
+			return;
+		}
+
+		_animatedSprite.FlipH = _horizontalFacing != GetSourceArtFacingSign();
+	}
+
+	private void OnAnimationFinished()
+	{
+		if (_animatedSprite == null)
+		{
+			return;
+		}
+
+		string finishedAnimation = _animatedSprite.Animation.ToString();
+		if (string.IsNullOrWhiteSpace(finishedAnimation))
+		{
+			return;
+		}
+
+		// 非循环表现动画播完后要主动回到 idle，
+		// 否则 AnimatedSprite2D 会停在最后一帧，看起来像“动画卡住”。
+		if (string.Equals(finishedAnimation, "idle", StringComparison.Ordinal)
+			|| string.Equals(finishedAnimation, "move", StringComparison.Ordinal)
+			|| string.Equals(finishedAnimation, "defeat", StringComparison.Ordinal))
+		{
+			return;
+		}
+
+		PlayIdle();
+	}
+
+	private void SetKillWhiteMix(float value)
+	{
+		_killShaderMaterial?.SetShaderParameter("white_mix", value);
+	}
+
+	private void SetKillShatterProgress(float value)
+	{
+		_killShaderMaterial?.SetShaderParameter("shatter_progress", value);
 	}
 }

@@ -13,6 +13,11 @@ public static class BattleRoomTileSetFactory
 		PackedScene playerScene,
 		PackedScene enemyScene,
 		PackedScene obstacleScene,
+		PackedScene escapeScene,
+		PackedScene facingLeftScene,
+		PackedScene facingUpScene,
+		PackedScene facingRightScene,
+		PackedScene facingDownScene,
 		int cellSizePixels)
 	{
 		TileSet tileSet = new TileSet
@@ -32,6 +37,11 @@ public static class BattleRoomTileSetFactory
 		sceneSource.CreateSceneTile(playerScene);
 		sceneSource.CreateSceneTile(enemyScene);
 		sceneSource.CreateSceneTile(obstacleScene);
+		sceneSource.CreateSceneTile(escapeScene, 6);
+		sceneSource.CreateSceneTile(facingLeftScene, 7);
+		sceneSource.CreateSceneTile(facingUpScene, 8);
+		sceneSource.CreateSceneTile(facingRightScene, 9);
+		sceneSource.CreateSceneTile(facingDownScene, 10);
 		tileSet.AddSource(sceneSource, SceneSourceId);
 
 		return tileSet;

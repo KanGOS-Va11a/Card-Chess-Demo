@@ -21,6 +21,20 @@ public sealed class BoardInitializer
 		_registry.Clear();
 		_boardState.Initialize(layout.BoardSize, layout.DefaultTerrainId, layout.DefaultMoveCost);
 		_boardState.SetRoomTags(layout.Tags);
+		foreach (Vector2I cell in layout.ArcTerrainCells)
+		{
+			if (_boardState.ContainsCell(cell))
+			{
+				_boardState.SetTerrain(cell, "arc");
+			}
+		}
+		foreach (Vector2I cell in layout.FireTerrainCells)
+		{
+			if (_boardState.ContainsCell(cell))
+			{
+				_boardState.SetTerrain(cell, "fire");
+			}
+		}
 
 		foreach (BoardObjectSpawnDefinition spawn in layout.ObjectSpawns)
 		{
