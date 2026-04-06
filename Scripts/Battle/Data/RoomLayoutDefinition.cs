@@ -10,6 +10,8 @@ public partial class RoomLayoutDefinition : Resource
 	[Export] public string DefaultTerrainId { get; set; } = "floor";
 	[Export] public int DefaultMoveCost { get; set; } = 1;
 	[Export] public BoardObjectSpawnDefinition[] ObjectSpawns { get; set; } = System.Array.Empty<BoardObjectSpawnDefinition>();
+	[Export] public Godot.Collections.Array<Vector2I> ArcTerrainCells { get; set; } = new();
+	[Export] public Godot.Collections.Array<Vector2I> FireTerrainCells { get; set; } = new();
 	[Export] public string[] Tags { get; set; } = System.Array.Empty<string>();
 	public Vector2I[] PlayerSpawnCells { get; set; } = System.Array.Empty<Vector2I>();
 	public Vector2I[] EnemySpawnCells { get; set; } = System.Array.Empty<Vector2I>();

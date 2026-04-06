@@ -12,6 +12,7 @@ public enum BattleCardTargetingMode
     EnemyUnit = 1,
     StraightLineEnemy = 2,
     FriendlyUnit = 3,
+    Cell = 4,
 }
 
 public sealed class BattleCardDefinition

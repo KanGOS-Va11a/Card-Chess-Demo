@@ -18,14 +18,21 @@ public sealed class PlayerStatResolver
 		_equipmentCatalog = equipmentCatalog;
 	}
 
-	public ResolvedPlayerStats Resolve(SharedPlayerRuntimeState playerState, SharedProgressionRuntimeState progressionState, SharedEquipmentLoadoutState loadoutState, int defenseDamageReductionPercent, int defenseShieldGain)
+	public ResolvedPlayerStats Resolve(
+		SharedPlayerRuntimeState playerState,
+		SharedProgressionRuntimeState progressionState,
+		SharedEquipmentLoadoutState loadoutState,
+		int defenseDamageReductionPercent,
+		int defenseShieldGain,
+		string? weaponOverrideItemId = null)
 	{
 		if (playerState == null)
 		{
 			return new ResolvedPlayerStats();
 		}
 
-		int attackBonus = SumTalentScalarBonuses(progressionState, "stat.attack_bonus.") + SumEquipmentIntModifiers(loadoutState, "player.attack_bonus");
+		int attackBonus = SumTalentScalarBonuses(progressionState, "stat.attack_bonus.") + SumEquipmentIntModifiers(loadoutState, "player.attack_bonus", weaponOverrideItemId);
+		int attackRangeBonus = SumTalentScalarBonuses(progressionState, "stat.attack_range_bonus.") + SumEquipmentIntModifiers(loadoutState, "player.attack_range_bonus", weaponOverrideItemId);
 		int defenseReductionBonus = SumTalentScalarBonuses(progressionState, "stat.defense_reduction_bonus.") + SumEquipmentIntModifiers(loadoutState, "player.defense_reduction_bonus");
 		int defenseShieldBonus = SumTalentScalarBonuses(progressionState, "stat.defense_shield_bonus.") + SumEquipmentIntModifiers(loadoutState, "player.defense_shield_bonus");
 		int maxHpBonus = SumEquipmentIntModifiers(loadoutState, "player.max_hp_bonus");
@@ -36,7 +43,7 @@ public sealed class PlayerStatResolver
 			MaxHp = Math.Max(1, playerState.MaxHp + maxHpBonus),
 			CurrentHp = Math.Max(0, playerState.CurrentHp),
 			MovePointsPerTurn = Math.Max(0, playerState.MovePointsPerTurn + moveBonus),
-			AttackRange = Math.Max(0, playerState.AttackRange),
+			AttackRange = Math.Max(0, playerState.AttackRange + attackRangeBonus),
 			AttackDamage = Math.Max(0, playerState.AttackDamage + attackBonus),
 			DefenseDamageReductionPercent = Mathf.Clamp(defenseDamageReductionPercent + defenseReductionBonus, 0, 100),
 			DefenseShieldGain = Math.Max(0, defenseShieldGain + defenseShieldBonus),
@@ -68,24 +75,28 @@ public sealed class PlayerStatResolver
 		return total;
 	}
 
-	private int SumEquipmentIntModifiers(SharedEquipmentLoadoutState? loadoutState, string modifierTypeId)
+	private int SumEquipmentIntModifiers(SharedEquipmentLoadoutState? loadoutState, string modifierTypeId, string? weaponOverrideItemId = null)
 	{
 		if (loadoutState == null || string.IsNullOrWhiteSpace(modifierTypeId))
 		{
 			return 0;
 		}
 
-		return GetEquippedDefinitions(loadoutState)
+		return GetEquippedDefinitions(loadoutState, weaponOverrideItemId)
 			.SelectMany(definition => definition.Modifiers)
 			.Where(modifier => string.Equals(modifier.ModifierTypeId, modifierTypeId, StringComparison.Ordinal))
 			.Sum(modifier => modifier.IntValue);
 	}
 
-	private EquipmentDefinition[] GetEquippedDefinitions(SharedEquipmentLoadoutState loadoutState)
+	private EquipmentDefinition[] GetEquippedDefinitions(SharedEquipmentLoadoutState loadoutState, string? weaponOverrideItemId)
 	{
+		string resolvedWeaponItemId = string.IsNullOrWhiteSpace(weaponOverrideItemId)
+			? loadoutState.WeaponItemId
+			: weaponOverrideItemId.Trim();
+
 		return new[]
 		{
-			_equipmentCatalog.FindDefinition(loadoutState.WeaponItemId),
+			_equipmentCatalog.FindDefinition(resolvedWeaponItemId),
 			_equipmentCatalog.FindDefinition(loadoutState.ArmorItemId),
 			_equipmentCatalog.FindDefinition(loadoutState.AccessoryItemId),
 		}

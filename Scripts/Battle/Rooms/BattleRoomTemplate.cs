@@ -32,6 +32,8 @@ public partial class BattleRoomTemplate : Node2D
 	[Export] public Godot.Collections.Array<Vector2I> DefaultDestructibleObstacleCells { get; set; } = new() { new Vector2I(6, 2) };
 	[Export] public Godot.Collections.Array<Vector2I> DefaultIndestructibleObstacleCells { get; set; } = new() { new Vector2I(7, 5) };
 	[Export] public Godot.Collections.Array<Vector2I> DefaultSlowPassObstacleCells { get; set; } = new() { new Vector2I(9, 3) };
+	[Export] public Godot.Collections.Array<Vector2I> DefaultArcTerrainCells { get; set; } = new();
+	[Export] public Godot.Collections.Array<Vector2I> DefaultFireTerrainCells { get; set; } = new();
 	[Export] public Godot.Collections.Array<Vector2I> DefaultEscapeCells { get; set; } = new();
 	[Export] public int FloorSourceId { get; set; } = 0;
 	[Export] public Vector2I DefaultFloorAtlasCoords { get; set; } = Vector2I.Zero;
@@ -164,6 +166,8 @@ public partial class BattleRoomTemplate : Node2D
 			BoardSize = BoardSize,
 			DefaultTerrainId = DefaultTerrainId,
 			DefaultMoveCost = DefaultMoveCost,
+			ArcTerrainCells = new Godot.Collections.Array<Vector2I>(DefaultArcTerrainCells),
+			FireTerrainCells = new Godot.Collections.Array<Vector2I>(DefaultFireTerrainCells),
 			Tags = RoomTags,
 			PlayerSpawnCells = playerSpawnCells.ToArray(),
 			EnemySpawnCells = enemySpawnCells.ToArray(),

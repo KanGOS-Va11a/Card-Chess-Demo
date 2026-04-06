@@ -12,6 +12,8 @@ public partial class BattleBoardOverlay : Node2D
     [Export] public Color ReachableColor { get; set; } = new(0.2f, 1.0f, 0.45f, 0.18f);
     [Export] public Color AttackTargetColor { get; set; } = new(1.0f, 0.35f, 0.35f, 0.22f);
     [Export] public Color SupportTargetColor { get; set; } = new(0.28f, 0.76f, 1.0f, 0.22f);
+    [Export] public Color ArcTerrainColor { get; set; } = new(0.20f, 0.58f, 1.0f, 0.18f);
+    [Export] public Color FireTerrainColor { get; set; } = new(1.0f, 0.55f, 0.14f, 0.20f);
     [Export] public Color EscapeCellColor { get; set; } = new(0.22f, 0.92f, 0.38f, 0.22f);
     [Export] public Color EscapeArrowColor { get; set; } = new(0.82f, 1.0f, 0.86f, 0.92f);
     [Export] public Color PathColor { get; set; } = new(1.0f, 0.9f, 0.3f, 0.82f);
@@ -25,6 +27,8 @@ public partial class BattleBoardOverlay : Node2D
     private readonly AnimatedCellLayer _reachableCells = new();
     private readonly AnimatedCellLayer _attackTargetCells = new();
     private readonly AnimatedCellLayer _supportTargetCells = new();
+    private readonly List<Vector2I> _arcTerrainCells = new();
+    private readonly List<Vector2I> _fireTerrainCells = new();
     private readonly List<Vector2I> _escapeCells = new();
     private readonly List<Vector2I> _previewPath = new();
     private double _previewPathAnimationStartTimeSeconds;
@@ -74,6 +78,42 @@ public partial class BattleBoardOverlay : Node2D
         QueueRedraw();
     }
 
+    public void SetArcTerrainCells(IEnumerable<Vector2I> cells)
+    {
+        Vector2I[] orderedCells = cells
+            .Distinct()
+            .OrderBy(cell => cell.Y)
+            .ThenBy(cell => cell.X)
+            .ToArray();
+
+        if (_arcTerrainCells.SequenceEqual(orderedCells))
+        {
+            return;
+        }
+
+        _arcTerrainCells.Clear();
+        _arcTerrainCells.AddRange(orderedCells);
+        QueueRedraw();
+    }
+
+    public void SetFireTerrainCells(IEnumerable<Vector2I> cells)
+    {
+        Vector2I[] orderedCells = cells
+            .Distinct()
+            .OrderBy(cell => cell.Y)
+            .ThenBy(cell => cell.X)
+            .ToArray();
+
+        if (_fireTerrainCells.SequenceEqual(orderedCells))
+        {
+            return;
+        }
+
+        _fireTerrainCells.Clear();
+        _fireTerrainCells.AddRange(orderedCells);
+        QueueRedraw();
+    }
+
     public void SetPreviewPath(IEnumerable<Vector2I> cells)
     {
         Vector2I[] orderedCells = cells.ToArray();
@@ -116,6 +156,8 @@ public partial class BattleBoardOverlay : Node2D
         DrawAnimatedCells(_reachableCells, ReachableColor);
         DrawAnimatedCells(_attackTargetCells, AttackTargetColor);
         DrawAnimatedCells(_supportTargetCells, SupportTargetColor);
+        DrawArcTerrainCells();
+        DrawFireTerrainCells();
         DrawEscapeCells();
 
         if (_previewPath.Count > 1)
@@ -288,6 +330,38 @@ public partial class BattleBoardOverlay : Node2D
             DrawRect(cellRect, EscapeCellColor, true);
             DrawRect(cellRect.Grow(-1.0f), borderColor, false, 2.0f);
             DrawEscapeArrow(cellRect, ResolveEscapeArrowDirection(cell));
+        }
+    }
+
+    private void DrawArcTerrainCells()
+    {
+        if (_room == null)
+        {
+            return;
+        }
+
+        Color borderColor = BuildCellBorderColor(ArcTerrainColor);
+        foreach (Vector2I cell in _arcTerrainCells)
+        {
+            Rect2 cellRect = _room.GetCellRect(cell);
+            DrawRect(cellRect, ArcTerrainColor, true);
+            DrawRect(cellRect.Grow(-1.0f), borderColor, false, 2.0f);
+        }
+    }
+
+    private void DrawFireTerrainCells()
+    {
+        if (_room == null)
+        {
+            return;
+        }
+
+        Color borderColor = BuildCellBorderColor(FireTerrainColor);
+        foreach (Vector2I cell in _fireTerrainCells)
+        {
+            Rect2 cellRect = _room.GetCellRect(cell);
+            DrawRect(cellRect, FireTerrainColor, true);
+            DrawRect(cellRect.Grow(-1.0f), borderColor, false, 2.0f);
         }
     }
 

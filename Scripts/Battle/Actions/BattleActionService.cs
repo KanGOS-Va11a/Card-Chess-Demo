@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
@@ -16,6 +16,10 @@ namespace CardChessDemo.Battle.Actions;
 public sealed class BattleActionService
 {
     public event Action<string>? ActionLogged;
+    public const string ArcTerrainId = "arc";
+    public const int ArcTerrainDamage = 2;
+    public const string FireTerrainId = "fire";
+    public const int FireTerrainDamage = 3;
 
     private readonly BoardState _boardState;
     private readonly BoardObjectRegistry _registry;
@@ -73,6 +77,11 @@ public sealed class BattleActionService
     public bool TryMoveObject(string objectId, Vector2I targetCell, out string failureReason)
     {
         failureReason = string.Empty;
+        Vector2I previousCell = Vector2I.Zero;
+        if (_registry.TryGet(objectId, out BoardObject? existingObject) && existingObject != null)
+        {
+            previousCell = existingObject.Cell;
+        }
 
         bool moved = _queryService.TryMoveObject(objectId, targetCell, out failureReason);
         if (!moved)
@@ -80,9 +89,14 @@ public sealed class BattleActionService
             return false;
         }
 
+        if (_registry.TryGet(objectId, out BoardObject? movedObject) && movedObject != null)
+        {
+            ApplyTerrainEffectsForMovement(movedObject, previousCell, targetCell);
+        }
+
         SyncPresentation();
         _pieceViewManager.PlayMove(objectId);
-        PublishActionLog($"{ResolveObjectDisplayName(objectId)}->({targetCell.X},{targetCell.Y}) 移动");
+        PublishActionLog($"{ResolveObjectDisplayName(objectId)}->({targetCell.X},{targetCell.Y}) 绉诲姩");
         return true;
     }
 
@@ -93,6 +107,7 @@ public sealed class BattleActionService
             return false;
         }
 
+        Vector2I previousCell = movingObject.Cell;
         IReadOnlyList<Vector2I> path = BuildMovePath(objectId, movingObject.Cell, targetCell);
         bool moved = _queryService.TryMoveObject(objectId, targetCell, out _);
         if (!moved)
@@ -108,7 +123,12 @@ public sealed class BattleActionService
             await WaitSeconds(MovePresentationDurationSeconds);
         }
 
-        PublishActionLog($"{ResolveObjectDisplayName(objectId)}->({targetCell.X},{targetCell.Y}) 移动");
+        if (_registry.TryGet(objectId, out BoardObject? movedObject) && movedObject != null)
+        {
+            ApplyTerrainEffectsForMovement(movedObject, previousCell, targetCell);
+        }
+
+        PublishActionLog($"{ResolveObjectDisplayName(objectId)}->({targetCell.X},{targetCell.Y}) 绉诲姩");
 
         return true;
     }
@@ -146,7 +166,7 @@ public sealed class BattleActionService
         PlayAttackPresentation(attacker, target, attackDirection);
         DamageApplicationResult result = ApplyDamageToTarget(target, attackerState.AttackDamage, attackDirection);
         wasDestroyed = target.IsDestroyed;
-        PublishActionLog($"{ResolveObjectDisplayName(attacker.ObjectId)}->{ResolveObjectDisplayName(target.ObjectId)} 攻击{SumDamageImpactAmount(result)}");
+        PublishActionLog($"{ResolveObjectDisplayName(attacker.ObjectId)}->{ResolveObjectDisplayName(target.ObjectId)} 鏀诲嚮{SumDamageImpactAmount(result)}");
         SyncPresentation();
         return true;
     }
@@ -237,8 +257,7 @@ public sealed class BattleActionService
             ObjectType = BoardObjectType.Obstacle,
             Cell = targetCell,
             Faction = BoardObjectFaction.World,
-            // 荒川造物需要阻挡站位，但仍应允许被攻击拆除，避免无限堵死敌人导致卡关。
-            Tags = new[] { "obstacle", "destructible", "arakawa_construct" },
+            // 鑽掑窛閫犵墿闇€瑕侀樆鎸＄珯浣嶏紝浣嗕粛搴斿厑璁歌鏀诲嚮鎷嗛櫎锛岄伩鍏嶆棤闄愬牭姝绘晫浜哄鑷村崱鍏炽€?            Tags = new[] { "obstacle", "destructible", "arakawa_construct" },
             MaxHp = 3,
             CurrentHp = 3,
             BlocksMovement = true,
@@ -251,7 +270,7 @@ public sealed class BattleActionService
 
     public bool TryCreateIndestructibleObstacle(Vector2I targetCell, out string createdObjectId, out string failureReason)
     {
-        // 兼容旧调用点。当前荒川造墙已改为“可破坏障碍物”实现。
+        // 兼容旧调用点。当前荒川造墙已经统一为可破坏障碍物实现。
         return TryCreateArakawaBarrier(targetCell, out createdObjectId, out failureReason);
     }
 
@@ -299,8 +318,51 @@ public sealed class BattleActionService
 
     public async Task<bool> TryCreateIndestructibleObstacleAsync(Vector2I targetCell)
     {
-        // 兼容旧调用点。当前荒川造墙已改为“可破坏障碍物”实现。
+        // 兼容旧调用点。当前荒川造墙已经统一为可破坏障碍物实现。
         return await TryCreateArakawaBarrierAsync(targetCell);
+    }
+
+    public bool TryCreateArcTerrain(Vector2I centerCell, out string failureReason)
+    {
+        failureReason = string.Empty;
+        bool changedAnyCell = false;
+        foreach (Vector2I cell in EnumerateArcTerrainCells(centerCell))
+        {
+            if (!_boardState.ContainsCell(cell))
+            {
+                continue;
+            }
+
+            BoardCellState cellState = _boardState.GetCell(cell);
+            if (string.Equals(cellState.TerrainId, ArcTerrainId, StringComparison.Ordinal))
+            {
+                continue;
+            }
+
+            _boardState.SetTerrain(cell, ArcTerrainId);
+            changedAnyCell = true;
+        }
+
+        if (!changedAnyCell)
+        {
+            failureReason = "No cells were changed.";
+            return false;
+        }
+
+        SyncPresentation();
+        return true;
+    }
+
+    public async Task<bool> TryCreateArcTerrainAsync(Vector2I centerCell)
+    {
+        bool created = TryCreateArcTerrain(centerCell, out _);
+        if (!created)
+        {
+            return false;
+        }
+
+        await WaitSeconds(UtilityPresentationDurationSeconds);
+        return true;
     }
 
     public async Task<bool> TrySpawnBoardObjectAsync(BoardObjectSpawnDefinition spawn)
@@ -329,6 +391,21 @@ public sealed class BattleActionService
             {
                 boardObject.ResolveTurnStart(activeFaction, activeTurnIndex);
             }
+        }
+
+        foreach (BoardObject boardObject in _registry.AllObjects.Where(obj => obj.Faction == activeFaction && obj.ObjectType == BoardObjectType.Unit).ToArray())
+        {
+            ApplyArcTerrainStayEffect(boardObject);
+        }
+
+        SyncPresentation();
+    }
+
+    public void ResolveTurnEnd(BoardObjectFaction endingFaction, int endingTurnIndex)
+    {
+        foreach (BoardObject boardObject in _registry.AllObjects.Where(obj => obj.Faction == endingFaction && obj.ObjectType == BoardObjectType.Unit).ToArray())
+        {
+            ApplyFireTerrainStayEffect(boardObject);
         }
 
         SyncPresentation();
@@ -537,6 +614,97 @@ public sealed class BattleActionService
         await _room.ToSignal(_sceneTree.CreateTimer(seconds), SceneTreeTimer.SignalName.Timeout);
     }
 
+    private void ApplyTerrainEffectsForMovement(BoardObject boardObject, Vector2I previousCell, Vector2I targetCell)
+    {
+        if (boardObject.ObjectType != BoardObjectType.Unit || boardObject.IsDestroyed)
+        {
+            return;
+        }
+
+        if (previousCell != targetCell && IsArcTerrain(previousCell))
+        {
+            ApplyArcTerrainDamage(boardObject, "离开");
+        }
+
+        if (!boardObject.IsDestroyed && previousCell != targetCell && IsArcTerrain(targetCell))
+        {
+            ApplyArcTerrainDamage(boardObject, "进入");
+        }
+    }
+
+    private void ApplyArcTerrainStayEffect(BoardObject boardObject)
+    {
+        if (boardObject.ObjectType != BoardObjectType.Unit || boardObject.IsDestroyed)
+        {
+            return;
+        }
+
+        if (IsArcTerrain(boardObject.Cell))
+        {
+            ApplyArcTerrainDamage(boardObject, "停留");
+        }
+    }
+
+    private void ApplyFireTerrainStayEffect(BoardObject boardObject)
+    {
+        if (boardObject.ObjectType != BoardObjectType.Unit || boardObject.IsDestroyed)
+        {
+            return;
+        }
+
+        if (IsFireTerrain(boardObject.Cell))
+        {
+            ApplyFireTerrainDamage(boardObject);
+        }
+    }
+
+    private void ApplyArcTerrainDamage(BoardObject boardObject, string triggerLabel)
+    {
+        DamageApplicationResult result = ApplyDamageToTarget(boardObject, ArcTerrainDamage, Vector2.Zero);
+        int damageAmount = result.Impacts
+            .Where(impact => impact.ImpactType is CombatImpactType.HealthDamage or CombatImpactType.ShieldDamage)
+            .Sum(impact => impact.Amount);
+        if (damageAmount > 0)
+        {
+            PublishActionLog($"{ResolveObjectDisplayName(boardObject.ObjectId)}->电弧{triggerLabel}{damageAmount}");
+        }
+    }
+
+    private void ApplyFireTerrainDamage(BoardObject boardObject)
+    {
+        DamageApplicationResult result = ApplyDamageToTarget(boardObject, FireTerrainDamage, Vector2.Zero);
+        int damageAmount = result.Impacts
+            .Where(impact => impact.ImpactType is CombatImpactType.HealthDamage or CombatImpactType.ShieldDamage)
+            .Sum(impact => impact.Amount);
+        if (damageAmount > 0)
+        {
+            PublishActionLog($"{ResolveObjectDisplayName(boardObject.ObjectId)}->火焰停留{damageAmount}");
+        }
+    }
+
+    private bool IsArcTerrain(Vector2I cell)
+    {
+        return _boardState.TryGetCell(cell, out BoardCellState? cellState)
+            && cellState != null
+            && string.Equals(cellState.TerrainId, ArcTerrainId, StringComparison.Ordinal);
+    }
+
+    private bool IsFireTerrain(Vector2I cell)
+    {
+        return _boardState.TryGetCell(cell, out BoardCellState? cellState)
+            && cellState != null
+            && string.Equals(cellState.TerrainId, FireTerrainId, StringComparison.Ordinal);
+    }
+
+    private static IEnumerable<Vector2I> EnumerateArcTerrainCells(Vector2I centerCell)
+    {
+        yield return centerCell;
+        foreach (Vector2I direction in BoardTopology.CardinalDirections)
+        {
+            yield return centerCell + direction;
+        }
+    }
+
     private static int GetManhattanDistance(Vector2I a, Vector2I b)
     {
         return Mathf.Abs(a.X - b.X) + Mathf.Abs(a.Y - b.Y);
@@ -601,3 +769,4 @@ public sealed class BattleActionService
             .Sum(impact => impact.Amount);
     }
 }
+

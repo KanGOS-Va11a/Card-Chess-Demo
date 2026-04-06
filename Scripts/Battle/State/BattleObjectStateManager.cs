@@ -17,6 +17,8 @@ public sealed class BattleObjectStateManager
     private readonly BattlePrefabLibrary _prefabLibrary;
     private readonly GlobalGameSession _session;
     private int _playerAttackDamageBonus;
+    private string _temporaryWeaponOverrideItemId = string.Empty;
+    private int _temporaryWeaponBasicAttackChargesRemaining;
 
     public BattleObjectStateManager(BoardObjectRegistry registry, BattlePrefabLibrary prefabLibrary, GlobalGameSession session)
     {
@@ -59,6 +61,69 @@ public sealed class BattleObjectStateManager
         _playerAttackDamageBonus += amount;
         SyncPlayerFromSession();
     }
+
+    public void ActivateTemporaryWeaponOverride(string weaponItemId, int basicAttackCharges)
+    {
+        if (string.IsNullOrWhiteSpace(weaponItemId) || basicAttackCharges <= 0)
+        {
+            ClearTemporaryWeaponOverride();
+            return;
+        }
+
+        _temporaryWeaponOverrideItemId = weaponItemId.Trim();
+        _temporaryWeaponBasicAttackChargesRemaining = basicAttackCharges;
+        SyncPlayerFromSession();
+    }
+
+    public bool ConsumeTemporaryWeaponAttackCharge(out bool expired, out int remainingCharges)
+    {
+        expired = false;
+        remainingCharges = _temporaryWeaponBasicAttackChargesRemaining;
+        if (!HasTemporaryWeaponOverride)
+        {
+            return false;
+        }
+
+        _temporaryWeaponBasicAttackChargesRemaining = Math.Max(0, _temporaryWeaponBasicAttackChargesRemaining - 1);
+        remainingCharges = _temporaryWeaponBasicAttackChargesRemaining;
+        if (_temporaryWeaponBasicAttackChargesRemaining == 0)
+        {
+            expired = true;
+            _temporaryWeaponOverrideItemId = string.Empty;
+        }
+
+        SyncPlayerFromSession();
+        return true;
+    }
+
+    public void ClearTemporaryWeaponOverride()
+    {
+        if (!HasTemporaryWeaponOverride)
+        {
+            return;
+        }
+
+        _temporaryWeaponOverrideItemId = string.Empty;
+        _temporaryWeaponBasicAttackChargesRemaining = 0;
+        SyncPlayerFromSession();
+    }
+
+    public string GetActivePlayerWeaponItemId()
+    {
+        if (HasTemporaryWeaponOverride)
+        {
+            return _temporaryWeaponOverrideItemId;
+        }
+
+        return _session.GetEquippedItemId(Equipment.EquipmentSlotIds.Weapon);
+    }
+
+    public int GetTemporaryWeaponBasicAttackChargesRemaining()
+    {
+        return _temporaryWeaponBasicAttackChargesRemaining;
+    }
+
+    public bool HasTemporaryWeaponOverride => !string.IsNullOrWhiteSpace(_temporaryWeaponOverrideItemId) && _temporaryWeaponBasicAttackChargesRemaining > 0;
 
     public void SyncAllFromRegistry()
     {
@@ -103,7 +168,7 @@ public sealed class BattleObjectStateManager
             return;
         }
 
-        ResolvedPlayerStats resolvedStats = _session.ResolvePlayerStats();
+        ResolvedPlayerStats resolvedStats = _session.ResolvePlayerStats(_temporaryWeaponOverrideItemId);
 
         // 玩家单位的显示名、生命和移动力以全局 session 为准，
         // 这样 HUD 调试改动能立即反馈到战斗表现。
@@ -119,7 +184,7 @@ public sealed class BattleObjectStateManager
     {
         BattlePrefabEntry? prefabEntry = _prefabLibrary.FindEntry(boardObject.DefinitionId);
         bool isPlayer = boardObject.HasTag("player");
-        ResolvedPlayerStats resolvedStats = _session.ResolvePlayerStats();
+        ResolvedPlayerStats resolvedStats = _session.ResolvePlayerStats(_temporaryWeaponOverrideItemId);
 
         BattleObjectState state = new(
             boardObject.ObjectId,
