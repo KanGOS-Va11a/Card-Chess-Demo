@@ -6,6 +6,5 @@
   </PropertyGroup>
   <ItemGroup>
     <Compile Remove="legacy\**\*.cs" />
-    <Compile Remove="Merge\**\*.cs" />
   </ItemGroup>
 </Project>

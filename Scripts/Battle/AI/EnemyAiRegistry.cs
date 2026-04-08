@@ -13,9 +13,6 @@ public sealed class EnemyAiRegistry
     {
         Register(_fallbackStrategy);
         Register(new MeleeBasicEnemyAiStrategy());
-        Register(new ScoutFlankerEnemyAiStrategy());
-        Register(new RangedLineEnemyAiStrategy());
-        Register(new Scene01LearningEnemyAiStrategy());
     }
 
     public void Register(IEnemyAiStrategy strategy)

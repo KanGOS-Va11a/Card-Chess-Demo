@@ -6,7 +6,7 @@ namespace CardChessDemo.Map;
 
 public partial class MapSceneController : Node2D
 {
-	[Export] public NodePath PlayerPath { get; set; } = new("MainPlayer/Player");
+	[Export] public NodePath PlayerPath { get; set; } = new("Player");
 
 	private GlobalGameSession? _globalSession;
 
@@ -49,7 +49,6 @@ public partial class MapSceneController : Node2D
 		}
 
 		player.GlobalPosition = resumeContext.PlayerGlobalPosition;
-		MapRuntimeSnapshotHelper.ApplyToScene(GetTree().CurrentScene ?? this, resumeContext.MapRuntimeSnapshot);
 		_globalSession.ConsumePendingMapResumeContext();
 	}
 
@@ -60,7 +59,6 @@ public partial class MapSceneController : Node2D
 			return player;
 		}
 
-		return GetNodeOrNull<Node2D>("MainPlayer/Player")
-			?? GetNodeOrNull<Node2D>("Player");
+		return GetNodeOrNull<Node2D>("Player");
 	}
 }

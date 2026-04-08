@@ -6,7 +6,6 @@ using CardChessDemo.Battle.Equipment;
 using CardChessDemo.Battle.Boundary;
 using CardChessDemo.Battle.Cards;
 using CardChessDemo.Battle.Progression;
-using CardChessDemo.Battle.Services;
 using CardChessDemo.Battle.Stats;
 
 namespace CardChessDemo.Battle.Shared;
@@ -44,7 +43,6 @@ public partial class GlobalGameSession : Node
 	[Export] public string EquippedWeaponItemId { get; set; } = string.Empty;
 	[Export] public string EquippedArmorItemId { get; set; } = string.Empty;
 	[Export] public string EquippedAccessoryItemId { get; set; } = string.Empty;
-	[Export] public string[] InventoryKeyItemIds { get; set; } = Array.Empty<string>();
 	[Export] public string LastCheckpointSaveId { get; set; } = string.Empty;
 	[Export] public string LastManualSaveId { get; set; } = string.Empty;
 	[Export] public string AutoSaveSlotId { get; set; } = "autosave";
@@ -52,13 +50,6 @@ public partial class GlobalGameSession : Node
 	[Export] public string LastCheckpointMapId { get; set; } = string.Empty;
 	[Export] public string LastCheckpointSpawnId { get; set; } = string.Empty;
 	[Export] public string LastAutoSaveTimestampUtc { get; set; } = string.Empty;
-	[Export] public string SessionId { get; set; } = string.Empty;
-	[Export] public string CurrentMapId { get; set; } = "scene1";
-	[Export] public string CurrentMapSpawnId { get; set; } = string.Empty;
-	[Export] public string PlayerProfileId { get; set; } = "default_player";
-	[Export] public int ScanRisk { get; set; } = 0;
-	[Export] public bool ShouldRestorePlayerPosition { get; set; } = false;
-	[Export] public Vector2 PendingRestorePlayerPosition { get; set; } = Vector2.Zero;
 
 	public BattleRequest? PendingBattleRequest { get; private set; }
 	public BattleResult? LastBattleResult { get; private set; }
@@ -73,103 +64,14 @@ public partial class GlobalGameSession : Node
 	public EquipmentCatalog RuntimeEquipmentCatalog { get; } = EquipmentCatalog.CreateFromConfiguredResources();
 	public ProgressionRuleSet RuntimeProgressionRuleSet { get; } = ProgressionRuleSet.CreateFromConfiguredRules();
 	public Godot.Collections.Dictionary InventoryItemCounts => InventoryState.ItemCounts;
-	public Godot.Collections.Array<string> InventoryKeyItems => InventoryState.KeyItemIds;
-	public Godot.Collections.Dictionary<StringName, Variant> WorldFlags { get; } = new();
-	public Godot.Collections.Array<StringName> ClearedEncounters { get; } = new();
-	public Godot.Collections.Array<StringName> UsedInteractables { get; } = new();
 
 	private EquipmentService _equipmentService = null!;
 	private PlayerStatResolver _playerStatResolver = null!;
 
 	public override void _Ready()
 	{
-		if (string.IsNullOrWhiteSpace(SessionId))
-		{
-			SessionId = Guid.NewGuid().ToString("N");
-		}
-
 		EnsureCompositionServices();
 		SyncCompositeStateFromFields();
-	}
-
-	public void SetCurrentMapContext(string mapId, string spawnId = "", string playerProfileId = "")
-	{
-		if (!string.IsNullOrWhiteSpace(mapId))
-		{
-			CurrentMapId = mapId.Trim();
-		}
-
-		CurrentMapSpawnId = spawnId?.Trim() ?? string.Empty;
-		if (!string.IsNullOrWhiteSpace(playerProfileId))
-		{
-			PlayerProfileId = playerProfileId.Trim();
-		}
-	}
-
-	public void SetFlag(StringName key, Variant value)
-	{
-		WorldFlags[key] = value;
-	}
-
-	public bool TryGetFlag(StringName key, out Variant value)
-	{
-		if (WorldFlags.TryGetValue(key, out value))
-		{
-			return true;
-		}
-
-		value = default;
-		return false;
-	}
-
-	public void MarkEncounterCleared(StringName encounterId)
-	{
-		if (!ClearedEncounters.Contains(encounterId))
-		{
-			ClearedEncounters.Add(encounterId);
-		}
-	}
-
-	public void MarkInteractableUsed(StringName interactableId)
-	{
-		if (!UsedInteractables.Contains(interactableId))
-		{
-			UsedInteractables.Add(interactableId);
-		}
-	}
-
-	public void SetPendingRestorePlayerPosition(Vector2 position)
-	{
-		ShouldRestorePlayerPosition = true;
-		PendingRestorePlayerPosition = position;
-	}
-
-	public void ClearPendingRestorePlayerPosition()
-	{
-		ShouldRestorePlayerPosition = false;
-		PendingRestorePlayerPosition = Vector2.Zero;
-	}
-
-	public void ApplyResourceDelta(StringName resourceKey, int delta, int? clampMin = null, int? clampMax = null)
-	{
-		int value;
-		switch (resourceKey.ToString())
-		{
-			case "player_hp":
-				value = PartyState.Player.CurrentHp + delta;
-				SetPlayerCurrentHp(ClampOptional(value, clampMin, clampMax));
-				break;
-			case "arakawa_energy":
-				value = PartyState.Arakawa.CurrentEnergy + delta;
-				SetArakawaCurrentEnergy(ClampOptional(value, clampMin, clampMax));
-				break;
-			case "scan_risk":
-				ScanRisk = ClampOptional(ScanRisk + delta, clampMin, clampMax);
-				break;
-			default:
-				GD.PushWarning($"GlobalGameSession.ApplyResourceDelta: unknown resource key '{resourceKey}'.");
-				break;
-		}
 	}
 
 	public void SetPlayerCurrentHp(int value)
@@ -452,47 +354,8 @@ public partial class GlobalGameSession : Node
 			return;
 		}
 
-		string roomLayoutId = result.RuntimeFlags.TryGetValue("room_layout_id", out Variant roomLayoutVariant)
-			? roomLayoutVariant.AsString()
-			: string.Empty;
-		BattleResolutionService resolutionService = new();
-		BattleResolutionPlan resolutionPlan = resolutionService.Resolve(this, result, roomLayoutId);
-		Godot.Collections.Dictionary mergedRuntimeFlags = CloneDictionary(result.RuntimeFlags);
-		foreach (Variant key in resolutionPlan.RewardBundle.RuntimeFlags.Keys)
-		{
-			mergedRuntimeFlags[key] = resolutionPlan.RewardBundle.RuntimeFlags[key];
-		}
-
-		if (resolutionPlan.ShouldClearEncounter)
-		{
-			mergedRuntimeFlags["cleared_encounter_id"] = resolutionPlan.ClearedEncounterId;
-			MarkEncounterCleared(new StringName(resolutionPlan.ClearedEncounterId));
-		}
-
-		if (result.Outcome == BattleOutcome.Victory && PendingMapResumeContext != null)
-		{
-			ApplyBattleVictoryToPendingMapResume(PendingMapResumeContext);
-		}
-
-		BattleResult resolvedResult = new(
-			requestId: result.RequestId,
-			encounterId: result.EncounterId,
-			outcome: result.Outcome,
-			playerSnapshot: result.PlayerSnapshot,
-			companionSnapshot: result.CompanionSnapshot,
-			progressionDelta: resolutionPlan.RewardBundle.ProgressionDelta.ToDictionary(),
-			inventoryDelta: resolutionPlan.RewardBundle.InventoryDelta.ToDictionary(),
-			rewardEntries: resolutionPlan.RewardBundle.RewardEntries.Select(BattleRewardEntry.FromDictionary),
-			clearedEncounterId: resolutionPlan.ShouldClearEncounter ? resolutionPlan.ClearedEncounterId : result.ClearedEncounterId,
-			runtimeFlags: mergedRuntimeFlags);
-
-		LastBattleResult = resolvedResult;
-		resolvedResult.ApplyToSession(this);
-	}
-
-	public BattleResult? PeekLastBattleResult()
-	{
-		return LastBattleResult;
+		LastBattleResult = result;
+		result.ApplyToSession(this);
 	}
 
 	public BattleResult? ConsumeLastBattleResult()
@@ -500,31 +363,6 @@ public partial class GlobalGameSession : Node
 		BattleResult? result = LastBattleResult;
 		LastBattleResult = null;
 		return result;
-	}
-
-	private void ApplyBattleVictoryToPendingMapResume(MapResumeContext resumeContext)
-	{
-		if (!string.IsNullOrWhiteSpace(resumeContext.EncounterId))
-		{
-			MarkEncounterCleared(new StringName(resumeContext.EncounterId));
-		}
-
-		if (string.IsNullOrWhiteSpace(resumeContext.SourceInteractablePath))
-		{
-			return;
-		}
-
-		MarkInteractableUsed(new StringName(resumeContext.SourceInteractablePath));
-		Godot.Collections.Dictionary snapshot = resumeContext.MapRuntimeSnapshot;
-		if (!snapshot.TryGetValue(resumeContext.SourceInteractablePath, out Variant sourceSnapshotVariant)
-			|| sourceSnapshotVariant.Obj is not Godot.Collections.Dictionary interactableSnapshot)
-		{
-			interactableSnapshot = new Godot.Collections.Dictionary();
-			snapshot[resumeContext.SourceInteractablePath] = interactableSnapshot;
-		}
-
-		interactableSnapshot["is_disabled"] = true;
-		interactableSnapshot["remove_from_scene"] = true;
 	}
 
 	public Godot.Collections.Dictionary BuildPlayerSnapshot()
@@ -600,11 +438,7 @@ public partial class GlobalGameSession : Node
 
 	public Godot.Collections.Dictionary BuildInventorySnapshot()
 	{
-		return new Godot.Collections.Dictionary
-		{
-			["items"] = CloneDictionary(InventoryItemCounts),
-			["key_items"] = CloneStringArray(InventoryKeyItems),
-		};
+		return CloneDictionary(InventoryItemCounts);
 	}
 
 	public Godot.Collections.Dictionary BuildSaveRuntimeSnapshot()
@@ -778,11 +612,6 @@ public partial class GlobalGameSession : Node
 			ProgressionState.ArakawaUnlockIds = MergeUniqueStrings(ProgressionState.ArakawaUnlockIds, delta.ArakawaUnlockIds);
 		}
 
-		if (delta.UnlockedCardIds.Length > 0)
-		{
-			ProgressionState.UnlockedCardIds = MergeUniqueStrings(ProgressionState.UnlockedCardIds, delta.UnlockedCardIds);
-		}
-
 		SyncFieldsFromCompositeState();
 	}
 
@@ -811,34 +640,10 @@ public partial class GlobalGameSession : Node
 
 	public void ApplyInventorySnapshot(Godot.Collections.Dictionary snapshot)
 	{
-		if (snapshot.TryGetValue("items", out Variant itemsVariant) && itemsVariant.Obj is Godot.Collections.Dictionary itemDictionary)
+		InventoryItemCounts.Clear();
+		foreach (Variant key in snapshot.Keys)
 		{
-			InventoryItemCounts.Clear();
-			foreach (Variant key in itemDictionary.Keys)
-			{
-				InventoryItemCounts[key.AsString()] = itemDictionary[key].AsInt32();
-			}
-		}
-		else
-		{
-			InventoryItemCounts.Clear();
-			foreach (Variant key in snapshot.Keys)
-			{
-				InventoryItemCounts[key.AsString()] = snapshot[key].AsInt32();
-			}
-		}
-
-		InventoryKeyItems.Clear();
-		if (snapshot.TryGetValue("key_items", out Variant keyItemsVariant) && keyItemsVariant.Obj is Godot.Collections.Array keyItemArray)
-		{
-			foreach (Variant item in keyItemArray)
-			{
-				string text = item.AsString();
-				if (!string.IsNullOrWhiteSpace(text))
-				{
-					InventoryKeyItems.Add(text);
-				}
-			}
+			InventoryItemCounts[key.AsString()] = snapshot[key].AsInt32();
 		}
 	}
 
@@ -885,80 +690,6 @@ public partial class GlobalGameSession : Node
 		}
 
 		SyncFieldsFromCompositeState();
-	}
-
-	public Godot.Collections.Dictionary BuildMapRuntimeSnapshot()
-	{
-		return new Godot.Collections.Dictionary
-		{
-			["session_id"] = SessionId,
-			["current_map_id"] = CurrentMapId,
-			["current_map_spawn_id"] = CurrentMapSpawnId,
-			["player_profile_id"] = PlayerProfileId,
-			["scan_risk"] = ScanRisk,
-			["should_restore_player_position"] = ShouldRestorePlayerPosition,
-			["pending_restore_player_position"] = PendingRestorePlayerPosition,
-			["world_flags"] = CloneDictionary(WorldFlags),
-			["cleared_encounters"] = CloneStringNameArray(ClearedEncounters),
-			["used_interactables"] = CloneStringNameArray(UsedInteractables),
-		};
-	}
-
-	public void ApplyMapRuntimeSnapshot(Godot.Collections.Dictionary snapshot)
-	{
-		if (snapshot.TryGetValue("session_id", out Variant sessionId))
-		{
-			SessionId = sessionId.AsString();
-		}
-
-		if (snapshot.TryGetValue("current_map_id", out Variant currentMapId))
-		{
-			CurrentMapId = currentMapId.AsString();
-		}
-
-		if (snapshot.TryGetValue("current_map_spawn_id", out Variant currentMapSpawnId))
-		{
-			CurrentMapSpawnId = currentMapSpawnId.AsString();
-		}
-
-		if (snapshot.TryGetValue("player_profile_id", out Variant playerProfileId))
-		{
-			PlayerProfileId = playerProfileId.AsString();
-		}
-
-		if (snapshot.TryGetValue("scan_risk", out Variant scanRisk))
-		{
-			ScanRisk = Math.Max(0, scanRisk.AsInt32());
-		}
-
-		if (snapshot.TryGetValue("should_restore_player_position", out Variant shouldRestore))
-		{
-			ShouldRestorePlayerPosition = shouldRestore.AsBool();
-		}
-
-		if (snapshot.TryGetValue("pending_restore_player_position", out Variant pendingRestorePosition))
-		{
-			PendingRestorePlayerPosition = pendingRestorePosition.AsVector2();
-		}
-
-		if (snapshot.TryGetValue("world_flags", out Variant worldFlags) && worldFlags.Obj is Godot.Collections.Dictionary worldFlagsDictionary)
-		{
-			WorldFlags.Clear();
-			foreach (Variant key in worldFlagsDictionary.Keys)
-			{
-				WorldFlags[new StringName(key.AsString())] = worldFlagsDictionary[key];
-			}
-		}
-
-		if (snapshot.TryGetValue("cleared_encounters", out Variant clearedEncounters))
-		{
-			ReplaceStringNameArray(ClearedEncounters, clearedEncounters);
-		}
-
-		if (snapshot.TryGetValue("used_interactables", out Variant usedInteractables))
-		{
-			ReplaceStringNameArray(UsedInteractables, usedInteractables);
-		}
 	}
 
 	private static string[] MergeUniqueStrings(string[] current, string[] incoming)
@@ -1020,72 +751,6 @@ public partial class GlobalGameSession : Node
 		return clone;
 	}
 
-	private static Godot.Collections.Dictionary CloneDictionary(Godot.Collections.Dictionary<StringName, Variant> source)
-	{
-		Godot.Collections.Dictionary clone = new();
-		foreach (StringName key in source.Keys)
-		{
-			clone[key] = source[key];
-		}
-
-		return clone;
-	}
-
-	private static Godot.Collections.Array<StringName> CloneStringNameArray(Godot.Collections.Array<StringName> source)
-	{
-		Godot.Collections.Array<StringName> clone = new();
-		foreach (StringName value in source)
-		{
-			clone.Add(value);
-		}
-
-		return clone;
-	}
-
-	private static Godot.Collections.Array<string> CloneStringArray(Godot.Collections.Array<string> source)
-	{
-		Godot.Collections.Array<string> clone = new();
-		foreach (string value in source)
-		{
-			clone.Add(value);
-		}
-
-		return clone;
-	}
-
-	private static void ReplaceStringNameArray(Godot.Collections.Array<StringName> target, Variant value)
-	{
-		target.Clear();
-		if (value.Obj is not Godot.Collections.Array rawArray)
-		{
-			return;
-		}
-
-		foreach (Variant item in rawArray)
-		{
-			string text = item.AsString();
-			if (!string.IsNullOrWhiteSpace(text))
-			{
-				target.Add(new StringName(text));
-			}
-		}
-	}
-
-	private static int ClampOptional(int value, int? min, int? max)
-	{
-		if (min.HasValue && value < min.Value)
-		{
-			value = min.Value;
-		}
-
-		if (max.HasValue && value > max.Value)
-		{
-			value = max.Value;
-		}
-
-		return value;
-	}
-
 	private void EnsureCompositionServices()
 	{
 		_equipmentService ??= new EquipmentService(RuntimeEquipmentCatalog);
@@ -1127,14 +792,6 @@ public partial class GlobalGameSession : Node
 		EquipmentLoadoutState.WeaponItemId = EquippedWeaponItemId;
 		EquipmentLoadoutState.ArmorItemId = EquippedArmorItemId;
 		EquipmentLoadoutState.AccessoryItemId = EquippedAccessoryItemId;
-		InventoryState.KeyItemIds.Clear();
-		foreach (string keyItemId in InventoryKeyItemIds)
-		{
-			if (!string.IsNullOrWhiteSpace(keyItemId))
-			{
-				InventoryState.KeyItemIds.Add(keyItemId);
-			}
-		}
 
 		SaveState.LastCheckpointSaveId = LastCheckpointSaveId;
 		SaveState.LastManualSaveId = LastManualSaveId;
@@ -1176,7 +833,6 @@ public partial class GlobalGameSession : Node
 		EquippedWeaponItemId = EquipmentLoadoutState.WeaponItemId;
 		EquippedArmorItemId = EquipmentLoadoutState.ArmorItemId;
 		EquippedAccessoryItemId = EquipmentLoadoutState.AccessoryItemId;
-		InventoryKeyItemIds = InventoryState.KeyItemIds.ToArray();
 
 		LastCheckpointSaveId = SaveState.LastCheckpointSaveId;
 		LastManualSaveId = SaveState.LastManualSaveId;

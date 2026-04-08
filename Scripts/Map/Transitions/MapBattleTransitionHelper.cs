@@ -33,26 +33,10 @@ public static class MapBattleTransitionHelper
             return false;
         }
 
-        Node? currentScene = contextNode.GetTree().CurrentScene;
-        string currentScenePath = ResolveCurrentScenePath(contextNode, currentScene);
-        if (string.IsNullOrWhiteSpace(currentScenePath))
-        {
-            failureReason = "Current map scene path is empty, cannot resume from battle.";
-            return false;
-        }
-
-        Godot.Collections.Dictionary mapRuntimeSnapshot = MapRuntimeSnapshotHelper.CaptureFromScene(currentScene);
-        string sourceInteractablePath = currentScene != null && currentScene.IsAncestorOf(contextNode)
-            ? currentScene.GetPathTo(contextNode).ToString()
-            : string.Empty;
+        string currentScenePath = contextNode.GetTree().CurrentScene?.SceneFilePath ?? string.Empty;
         globalSession.BeginBattle(BattleRequest.FromSession(globalSession, battleEncounterId));
         globalSession.SetPendingBattleEncounterId(battleEncounterId);
-        globalSession.SetPendingMapResumeContext(new MapResumeContext(
-            currentScenePath,
-            player.GlobalPosition,
-            mapRuntimeSnapshot,
-            sourceInteractablePath,
-            battleEncounterId));
+        globalSession.SetPendingMapResumeContext(new MapResumeContext(currentScenePath, player.GlobalPosition));
 
         _ = ExecuteBattleTransitionAsync(contextNode, battleScene, battleScenePath, globalSession, deferredFailureCallback);
         return true;
@@ -112,26 +96,5 @@ public static class MapBattleTransitionHelper
         tree.Root.AddChild(overlay);
         await overlay.ToSignal(tree, SceneTree.SignalName.ProcessFrame);
         return overlay;
-    }
-
-    private static string ResolveCurrentScenePath(Node contextNode, Node? currentScene)
-    {
-        if (currentScene != null && !string.IsNullOrWhiteSpace(currentScene.SceneFilePath))
-        {
-            return currentScene.SceneFilePath;
-        }
-
-        Node? owner = contextNode;
-        while (owner != null)
-        {
-            if (!string.IsNullOrWhiteSpace(owner.SceneFilePath))
-            {
-                return owner.SceneFilePath;
-            }
-
-            owner = owner.Owner;
-        }
-
-        return string.Empty;
     }
 }

@@ -17,8 +17,6 @@ public sealed class EnemyTurnResolver
     private readonly BattleActionService _actionService;
     private readonly EnemyAiRegistry _aiRegistry;
     private readonly Node _awaitHost;
-    private readonly Action<string, string, int>? _attackResolvedCallback;
-    private readonly Action<string>? _activeEnemyChangedCallback;
 
     public double PreActionDelaySeconds { get; set; } = 0.04d;
     public double PostActionDelaySeconds { get; set; } = 0.05d;
@@ -30,9 +28,7 @@ public sealed class EnemyTurnResolver
         BoardTargetingService targetingService,
         BattleActionService actionService,
         EnemyAiRegistry aiRegistry,
-        Node awaitHost,
-        Action<string, string, int>? attackResolvedCallback = null,
-        Action<string>? activeEnemyChangedCallback = null)
+        Node awaitHost)
     {
         _registry = registry;
         _stateManager = stateManager;
@@ -41,8 +37,6 @@ public sealed class EnemyTurnResolver
         _actionService = actionService;
         _aiRegistry = aiRegistry;
         _awaitHost = awaitHost;
-        _attackResolvedCallback = attackResolvedCallback;
-        _activeEnemyChangedCallback = activeEnemyChangedCallback;
     }
 
     public async Task ResolveTurnAsync()
@@ -55,10 +49,8 @@ public sealed class EnemyTurnResolver
 
         foreach (string enemyId in enemyIds)
         {
-            _activeEnemyChangedCallback?.Invoke(enemyId);
             if (!_registry.TryGet(enemyId, out BoardObject? enemyObject) || enemyObject == null)
             {
-                _activeEnemyChangedCallback?.Invoke(string.Empty);
                 continue;
             }
 
@@ -82,15 +74,12 @@ public sealed class EnemyTurnResolver
             await WaitSeconds(PreActionDelaySeconds);
             await ExecuteDecisionAsync(enemyId, decision);
             await WaitSeconds(Math.Max(PostActionDelaySeconds, _actionService.LastImpactPresentationDurationSeconds));
-            _activeEnemyChangedCallback?.Invoke(string.Empty);
 
             if (_actionService.IsPlayerDefeated)
             {
                 break;
             }
         }
-
-        _activeEnemyChangedCallback?.Invoke(string.Empty);
     }
 
     private async Task ExecuteDecisionAsync(string enemyId, EnemyAiDecision decision)
@@ -102,11 +91,7 @@ public sealed class EnemyTurnResolver
                 break;
 
             case EnemyAiDecisionType.Attack:
-                if (await _actionService.TryAttackObjectAsync(enemyId, decision.TargetObjectId, allowKillKnockback: false))
-                {
-                    int attackRange = _stateManager.Get(enemyId)?.AttackRange ?? 1;
-                    _attackResolvedCallback?.Invoke(enemyId, decision.TargetObjectId, attackRange);
-                }
+                await _actionService.TryAttackObjectAsync(enemyId, decision.TargetObjectId, allowKillKnockback: false);
                 break;
 
             case EnemyAiDecisionType.Spawn:

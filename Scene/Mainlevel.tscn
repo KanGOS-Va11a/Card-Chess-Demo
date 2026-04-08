@@ -1,13 +1,13 @@
-[gd_scene format=3 uid="uid://dhiavovujl55q"]
+[gd_scene format=3 uid="uid://vnei6k7os1lo"]
 
 [ext_resource type="Script" uid="uid://b8l5yhi5thqn" path="res://Scripts/Map/Actors/Player.cs" id="1_dx8mo"]
 [ext_resource type="Script" uid="uid://bacvjmwtxs21k" path="res://Scripts/Map/Controllers/MapSceneController.cs" id="1_map_controller"]
 [ext_resource type="Texture2D" uid="uid://cbnn0o0mufyk5" path="res://CosmicLegacy_PetricakeGamesPNG.png" id="2_j8rcl"]
-[ext_resource type="PackedScene" uid="uid://dt1wv24a11tt2" path="res://Scene/Chest.tscn" id="3_5o5ic"]
-[ext_resource type="PackedScene" uid="uid://cgyp1rf0rfueb" path="res://Scene/Healing.tscn" id="3_j8rcl"]
-[ext_resource type="PackedScene" uid="uid://gvdnl1a1kgcu" path="res://Scene/NpcScene.tscn" id="5_5o5ic"]
-[ext_resource type="PackedScene" uid="uid://dseclauojothp" path="res://Scene/SceneDoor.tscn" id="6_ujx8d"]
-[ext_resource type="PackedScene" uid="uid://cwg4wab3kfcp3" path="res://Scene/BattleEncounterEnemy.tscn" id="7_enemy"]
+[ext_resource type="PackedScene" uid="uid://c1ojey6clae1h" path="res://Scene/Chest.tscn" id="3_5o5ic"]
+[ext_resource type="PackedScene" uid="uid://disesyij2btfk" path="res://Scene/Healing.tscn" id="3_j8rcl"]
+[ext_resource type="PackedScene" uid="uid://cko4roccpe105" path="res://Scene/NpcScene.tscn" id="5_5o5ic"]
+[ext_resource type="PackedScene" uid="uid://bol17882q8uqr" path="res://Scene/SceneDoor.tscn" id="6_ujx8d"]
+[ext_resource type="PackedScene" uid="uid://dpjk4j87l3r8q" path="res://Scene/BattleEncounterEnemy.tscn" id="7_enemy"]
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_3jdkb"]
 
@@ -54,6 +54,10 @@ position = Vector2(631, -21)
 
 [node name="Door" parent="." unique_id=583652748 instance=ExtResource("6_ujx8d")]
 position = Vector2(611, 649)
+
+[node name="Door" parent="Door"]
+NextScenePath = "res://Scene/Scene2.tscn"
+PromptText = "进入测试区"
 
 [node name="Enemy" parent="." unique_id=270315686 instance=ExtResource("7_enemy")]
 position = Vector2(184, 170)

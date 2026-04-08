@@ -27,13 +27,8 @@ public partial class BattleHudController : CanvasLayer
 	private const float HoverOffsetY = -8.0f;
 	private const float ScreenMargin = 4.0f;
 	private const float SelectedCardLift = 8.0f;
-	private const float HoveredCardLift = 18.0f;
 	private const float CardWidth = 56.0f;
 	private const float CardHeight = 54.0f;
-	private const float HandLeftPadding = 2.0f;
-	private const float PreferredCardSpacing = 10.0f;
-	private const float MaxCardSpacing = 16.0f;
-	private const float MinCardSpacing = -44.0f;
 	private const float PilePreviewCardWidth = 58.0f;
 	private const float PilePreviewCardHeight = 96.0f;
 	private const int MaxPilePreviewColumns = 3;
@@ -151,8 +146,6 @@ public partial class BattleHudController : CanvasLayer
 	private string _selectedCardInstanceId = string.Empty;
 	private string _lastHandSignature = string.Empty;
 	private bool _signalsHooked;
-	private string _hoveredCardInstanceId = string.Empty;
-	private bool _handReorderQueued;
 
 	public override void _Ready()
 	{
@@ -402,7 +395,6 @@ public partial class BattleHudController : CanvasLayer
 	{
 		if (_hoveredCard == null)
 		{
-			_hoveredCardInstanceId = string.Empty;
 			_hoveredCardPanel.Visible = false;
 			return;
 		}
@@ -420,7 +412,6 @@ public partial class BattleHudController : CanvasLayer
 		}
 
 		_hoveredCardPanel.Visible = true;
-		_hoveredCardInstanceId = _hoveredCard.InstanceId;
 		_hoveredCardTitle.Text = $"{_hoveredCard.Definition.DisplayName} C{_hoveredCard.Definition.Cost}";
 		_hoveredCardStats.Text = line.ToString();
 		PositionFloatingPanel(_hoveredCardPanel, _hoveredCardScreenPosition);
@@ -572,24 +563,13 @@ public partial class BattleHudController : CanvasLayer
 		}
 
 		int cardCount = _handCards.Length;
-		float availableWidth = Mathf.Max(CardWidth, _handArea.Size.X - HandLeftPadding);
-		float spacing = PreferredCardSpacing;
-		if (cardCount > 1)
-		{
-			float fitSpacing = (availableWidth - CardWidth * cardCount) / Math.Max(1, cardCount - 1);
-			spacing = Mathf.Clamp(fitSpacing, MinCardSpacing, MaxCardSpacing);
-			if (fitSpacing > PreferredCardSpacing)
-			{
-				spacing = Mathf.Min(fitSpacing, MaxCardSpacing);
-			}
-		}
+		float availableWidth = Mathf.Max(CardWidth, _handArea.Size.X);
+		float spacing = cardCount <= 1
+			? 0.0f
+			: Mathf.Clamp((availableWidth - CardWidth * cardCount) / Math.Max(1, cardCount - 1), -22.0f, 4.0f);
 
 		float totalWidth = CardWidth * cardCount + spacing * Mathf.Max(0, cardCount - 1);
-		float startX = HandLeftPadding;
-		if (totalWidth > availableWidth)
-		{
-			startX = Mathf.Max(0.0f, _handArea.Size.X - totalWidth);
-		}
+		float startX = Mathf.Max(0.0f, (availableWidth - totalWidth) * 0.5f);
 
 		for (int index = 0; index < _handCards.Length; index++)
 		{
@@ -601,72 +581,10 @@ public partial class BattleHudController : CanvasLayer
 
 			bool isPlayable = _turnState?.CanSelectCard == true && card.Definition.Cost <= _currentEnergy;
 			bool isSelected = string.Equals(card.InstanceId, _selectedCardInstanceId, StringComparison.Ordinal);
-			bool isHovered = string.Equals(card.InstanceId, _hoveredCardInstanceId, StringComparison.Ordinal);
 			cardView.Bind(card, isSelected, isPlayable);
 			cardView.Size = new Vector2(CardWidth, CardHeight);
-			float liftedY = isHovered
-				? 0.0f
-				: isSelected
-					? SelectedCardLift
-					: HoveredCardLift;
-			cardView.Position = new Vector2(startX + index * (CardWidth + spacing), liftedY);
-			cardView.ZIndex = isHovered ? 30 : isSelected ? 20 : index;
-		}
-
-		QueueHandReorderForInput();
-	}
-
-	private void QueueHandReorderForInput()
-	{
-		if (_handReorderQueued || _handArea == null)
-		{
-			return;
-		}
-
-		_handReorderQueued = true;
-		Callable.From(ReorderHandCardViewsForInput).CallDeferred();
-	}
-
-	private void ReorderHandCardViewsForInput()
-	{
-		_handReorderQueued = false;
-		if (_handArea == null)
-		{
-			return;
-		}
-
-		List<BattleCardView> orderedViews = _handCards
-			.Select(card => _cardViews.TryGetValue(card.InstanceId, out BattleCardView? view) ? view : null)
-			.Where(view => view != null)
-			.ToList()!;
-
-		string selectedCardInstanceId = _selectedCardInstanceId;
-		string hoveredCardInstanceId = _hoveredCardInstanceId;
-
-		orderedViews.Sort((left, right) =>
-		{
-			int leftPriority = string.Equals(left.CardInstanceId, hoveredCardInstanceId, StringComparison.Ordinal)
-				? 2
-				: string.Equals(left.CardInstanceId, selectedCardInstanceId, StringComparison.Ordinal)
-					? 1
-					: 0;
-			int rightPriority = string.Equals(right.CardInstanceId, hoveredCardInstanceId, StringComparison.Ordinal)
-				? 2
-				: string.Equals(right.CardInstanceId, selectedCardInstanceId, StringComparison.Ordinal)
-					? 1
-					: 0;
-
-			if (leftPriority != rightPriority)
-			{
-				return leftPriority.CompareTo(rightPriority);
-			}
-
-			return 0;
-		});
-
-		for (int index = 0; index < orderedViews.Count; index++)
-		{
-			_handArea.CallDeferred("move_child", orderedViews[index], index);
+			cardView.Position = new Vector2(startX + index * (CardWidth + spacing), isSelected ? 0.0f : SelectedCardLift);
+			cardView.ZIndex = isSelected ? 10 : index;
 		}
 	}
 
@@ -1410,17 +1328,13 @@ public partial class BattleHudController : CanvasLayer
 	private void OnCardMouseEntered(BattleCardInstance card)
 	{
 		_hoveredCard = card;
-		_hoveredCardInstanceId = card.InstanceId;
 		_hoveredCardScreenPosition = GetViewport().GetMousePosition();
-		LayoutCardViews();
 		RefreshHoveredCard();
 	}
 
 	private void OnCardMouseExited()
 	{
 		_hoveredCard = null;
-		_hoveredCardInstanceId = string.Empty;
-		LayoutCardViews();
 		_hoveredCardPanel.Visible = false;
 	}
 

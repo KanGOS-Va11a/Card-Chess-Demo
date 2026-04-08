@@ -1,6 +1,6 @@
-[gd_scene format=3 uid="uid://bik05bcvdyaao"]
+[gd_scene format=3 uid="uid://cygseefr5cx8a"]
 
-[ext_resource type="Script" path="res://Scripts/Character/Player.cs" id="1_mv7q2"]
+[ext_resource type="Script" uid="uid://d0j3xk9r9plm1" path="res://Scripts/Character/Player.cs" id="1_mv7q2"]
 [ext_resource type="Texture2D" uid="uid://bjv3c3t7r52lh" path="res://Assets/Character/Idle/idle_001.png" id="3_idle1"]
 [ext_resource type="Texture2D" uid="uid://dpvopjty3t5ji" path="res://Assets/Character/Idle/idle_002.png" id="4_idle2"]
 [ext_resource type="FontFile" uid="uid://ct58dk6apiarx" path="res://Assets/Fonts/unifont_t-17.0.04.otf" id="5_ui_font"]
@@ -32,25 +32,6 @@ radius = 160.0
 collision_mask = 14
 script = ExtResource("1_mv7q2")
 Speed = 120.0
-Friction = null
-InteractionRange = null
-ViewConeHalfAngleDeg = null
-InteractionHintLabelPath = null
-InteractionHintSuffix = null
-AlwaysShowInteractionHint = null
-NoTargetHintText = null
-RequireLineOfSight = null
-InteractionObstacleMask = null
-InteractionStickyWindow = null
-InteractionStickyBonus = null
-ShowInteractionGizmo = null
-PlayerHpLabelPath = null
-PlayerHpBarPath = null
-PartnerEnergyLabelPath = null
-PartnerEnergyBarPath = null
-GizmoRangeColor = null
-GizmoConeColor = null
-GizmoForwardColor = null
 
 [node name="AnimatedSprite2D" type="AnimatedSprite2D" parent="Player" unique_id=373331228]
 scale = Vector2(1.4, 1.4)
@@ -76,22 +57,21 @@ shape = SubResource("CircleShape2D_5xq6q")
 
 [node name="InteractionHintLabel" type="Label" parent="UI" unique_id=194744206]
 visible = false
-z_index = 30
-anchors_preset = 1
 anchor_left = 1.0
 anchor_right = 1.0
 offset_left = -312.0
 offset_top = 6.0
 offset_right = -6.0
 offset_bottom = 44.0
-theme_override_colors/font_color = Color(1, 0.96, 0.68, 1)
-theme_override_colors/font_outline_color = Color(0, 0, 0, 1)
-theme_override_constants/outline_size = 3
-theme_override_fonts/font = ExtResource("5_ui_font")
-theme_override_font_sizes/font_size = 16
 horizontal_alignment = 2
 vertical_alignment = 1
 autowrap_mode = 2
+z_index = 30
+theme_override_fonts/font = ExtResource("5_ui_font")
+theme_override_colors/font_color = Color(1, 0.96, 0.68, 1)
+theme_override_colors/font_outline_color = Color(0, 0, 0, 1)
+theme_override_constants/outline_size = 3
+theme_override_font_sizes/font_size = 16
 
 [node name="BottomStatusBar" type="Panel" parent="UI" unique_id=1528687826]
 anchors_preset = 12
@@ -188,22 +168,15 @@ layout_mode = 2
 size_flags_vertical = 3
 theme_override_fonts/font = ExtResource("5_ui_font")
 theme_override_font_sizes/font_size = 14
-text = "普通物品：
-- （空）
-
-关键物品：
-- （无）"
 autowrap_mode = 2
+text = "普通物品：\n- （空）\n\n关键物品：\n- （无）"
 
 [node name="HintLabel" type="Label" parent="UI/InventoryPanel/Margin/VBox" unique_id=900120006]
 layout_mode = 2
-theme_override_colors/font_color = Color(0.85, 0.85, 0.85, 1)
 theme_override_fonts/font = ExtResource("5_ui_font")
 theme_override_font_sizes/font_size = 14
+theme_override_colors/font_color = Color(0.85, 0.85, 0.85, 1)
 text = "Tab 关闭背包"
 
 [node name="InventoryController" type="Node" parent="UI" unique_id=900120007]
 script = ExtResource("6_inventory_controller")
-PanelPath = null
-ContentLabelPath = null
-HintLabelPath = null

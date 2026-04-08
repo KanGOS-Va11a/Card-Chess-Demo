@@ -1,7 +1,7 @@
-[gd_scene format=3 uid="uid://dpba11wkw8cme"]
+[gd_scene format=3 uid="uid://ps2feuyl3u5d"]
 
 [ext_resource type="Texture2D" uid="uid://cbnn0o0mufyk5" path="res://CosmicLegacy_PetricakeGamesPNG.png" id="1_8i1a6"]
-[ext_resource type="Script" path="res://Scripts/Item/Door.cs" id="1_xgoer"]
+[ext_resource type="Script" uid="uid://dr8oorl9g0u1" path="res://Scripts/Item/Door.cs" id="1_xgoer"]
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_xgoer"]
 size = Vector2(92, 88)
@@ -13,21 +13,6 @@ radius = 108.0
 collision_layer = 2
 collision_mask = 0
 script = ExtResource("1_xgoer")
-NextScenePath = null
-UsesInSceneTeleport = null
-TeleportTargetPath = null
-TeleportOffset = null
-FadeOutSeconds = null
-BlackScreenHoldSeconds = null
-FadeInSeconds = null
-LockPlayerInputDuringTeleport = null
-BusyText = null
-DisplayName = null
-PromptText = null
-CooldownSeconds = null
-IsDisabled = null
-CompletedFlowNodeId = null
-NextActiveFlowNodeId = null
 
 [node name="Sprite2D" type="Sprite2D" parent="." unique_id=1653349226]
 scale = Vector2(5.2, 5.2)

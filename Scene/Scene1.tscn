@@ -1,13 +1,13 @@
-[gd_scene format=3 uid="uid://b0nwtt6pciaei"]
+[gd_scene format=3 uid="uid://bq5qagu68cj0o"]
 
 [ext_resource type="Script" uid="uid://dyw2yvmw0516w" path="res://Scripts/Map/Controllers/MapResolutionController.cs" id="1_map_resolution"]
-[ext_resource type="PackedScene" uid="uid://dt1wv24a11tt2" path="res://Scene/Chest.tscn" id="1_pyta8"]
+[ext_resource type="PackedScene" uid="uid://c1ojey6clae1h" path="res://Scene/Chest.tscn" id="1_pyta8"]
 [ext_resource type="Script" uid="uid://uyjnyeajalcw" path="res://Scripts/Map/Flow/MapFlowController.cs" id="2_map_flow_controller"]
 [ext_resource type="Script" uid="uid://cvq1ngfp8ro0t" path="res://Scripts/Map/Flow/FlowNodeGate.cs" id="3_flow_node_gate"]
-[ext_resource type="PackedScene" uid="uid://dpqvd6nlajxl0" path="res://Scene/Npc.tscn" id="3_pyta8"]
+[ext_resource type="PackedScene" uid="uid://nwbs50t7q10d" path="res://Scene/Npc.tscn" id="3_pyta8"]
 [ext_resource type="Script" uid="uid://dmhpblx8bnoo0" path="res://Scripts/Map/Flow/HubEntrySavePoint.cs" id="4_hub_save_point"]
-[ext_resource type="PackedScene" uid="uid://bik05bcvdyaao" path="res://Scene/MainPlayer.tscn" id="5_xawni"]
-[ext_resource type="PackedScene" uid="uid://csrea8f2igmyr" path="res://Scene/Enemy.tscn" id="6_enemy_scene"]
+[ext_resource type="PackedScene" uid="uid://cygseefr5cx8a" path="res://Scene/MainPlayer.tscn" id="5_xawni"]
+[ext_resource type="PackedScene" uid="uid://tln526npf6w6" path="res://Scene/Enemy.tscn" id="6_enemy_scene"]
 [ext_resource type="Texture2D" uid="uid://cbnn0o0mufyk5" path="res://CosmicLegacy_PetricakeGamesPNG.png" id="7_save_tex"]
 
 [sub_resource type="CircleShape2D" id="CircleShape2D_hub_save_interact"]
@@ -31,6 +31,7 @@ position = Vector2(-5, -2)
 
 [node name="Enemy" parent="." unique_id=1781789759 instance=ExtResource("6_enemy_scene")]
 position = Vector2(1363, 11)
+EncounterId = "grunt_debug"
 
 [node name="Chest" parent="." unique_id=419507687 instance=ExtResource("1_pyta8")]
 position = Vector2(-578, 2)
@@ -44,6 +45,8 @@ collision_layer = 2
 collision_mask = 0
 script = ExtResource("4_hub_save_point")
 PromptText = "记录进度"
+CompletedFlowNodeId = "hub_entry"
+NextActiveFlowNodeId = "maze_entry"
 
 [node name="Sprite2D" type="Sprite2D" parent="HubEntrySavePoint" unique_id=147900004]
 position = Vector2(0.99999994, 0)

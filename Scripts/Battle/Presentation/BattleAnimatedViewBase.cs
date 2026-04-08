@@ -8,7 +8,6 @@ namespace CardChessDemo.Battle.Presentation;
 public partial class BattleAnimatedViewBase : Node2D
 {
 	private static readonly Shader KillShatterShader = GD.Load<Shader>("res://Shaders/Battle/KillShatter.gdshader");
-	private static readonly Shader ActiveTurnOutlineShader = GD.Load<Shader>("res://Shaders/Battle/ActiveTurnOutline.gdshader");
 	private AnimatedSprite2D? _animatedSprite;
 	// 有些调用会在节点 _Ready 前发生，所以先缓存“想播什么动画”。
 	private string _pendingAnimation = "idle";
@@ -20,7 +19,6 @@ public partial class BattleAnimatedViewBase : Node2D
 	private Tween? _boardMoveTween;
 	private Tween? _killTween;
 	private ShaderMaterial? _killShaderMaterial;
-	private ShaderMaterial? _activeTurnOutlineMaterial;
 
 	public BattleObjectState? State { get; private set; }
 
@@ -290,28 +288,6 @@ public partial class BattleAnimatedViewBase : Node2D
 		PlayMotionOffset(new Vector2(0.0f, -1.5f), 0.04d, 0.12d);
 	}
 
-	public void SetActiveTurnHighlight(bool active, Color color)
-	{
-		if (_animatedSprite == null)
-		{
-			return;
-		}
-
-		if (active)
-		{
-			EnsureActiveTurnOutlineMaterial();
-			if (_activeTurnOutlineMaterial != null)
-			{
-				_activeTurnOutlineMaterial.SetShaderParameter("outline_color", color);
-				_animatedSprite.Material = _activeTurnOutlineMaterial;
-			}
-		}
-		else if (_animatedSprite.Material == _activeTurnOutlineMaterial)
-		{
-			_animatedSprite.Material = null;
-		}
-	}
-
 	public virtual void PlayMotionOffset(Vector2 targetOffset, double outDuration, double returnDuration, double returnDelay = 0.0d)
 	{
 		_motionTween?.Kill();
@@ -450,21 +426,6 @@ public partial class BattleAnimatedViewBase : Node2D
 		}
 
 		_animatedSprite.FlipH = _horizontalFacing != GetSourceArtFacingSign();
-	}
-
-	private void EnsureActiveTurnOutlineMaterial()
-	{
-		if (_activeTurnOutlineMaterial != null)
-		{
-			return;
-		}
-
-		_activeTurnOutlineMaterial = new ShaderMaterial
-		{
-			Shader = ActiveTurnOutlineShader,
-		};
-		_activeTurnOutlineMaterial.SetShaderParameter("outline_color", new Color(1.0f, 0.22f, 0.22f, 0.95f));
-		_activeTurnOutlineMaterial.SetShaderParameter("outline_size", 1.0f);
 	}
 
 	private void OnAnimationFinished()

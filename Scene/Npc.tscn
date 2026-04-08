@@ -1,6 +1,6 @@
-[gd_scene format=3 uid="uid://dpqvd6nlajxl0"]
+[gd_scene format=3 uid="uid://nwbs50t7q10d"]
 
-[ext_resource type="Script" path="res://Scripts/Character/Npc.cs" id="1_i8ab3"]
+[ext_resource type="Script" uid="uid://c1n7pc4vl4x2a" path="res://Scripts/Character/Npc.cs" id="1_i8ab3"]
 [ext_resource type="Texture2D" uid="uid://cbnn0o0mufyk5" path="res://CosmicLegacy_PetricakeGamesPNG.png" id="1_smt2w"]
 
 [sub_resource type="CircleShape2D" id="CircleShape2D_i8ab3"]
@@ -15,12 +15,6 @@ size = Vector2(242, 202)
 collision_layer = 2
 collision_mask = 0
 script = ExtResource("1_i8ab3")
-NpcName = null
-DialogueText = null
-DisplayName = null
-PromptText = null
-CooldownSeconds = null
-IsDisabled = null
 CompletedFlowNodeId = "tutorial_interact"
 NextActiveFlowNodeId = "hub_prepare"
 
