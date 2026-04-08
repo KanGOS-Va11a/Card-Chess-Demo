@@ -31,7 +31,8 @@ public partial class SystemFeatureLabController : CanvasLayer
 	private Label _masteryLabel = null!;
 	private ScrollContainer _talentTreeScroll = null!;
 	private Control _talentTreeCanvas = null!;
-	private Node2D _talentLineLayer = null!;
+	private Node _talentLineLayer = null!;
+	private TalentTreeLineCanvas? _talentLineCanvas;
 	private Button _cardTreeLabel = null!;
 	private Button _roleTreeLabel = null!;
 	private ColorRect _talentDetailDim = null!;
@@ -161,7 +162,8 @@ public partial class SystemFeatureLabController : CanvasLayer
 		_masteryLabel = GetNode<Label>("PanelRoot/Window/Margin/Root/Tabs/TalentTab/Body/MasteryFixedLabel");
 		_talentTreeScroll = GetNode<ScrollContainer>("PanelRoot/Window/Margin/Root/Tabs/TalentTab/Body/TalentTreeScroll");
 		_talentTreeCanvas = GetNode<Control>("PanelRoot/Window/Margin/Root/Tabs/TalentTab/Body/TalentTreeScroll/TalentTreeCanvas");
-		_talentLineLayer = GetNode<Node2D>("PanelRoot/Window/Margin/Root/Tabs/TalentTab/Body/TalentTreeScroll/TalentTreeCanvas/TalentLineLayer");
+		_talentLineLayer = GetNode("PanelRoot/Window/Margin/Root/Tabs/TalentTab/Body/TalentTreeScroll/TalentTreeCanvas/TalentLineLayer");
+		_talentLineCanvas = _talentLineLayer as TalentTreeLineCanvas;
 		_cardTreeLabel = GetNode<Button>("PanelRoot/Window/Margin/Root/Tabs/TalentTab/Body/TalentTreeScroll/TalentTreeCanvas/CardTreeLabel");
 		_roleTreeLabel = GetNode<Button>("PanelRoot/Window/Margin/Root/Tabs/TalentTab/Body/TalentTreeScroll/TalentTreeCanvas/RoleTreeLabel");
 		_talentDetailDim = GetNode<ColorRect>("PanelRoot/Window/Margin/Root/Tabs/TalentTab/Body/DetailDim");
@@ -197,6 +199,13 @@ public partial class SystemFeatureLabController : CanvasLayer
 		_tabs.SetTabTitle(2, "澶╄祴");
 		_tabs.SetTabTitle(3, "鍥鹃壌");
 		_tabs.SetTabTitle(4, "鏋勭瓚");
+		_tabs.SetTabTitle(0, "状态");
+		_tabs.SetTabTitle(1, "背包");
+		_tabs.SetTabTitle(2, "天赋");
+		_tabs.SetTabTitle(3, "图鉴");
+		_tabs.SetTabTitle(4, "构筑");
+		ApplyVisibleUiOverrides();
+		ApplyReadableUiTextOverrides();
 		_panelRoot.Visible = false;
 		_talentDetailPanel.Visible = false;
 
@@ -237,6 +246,7 @@ public partial class SystemFeatureLabController : CanvasLayer
 	public override void _Process(double delta)
 	{
 		UpdateStatusHint();
+		ApplyReadableStatusHint();
 	}
 
 	public override void _Input(InputEvent @event)
@@ -257,6 +267,8 @@ public partial class SystemFeatureLabController : CanvasLayer
 		if (_panelRoot.Visible)
 		{
 			RefreshAll();
+			ApplyVisibleUiOverrides();
+			ApplyReadableUiTextOverrides();
 			CallDeferred(nameof(ResetTalentTreeView));
 		}
 
@@ -304,19 +316,23 @@ public partial class SystemFeatureLabController : CanvasLayer
 	{
 		if (@event is InputEventMouseButton wheelEvent && wheelEvent.Pressed)
 		{
-			if (wheelEvent.ButtonIndex == MouseButton.WheelUp)
-			{
-				ApplyTalentTreeZoom(_talentTreeZoom + 0.1f, wheelEvent.Position);
-				GetViewport().SetInputAsHandled();
-				return;
-			}
+			GetViewport().SetInputAsHandled();
+		}
 
-			if (wheelEvent.ButtonIndex == MouseButton.WheelDown)
-			{
-				ApplyTalentTreeZoom(_talentTreeZoom - 0.1f, wheelEvent.Position);
-				GetViewport().SetInputAsHandled();
-				return;
-			}
+		if (@event is InputEventMouseButton mouseButton && mouseButton.ButtonIndex == MouseButton.Left)
+		{
+			_isDraggingTalentTree = mouseButton.Pressed;
+			_lastTalentDragPosition = mouseButton.Position;
+			return;
+		}
+
+		if (_isDraggingTalentTree && @event is InputEventMouseMotion mouseMotion)
+		{
+			Vector2 delta = mouseMotion.Position - _lastTalentDragPosition;
+			_talentTreeScroll.ScrollHorizontal = Math.Max(0, _talentTreeScroll.ScrollHorizontal - Mathf.RoundToInt(delta.X));
+			_talentTreeScroll.ScrollVertical = Math.Max(0, _talentTreeScroll.ScrollVertical - Mathf.RoundToInt(delta.Y));
+			_lastTalentDragPosition = mouseMotion.Position;
+			GetViewport().SetInputAsHandled();
 		}
 	}
 
@@ -353,26 +369,25 @@ public partial class SystemFeatureLabController : CanvasLayer
 			&& wheelEvent.Pressed
 			&& _talentTreeScroll.GetGlobalRect().HasPoint(wheelEvent.GlobalPosition))
 		{
-			Vector2 localMousePosition = wheelEvent.GlobalPosition - _talentTreeScroll.GetGlobalRect().Position;
-			if (wheelEvent.ButtonIndex == MouseButton.WheelUp)
-			{
-				ApplyTalentTreeZoom(_talentTreeZoom + 0.1f, localMousePosition);
-				GetViewport().SetInputAsHandled();
-				return;
-			}
-
-			if (wheelEvent.ButtonIndex == MouseButton.WheelDown)
-			{
-				ApplyTalentTreeZoom(_talentTreeZoom - 0.1f, localMousePosition);
-				GetViewport().SetInputAsHandled();
-				return;
-			}
+			GetViewport().SetInputAsHandled();
+			return;
 		}
 
 		if (@event is InputEventMouseButton mouseButton && mouseButton.ButtonIndex == MouseButton.Left)
 		{
 			if (mouseButton.Pressed)
 			{
+				if (_talentDetailPanel.Visible
+					&& !_talentDetailPanel.GetGlobalRect().HasPoint(mouseButton.GlobalPosition)
+					&& !IsPointOverTalentButton(mouseButton.GlobalPosition))
+				{
+					_selectedTalentId = string.Empty;
+					RefreshTalentButtons();
+					RefreshTalentDetail();
+					GetViewport().SetInputAsHandled();
+					return;
+				}
+
 				if (!_talentTreeScroll.GetGlobalRect().HasPoint(mouseButton.GlobalPosition))
 				{
 					return;
@@ -457,16 +472,113 @@ public partial class SystemFeatureLabController : CanvasLayer
 
 	private void ResetTalentTreeView()
 	{
-		_talentTreeZoom = 1.0f;
-		_talentTreeCanvas.Scale = Vector2.One;
+		_talentTreeZoom = 0.82f;
+		_talentTreeCanvas.Scale = Vector2.One * _talentTreeZoom;
 
-		Vector2 focusPoint = GetControlCenter(_cardTreeLabel) + new Vector2(120f, 90f);
+		Vector2 focusPoint = GetControlCenter(_cardTreeLabel) + new Vector2(220f, 140f);
 		float viewportWidth = Mathf.Max(1f, _talentTreeScroll.Size.X);
 		float viewportHeight = Mathf.Max(1f, _talentTreeScroll.Size.Y);
-		int scrollX = Mathf.RoundToInt(Mathf.Max(0f, focusPoint.X - viewportWidth * 0.5f));
-		int scrollY = Mathf.RoundToInt(Mathf.Max(0f, focusPoint.Y - viewportHeight * 0.5f));
+		int scrollX = Mathf.RoundToInt(Mathf.Max(0f, focusPoint.X * _talentTreeZoom - viewportWidth * 0.5f));
+		int scrollY = Mathf.RoundToInt(Mathf.Max(0f, focusPoint.Y * _talentTreeZoom - viewportHeight * 0.5f));
 		_talentTreeScroll.ScrollHorizontal = scrollX;
 		_talentTreeScroll.ScrollVertical = scrollY;
+	}
+
+	private void ApplyVisibleUiOverrides()
+	{
+		_hintLabel.Text = "WASD Move  E Interact  C System";
+		GetNode<Label>("PanelRoot/Window/Margin/Root/TitleLabel").Text = "System Lab | C Close";
+		GetNode<Label>("PanelRoot/Window/Margin/Root/Tabs/StatusTab/Columns/StatusColumn/Title").Text = "Status";
+		GetNode<Label>("PanelRoot/Window/Margin/Root/Tabs/StatusTab/Columns/EquipmentColumn/Title").Text = "Equipment";
+		GetNode<Label>("PanelRoot/Window/Margin/Root/Tabs/StatusTab/Columns/EquipmentColumn/CandidateTitle").Text = "Items";
+		_statusEquipButton.Text = "Equip";
+		_statusUnequipButton.Text = "Unequip";
+		GetNode<RichTextLabel>("PanelRoot/Window/Margin/Root/Tabs/StatusTab/Columns/EquipmentColumn/EquipmentDetailPanel/EquipmentDetailText").Text = "Equipment Detail";
+		GetNode<RichTextLabel>("PanelRoot/Window/Margin/Root/Tabs/InventoryTab/InventoryText").Text = "Bag Info";
+		_seedInventoryButton.Text = "Seed";
+		_clearInventoryButton.Text = "Clear";
+		_masteryLabel.Text = "Mastery";
+		_cardTreeLabel.Text = "Card Tree";
+		_roleTreeLabel.Text = "Role Tree";
+		_talentDetailTitleLabel.Text = "Talent Detail";
+		GetNode<Label>("PanelRoot/Window/Margin/Root/Tabs/TalentTab/Body/DetailPanel/Margin/Content/ActionHint").Text = "Select only. Click blank to close.";
+		_unlockTalentButton.Text = "Unlock";
+		_refundTalentButton.Text = "Refund";
+		GetNode<Label>("PanelRoot/Window/Margin/Root/Tabs/CodexTab/CodexTabs/CardCodex/Columns/ListColumn/Title").Text = "Card Codex";
+		GetNode<Label>("PanelRoot/Window/Margin/Root/Tabs/CodexTab/CodexTabs/EnemyCodex/Columns/ListColumn/Title").Text = "Enemy Codex";
+		GetNode<RichTextLabel>("PanelRoot/Window/Margin/Root/Tabs/CodexTab/CodexTabs/CardCodex/Columns/DetailPanel/DetailText").Text = "Select a card.";
+		GetNode<RichTextLabel>("PanelRoot/Window/Margin/Root/Tabs/CodexTab/CodexTabs/EnemyCodex/Columns/DetailPanel/DetailText").Text = "Select an enemy.";
+		_deckPoolSummaryLabel.Text = "Pool";
+		_deckSummaryLabel.Text = "Deck";
+		GetNode<Label>("PanelRoot/Window/Margin/Root/Tabs/DeckTab/Columns/AvailableColumn/AvailableTitle").Text = "Pool Cards";
+		GetNode<Label>("PanelRoot/Window/Margin/Root/Tabs/DeckTab/Columns/DeckColumn/DeckTitle").Text = "Current Deck";
+		_deckAddButton.Text = "Add ->";
+		_deckRemoveButton.Text = "<- Remove";
+		_deckDetailText.Text = "Select a card.";
+		_deckValidationText.Text = "Waiting";
+		_deckStarterButton.Text = "Starter";
+		_deckResetButton.Text = "Reset";
+		_deckSaveButton.Text = "Save";
+	}
+
+	private void ApplyReadableUiTextOverrides()
+	{
+		_hintLabel.Text = "WASD 移动  E 交互  C 系统";
+		GetNode<Label>("PanelRoot/Window/Margin/Root/TitleLabel").Text = "系统菜单 · 按 C 关闭";
+		GetNode<Label>("PanelRoot/Window/Margin/Root/Tabs/StatusTab/Columns/StatusColumn/Title").Text = "角色状态";
+		GetNode<Label>("PanelRoot/Window/Margin/Root/Tabs/StatusTab/Columns/EquipmentColumn/Title").Text = "装备管理";
+		GetNode<Label>("PanelRoot/Window/Margin/Root/Tabs/StatusTab/Columns/EquipmentColumn/CandidateTitle").Text = "可装备物品";
+		_statusEquipButton.Text = "装备";
+		_statusUnequipButton.Text = "卸下";
+		GetNode<RichTextLabel>("PanelRoot/Window/Margin/Root/Tabs/StatusTab/Columns/EquipmentColumn/EquipmentDetailPanel/EquipmentDetailText").Text = "选择装备后在这里查看详情";
+		GetNode<RichTextLabel>("PanelRoot/Window/Margin/Root/Tabs/InventoryTab/InventoryText").Text = "背包内容";
+		_seedInventoryButton.Text = "填充测试物资";
+		_clearInventoryButton.Text = "清空测试物资";
+		_masteryLabel.Text = "剩余专精点";
+		_cardTreeLabel.Text = "卡牌树";
+		_roleTreeLabel.Text = "角色能力树";
+		_talentDetailTitleLabel.Text = "天赋详情";
+		GetNode<Label>("PanelRoot/Window/Margin/Root/Tabs/TalentTab/Body/DetailPanel/Margin/Content/ActionHint").Text = "点击节点只会选中。点击空白处可关闭。";
+		_unlockTalentButton.Text = "解锁";
+		_refundTalentButton.Text = "退点";
+		GetNode<Label>("PanelRoot/Window/Margin/Root/Tabs/CodexTab/CodexTabs/CardCodex/Columns/ListColumn/Title").Text = "卡牌图鉴";
+		GetNode<Label>("PanelRoot/Window/Margin/Root/Tabs/CodexTab/CodexTabs/EnemyCodex/Columns/ListColumn/Title").Text = "敌人图鉴";
+		GetNode<RichTextLabel>("PanelRoot/Window/Margin/Root/Tabs/CodexTab/CodexTabs/CardCodex/Columns/DetailPanel/DetailText").Text = "选择一张卡牌查看详情";
+		GetNode<RichTextLabel>("PanelRoot/Window/Margin/Root/Tabs/CodexTab/CodexTabs/EnemyCodex/Columns/DetailPanel/DetailText").Text = "选择一个敌人查看详情";
+		_deckPoolSummaryLabel.Text = "可用卡池";
+		_deckSummaryLabel.Text = "当前构筑";
+		GetNode<Label>("PanelRoot/Window/Margin/Root/Tabs/DeckTab/Columns/AvailableColumn/AvailableTitle").Text = "可选卡牌";
+		GetNode<Label>("PanelRoot/Window/Margin/Root/Tabs/DeckTab/Columns/DeckColumn/DeckTitle").Text = "当前牌组";
+		_deckAddButton.Text = "加入 ->";
+		_deckRemoveButton.Text = "<- 移除";
+		_deckDetailText.Text = "选择一张卡牌查看详情";
+		_deckValidationText.Text = "等待校验";
+		_deckStarterButton.Text = "默认牌组";
+		_deckResetButton.Text = "恢复会话";
+		_deckSaveButton.Text = "保存构筑";
+	}
+
+	private void ApplyReadableStatusHint()
+	{
+		Node? playerNode = PlayerPath.IsEmpty ? null : GetNodeOrNull(PlayerPath);
+		Area2D? interactionArea = playerNode?.GetNodeOrNull<Area2D>("InteractionArea");
+		if (interactionArea == null)
+		{
+			_statusLabel.Text = "未找到玩家交互范围";
+			return;
+		}
+
+		foreach (Area2D area in interactionArea.GetOverlappingAreas())
+		{
+			if (area.GetParent() is IInteractable interactable && area.GetParent() is Node ownerNode)
+			{
+				Player? player = playerNode as Player ?? GetNodeOrNull<Player>(PlayerPath);
+				_statusLabel.Text = $"可交互对象: {ownerNode.Name} · {interactable.GetInteractText(player!)}";
+				return;
+			}
+		}
+
+		_statusLabel.Text = _panelRoot.Visible ? "系统面板已打开，按 C 关闭" : "靠近敌人后按 E 进入战斗";
 	}
 
 	private void BuildTalentButtons()
@@ -521,13 +633,17 @@ public partial class SystemFeatureLabController : CanvasLayer
 
 	private void RefreshTalentTreeLines()
 	{
-		foreach (Node child in _talentLineLayer.GetChildren().ToArray())
+		if (_talentLineCanvas == null && _talentLineLayer is Node2D legacyLayer)
 		{
-			child.QueueFree();
+			foreach (Node child in legacyLayer.GetChildren().ToArray())
+			{
+				child.QueueFree();
+			}
 		}
 
 		Vector2 cardRootCenter = GetControlCenter(_cardTreeLabel);
 		Vector2 roleRootCenter = GetControlCenter(_roleTreeLabel);
+		List<TalentTreeLineCanvas.PolylineData> lines = new();
 
 		foreach (TalentNode talent in _talents)
 		{
@@ -542,8 +658,8 @@ public partial class SystemFeatureLabController : CanvasLayer
 				Vector2 rootCenter = talent.Group == TalentTreeGroup.Card ? cardRootCenter : roleRootCenter;
 				Color lineColor = _purchasedTalentIds.Contains(talent.Id)
 					? new Color(1.0f, 0.86f, 0.28f, 1.0f)
-					: new Color(0.62f, 0.66f, 0.74f, 0.96f);
-				AddTreeLine(rootCenter, targetCenter, lineColor);
+					: new Color(0.56f, 0.60f, 0.66f, 1.0f);
+				lines.Add(new TalentTreeLineCanvas.PolylineData(BuildTreeLinePoints(rootCenter, targetCenter), lineColor, 8.0f));
 				continue;
 			}
 
@@ -557,29 +673,39 @@ public partial class SystemFeatureLabController : CanvasLayer
 				bool isUnlockedPath = _purchasedTalentIds.Contains(prerequisiteId) && _purchasedTalentIds.Contains(talent.Id);
 				Color lineColor = isUnlockedPath
 					? new Color(1.0f, 0.86f, 0.28f, 1.0f)
-					: new Color(0.62f, 0.66f, 0.74f, 0.96f);
-				AddTreeLine(GetControlCenter(prerequisiteButton), targetCenter, lineColor);
+					: new Color(0.56f, 0.60f, 0.66f, 1.0f);
+				lines.Add(new TalentTreeLineCanvas.PolylineData(BuildTreeLinePoints(GetControlCenter(prerequisiteButton), targetCenter), lineColor, 8.0f));
 			}
 		}
-	}
 
-	private void AddTreeLine(Vector2 from, Vector2 to, Color color)
-	{
-		Line2D line = new()
+		if (_talentLineCanvas != null)
 		{
-			Name = $"TreeLine_{Guid.NewGuid():N}",
-			Width = 6.0f,
-			DefaultColor = color,
-			Antialiased = false,
-			ZIndex = 0,
-		};
-
-		foreach (Vector2 point in BuildTreeLinePoints(from, to))
-		{
-			line.AddPoint(point);
+			_talentLineCanvas.SetLines(lines);
+			return;
 		}
 
-		_talentLineLayer.AddChild(line);
+		if (_talentLineLayer is not Node2D fallbackLayer)
+		{
+			return;
+		}
+
+		foreach (TalentTreeLineCanvas.PolylineData line in lines)
+		{
+			Line2D fallback = new()
+			{
+				Width = line.Width,
+				DefaultColor = line.Color,
+				Antialiased = false,
+				ZIndex = 1,
+			};
+
+			foreach (Vector2 point in line.Points)
+			{
+				fallback.AddPoint(point);
+			}
+
+			fallbackLayer.AddChild(fallback);
+		}
 	}
 
 	private static Vector2[] BuildTreeLinePoints(Vector2 from, Vector2 to)
@@ -881,7 +1007,10 @@ public partial class SystemFeatureLabController : CanvasLayer
 	{
 		foreach (TalentNode talent in _talents)
 		{
-			Button button = _talentButtons[talent.Id];
+			if (!_talentButtons.TryGetValue(talent.Id, out Button? button))
+			{
+				continue;
+			}
 			bool purchased = _purchasedTalentIds.Contains(talent.Id);
 			bool canPurchase = CanPurchase(talent);
 			bool canRefund = CanRefund(talent);

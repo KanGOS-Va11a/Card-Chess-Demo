@@ -4,6 +4,7 @@
 [ext_resource type="Script" uid="uid://bacvjmwtxs21k" path="res://Scripts/Map/Controllers/MapSceneController.cs" id="2_map_controller"]
 [ext_resource type="Script" uid="uid://b8l5yhi5thqn" path="res://Scripts/Map/Actors/Player.cs" id="3_player"]
 [ext_resource type="Script" path="res://Scripts/Map/UI/SystemFeatureLabController.cs" id="4_ui"]
+[ext_resource type="Script" path="res://Scripts/Map/UI/TalentTreeLineCanvas.cs" id="5_talent_line"]
 [ext_resource type="PackedScene" uid="uid://cwg4wab3kfcp3" path="res://Scene/BattleEncounterEnemy.tscn" id="5_enemy"]
 [ext_resource type="Texture2D" uid="uid://cbnn0o0mufyk5" path="res://Assets/Tilemap/CosmicLegacy_PetricakeGamesPNG.png" id="6_tiles"]
 
@@ -293,8 +294,19 @@ size_flags_stretch_ratio = 1.45
 theme_override_styles/panel = SubResource("StyleBoxFlat_panel")
 
 [node name="TalentTreeCanvas" type="Control" parent="SystemUI/PanelRoot/Window/Margin/Root/Tabs/TalentTab/Body/TalentTreeScroll" unique_id=1841924766]
-custom_minimum_size = Vector2(820, 420)
+custom_minimum_size = Vector2(2360, 1560)
 layout_mode = 2
+
+[node name="TalentLineLayer" type="Control" parent="SystemUI/PanelRoot/Window/Margin/Root/Tabs/TalentTab/Body/TalentTreeScroll/TalentTreeCanvas"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+z_index = 4
+script = ExtResource("5_talent_line")
 
 [node name="CardTreeRootBackdrop" type="ColorRect" parent="SystemUI/PanelRoot/Window/Margin/Root/Tabs/TalentTab/Body/TalentTreeScroll/TalentTreeCanvas" unique_id=1847016115]
 layout_mode = 0
@@ -312,12 +324,13 @@ offset_right = 692.0
 offset_bottom = 64.0
 color = Color(0.33, 0.24, 0.14, 0.92)
 
-[node name="CardTreeLabel" type="Label" parent="SystemUI/PanelRoot/Window/Margin/Root/Tabs/TalentTab/Body/TalentTreeScroll/TalentTreeCanvas" unique_id=1586509010]
+[node name="CardTreeLabel" type="Button" parent="SystemUI/PanelRoot/Window/Margin/Root/Tabs/TalentTab/Body/TalentTreeScroll/TalentTreeCanvas" unique_id=1586509010]
 layout_mode = 0
 offset_left = 126.0
 offset_top = 28.0
 offset_right = 248.0
 offset_bottom = 58.0
+z_index = 12
 theme_override_colors/font_color = Color(0.94, 0.97, 1, 1)
 theme_override_colors/font_outline_color = Color(0, 0, 0, 1)
 theme_override_constants/outline_size = 2
@@ -325,12 +338,13 @@ theme_override_font_sizes/font_size = 18
 text = "卡牌树"
 horizontal_alignment = 1
 
-[node name="RoleTreeLabel" type="Label" parent="SystemUI/PanelRoot/Window/Margin/Root/Tabs/TalentTab/Body/TalentTreeScroll/TalentTreeCanvas" unique_id=63003854]
+[node name="RoleTreeLabel" type="Button" parent="SystemUI/PanelRoot/Window/Margin/Root/Tabs/TalentTab/Body/TalentTreeScroll/TalentTreeCanvas" unique_id=63003854]
 layout_mode = 0
 offset_left = 510.0
 offset_top = 28.0
 offset_right = 674.0
 offset_bottom = 58.0
+z_index = 12
 theme_override_colors/font_color = Color(1, 0.97, 0.9, 1)
 theme_override_colors/font_outline_color = Color(0, 0, 0, 1)
 theme_override_constants/outline_size = 2
