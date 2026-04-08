@@ -1,3 +1,4 @@
+using System;
 using Godot;
 
 namespace CardChessDemo.Map;
@@ -93,5 +94,32 @@ public abstract partial class InteractableTemplate : StaticBody2D, IInteractable
 		tween.SetEase(Tween.EaseType.Out).SetTrans(Tween.TransitionType.Back);
 		tween.TweenProperty(pulseTarget, "scale", baseScale * scaleFactor, 0.08f);
 		tween.TweenProperty(pulseTarget, "scale", baseScale, 0.10f);
+	}
+
+	public virtual Godot.Collections.Dictionary BuildRuntimeSnapshot()
+	{
+		return new Godot.Collections.Dictionary
+		{
+			["is_disabled"] = IsDisabled,
+			["next_available_time_ms"] = (long)_nextAvailableTimeMs,
+		};
+	}
+
+	public virtual void ApplyRuntimeSnapshot(Godot.Collections.Dictionary snapshot)
+	{
+		if (snapshot == null || snapshot.Count == 0)
+		{
+			return;
+		}
+
+		if (snapshot.TryGetValue("is_disabled", out Variant disabledValue))
+		{
+			IsDisabled = disabledValue.AsBool();
+		}
+
+		if (snapshot.TryGetValue("next_available_time_ms", out Variant nextAvailableValue))
+		{
+			_nextAvailableTimeMs = (ulong)Math.Max(0L, nextAvailableValue.AsInt64());
+		}
 	}
 }

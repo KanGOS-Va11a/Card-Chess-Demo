@@ -6,8 +6,9 @@
 [sub_resource type="Resource" id="Encounter_grunt_debug"]
 script = ExtResource("2_profile")
 EncounterId = "grunt_debug"
-DisplayName = "Debug Grunt Encounter"
-EnemyTypeIds = PackedStringArray("grunt")
+DisplayName = "Scene01 Tutorial Encounter"
+PrimaryEnemyDefinitionId = "scene01_tutorial_enemy"
+EnemyTypeIds = PackedStringArray("scene01_tutorial_enemy")
 
 [resource]
 script = ExtResource("1_lib")

@@ -25,6 +25,98 @@ DefaultMaxHp = 6
 DefaultCurrentHp = 6
 DefaultMovePointsPerTurn = 3
 
+[sub_resource type="Resource" id="Entry_Pirate_Blocker"]
+script = ExtResource("2_entry")
+DefinitionId = "pirate_blocker"
+DisplayName = "搭船客堵门者"
+PrefabScene = ExtResource("4_enemy")
+DefaultMaxHp = 7
+DefaultCurrentHp = 7
+DefaultMovePointsPerTurn = 3
+DefaultAttackDamage = 2
+
+[sub_resource type="Resource" id="Entry_Pirate_Scout"]
+script = ExtResource("2_entry")
+DefinitionId = "pirate_scout"
+DisplayName = "搭船客侦察兵"
+PrefabScene = ExtResource("4_enemy")
+DefaultMaxHp = 5
+DefaultCurrentHp = 5
+DefaultMovePointsPerTurn = 4
+DefaultAttackDamage = 2
+
+[sub_resource type="Resource" id="Entry_Pirate_Shocker"]
+script = ExtResource("2_entry")
+DefinitionId = "pirate_shocker"
+DisplayName = "搭船客电棍手"
+PrefabScene = ExtResource("4_enemy")
+DefaultMaxHp = 6
+DefaultCurrentHp = 6
+DefaultMovePointsPerTurn = 3
+DefaultAttackDamage = 3
+
+[sub_resource type="Resource" id="Entry_Pirate_Gunner"]
+script = ExtResource("2_entry")
+DefinitionId = "pirate_gunner"
+DisplayName = "搭船客拾荒枪手"
+PrefabScene = ExtResource("4_enemy")
+DefaultMaxHp = 5
+DefaultCurrentHp = 5
+DefaultMovePointsPerTurn = 2
+DefaultAttackRange = 3
+DefaultAttackDamage = 2
+
+[sub_resource type="Resource" id="Entry_Pirate_Pipe_Bomber"]
+script = ExtResource("2_entry")
+DefinitionId = "pirate_pipe_bomber"
+DisplayName = "管道爆破客"
+PrefabScene = ExtResource("4_enemy")
+DefaultMaxHp = 5
+DefaultCurrentHp = 5
+DefaultMovePointsPerTurn = 2
+DefaultAttackRange = 3
+DefaultAttackDamage = 2
+
+[sub_resource type="Resource" id="Entry_Pirate_Brute_Elite"]
+script = ExtResource("2_entry")
+DefinitionId = "pirate_brute_elite"
+DisplayName = "搭船客重压者"
+PrefabScene = ExtResource("4_enemy")
+DefaultMaxHp = 10
+DefaultCurrentHp = 10
+DefaultMovePointsPerTurn = 3
+DefaultAttackDamage = 4
+
+[sub_resource type="Resource" id="Entry_Scrap_Medic_Elite"]
+script = ExtResource("2_entry")
+DefinitionId = "scrap_medic_elite"
+DisplayName = "废料医护机"
+PrefabScene = ExtResource("4_enemy")
+DefaultMaxHp = 8
+DefaultCurrentHp = 8
+DefaultMovePointsPerTurn = 2
+DefaultAttackRange = 2
+DefaultAttackDamage = 1
+
+[sub_resource type="Resource" id="Entry_Boss_Rust_Captain"]
+script = ExtResource("2_entry")
+DefinitionId = "boss_rust_captain"
+DisplayName = "锈船长"
+PrefabScene = ExtResource("4_enemy")
+DefaultMaxHp = 16
+DefaultCurrentHp = 16
+DefaultMovePointsPerTurn = 3
+DefaultAttackDamage = 5
+
+[sub_resource type="Resource" id="Entry_Scene01_Tutorial_Enemy"]
+script = ExtResource("2_entry")
+DefinitionId = "scene01_tutorial_enemy"
+DisplayName = "教程拾荒兵"
+PrefabScene = ExtResource("4_enemy")
+DefaultMaxHp = 6
+DefaultCurrentHp = 6
+DefaultMovePointsPerTurn = 3
+DefaultAttackDamage = 2
 [sub_resource type="Resource" id="Entry_Obstacle_Destructible"]
 script = ExtResource("2_entry")
 DefinitionId = "battle_obstacle_destructible"
@@ -53,4 +145,5 @@ DefaultAttackDamage = 0
 
 [resource]
 script = ExtResource("1_lib")
-Entries = [SubResource("Entry_Player"), SubResource("Entry_Enemy"), SubResource("Entry_Obstacle_Destructible"), SubResource("Entry_Obstacle_Wall"), SubResource("Entry_Obstacle_Slow")]
+Entries = [SubResource("Entry_Player"), SubResource("Entry_Enemy"), SubResource("Entry_Scene01_Tutorial_Enemy"), SubResource("Entry_Pirate_Blocker"), SubResource("Entry_Pirate_Scout"), SubResource("Entry_Pirate_Shocker"), SubResource("Entry_Pirate_Gunner"), SubResource("Entry_Pirate_Pipe_Bomber"), SubResource("Entry_Pirate_Brute_Elite"), SubResource("Entry_Scrap_Medic_Elite"), SubResource("Entry_Boss_Rust_Captain"), SubResource("Entry_Obstacle_Destructible"), SubResource("Entry_Obstacle_Wall"), SubResource("Entry_Obstacle_Slow")]
+

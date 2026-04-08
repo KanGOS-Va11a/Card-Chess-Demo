@@ -9,13 +9,13 @@ namespace CardChessDemo.Battle.Visual;
 public partial class BattleBoardOverlay : Node2D
 {
     [Export] public Color HoverColor { get; set; } = new(0.2f, 0.85f, 1.0f, 0.28f);
-    [Export] public Color ReachableColor { get; set; } = new(0.2f, 1.0f, 0.45f, 0.18f);
+    [Export] public Color ReachableColor { get; set; } = new(0.42f, 0.98f, 0.22f, 0.18f);
     [Export] public Color AttackTargetColor { get; set; } = new(1.0f, 0.35f, 0.35f, 0.22f);
-    [Export] public Color SupportTargetColor { get; set; } = new(0.28f, 0.76f, 1.0f, 0.22f);
-    [Export] public Color ArcTerrainColor { get; set; } = new(0.20f, 0.58f, 1.0f, 0.18f);
+    [Export] public Color SupportTargetColor { get; set; } = new(0.16f, 0.92f, 0.86f, 0.22f);
+    [Export] public Color ArcTerrainColor { get; set; } = new(0.34f, 0.46f, 1.0f, 0.22f);
     [Export] public Color FireTerrainColor { get; set; } = new(1.0f, 0.55f, 0.14f, 0.20f);
-    [Export] public Color EscapeCellColor { get; set; } = new(0.22f, 0.92f, 0.38f, 0.22f);
-    [Export] public Color EscapeArrowColor { get; set; } = new(0.82f, 1.0f, 0.86f, 0.92f);
+    [Export] public Color EscapeCellColor { get; set; } = new(0.18f, 0.72f, 0.28f, 0.28f);
+    [Export] public Color EscapeArrowColor { get; set; } = new(0.94f, 1.0f, 0.74f, 0.95f);
     [Export] public Color PathColor { get; set; } = new(1.0f, 0.9f, 0.3f, 0.82f);
     [Export(PropertyHint.Range, "0.01,0.40,0.01")] public float CellRevealDuration { get; set; } = 0.16f;
     [Export(PropertyHint.Range, "0.00,0.20,0.005")] public float CellRingDelaySeconds { get; set; } = 0.018f;

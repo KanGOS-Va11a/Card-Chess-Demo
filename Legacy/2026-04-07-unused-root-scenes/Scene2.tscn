@@ -1,0 +1,27 @@
+[gd_scene format=3 uid="uid://cvow5aawg3wqf"]
+
+[ext_resource type="PackedScene" uid="uid://4yvcd6ih5te5" path="res://Legacy/2026-04-07-premerge-map-layouts/Scene/MainPlayer.tscn" id="1_mqfk2"]
+[ext_resource type="PackedScene" uid="uid://bfeafeavwbga3" path="res://Legacy/2026-04-07-premerge-root-prefab-chain/Scene/Door.tscn" id="2_0tcl1"]
+
+[node name="Scene2" type="Node2D" unique_id=826928321]
+
+[node name="MainPlayer" parent="." unique_id=375524829 instance=ExtResource("1_mqfk2")]
+position = Vector2(39, 151)
+
+[node name="Door" parent="." unique_id=583652748 instance=ExtResource("2_0tcl1")]
+position = Vector2(912, -56)
+NextScenePath = "res://Legacy/2026-04-07-premerge-map-layouts/Scene/Scene3.tscn"
+UsesInSceneTeleport = null
+TeleportTargetPath = null
+TeleportOffset = null
+FadeOutSeconds = null
+BlackScreenHoldSeconds = null
+FadeInSeconds = null
+LockPlayerInputDuringTeleport = null
+BusyText = null
+DisplayName = null
+PromptText = null
+CooldownSeconds = null
+IsDisabled = null
+CompletedFlowNodeId = null
+NextActiveFlowNodeId = null

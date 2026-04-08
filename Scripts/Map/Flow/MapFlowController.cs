@@ -1,110 +1,99 @@
 using Godot;
-using System;
+using CardChessDemo.Battle.Shared;
 
 namespace CardChessDemo.Map;
 
 public partial class MapFlowController : Node
 {
-    [Export] public string ActiveNodeKey { get; set; } = "flow.active_node";
-    [Export] public string CompletedPrefix { get; set; } = "flow.completed.";
-    [Export] public string DefaultActiveNodeId { get; set; } = "intro_wakeup";
+	[Export] public string ActiveNodeKey { get; set; } = "flow.active_node";
+	[Export] public string CompletedPrefix { get; set; } = "flow.completed.";
+	[Export] public string DefaultActiveNodeId { get; set; } = "intro_wakeup";
 
-    private GameSession _session;
+	private GlobalGameSession? _session;
 
-    public override void _Ready()
-    {
-        _session = GetNodeOrNull<GameSession>("/root/GameSession");
-        EnsureDefaultActiveNode();
-    }
+	public override void _Ready()
+	{
+		_session = GetNodeOrNull<GlobalGameSession>("/root/GlobalGameSession");
+		EnsureDefaultActiveNode();
+	}
 
-    public string GetActiveNodeId()
-    {
-        if (_session == null)
-        {
-            return string.Empty;
-        }
+	public string GetActiveNodeId()
+	{
+		if (_session == null)
+		{
+			return string.Empty;
+		}
 
-        StringName key = new StringName(ActiveNodeKey);
-        if (!_session.world_flags.TryGetValue(key, out Variant value))
-        {
-            return string.Empty;
-        }
+		return _session.TryGetFlag(new StringName(ActiveNodeKey), out Variant value)
+			? value.AsString()
+			: string.Empty;
+	}
 
-        return value.AsString();
-    }
+	public void SetActiveNodeId(string nodeId)
+	{
+		if (_session == null || string.IsNullOrWhiteSpace(nodeId))
+		{
+			return;
+		}
 
-    public void SetActiveNodeId(string nodeId)
-    {
-        if (_session == null || string.IsNullOrWhiteSpace(nodeId))
-        {
-            return;
-        }
+		_session.SetFlag(new StringName(ActiveNodeKey), nodeId.Trim());
+	}
 
-        _session.set_flag(new StringName(ActiveNodeKey), nodeId.Trim());
-    }
+	public bool IsNodeCompleted(string nodeId)
+	{
+		if (_session == null || string.IsNullOrWhiteSpace(nodeId))
+		{
+			return false;
+		}
 
-    public bool IsNodeCompleted(string nodeId)
-    {
-        if (_session == null || string.IsNullOrWhiteSpace(nodeId))
-        {
-            return false;
-        }
+		return _session.TryGetFlag(BuildCompletedKey(nodeId), out Variant value) && value.AsBool();
+	}
 
-        StringName key = BuildCompletedKey(nodeId);
-        if (!_session.world_flags.TryGetValue(key, out Variant value))
-        {
-            return false;
-        }
+	public void MarkNodeCompleted(string nodeId)
+	{
+		if (_session == null || string.IsNullOrWhiteSpace(nodeId))
+		{
+			return;
+		}
 
-        return value.AsBool();
-    }
+		_session.SetFlag(BuildCompletedKey(nodeId), true);
+	}
 
-    public void MarkNodeCompleted(string nodeId)
-    {
-        if (_session == null || string.IsNullOrWhiteSpace(nodeId))
-        {
-            return;
-        }
+	public bool AreAllNodesCompleted(string[] nodeIds)
+	{
+		if (nodeIds == null || nodeIds.Length == 0)
+		{
+			return true;
+		}
 
-        _session.set_flag(BuildCompletedKey(nodeId), true);
-    }
+		for (int i = 0; i < nodeIds.Length; i++)
+		{
+			if (!IsNodeCompleted(nodeIds[i]))
+			{
+				return false;
+			}
+		}
 
-    public bool AreAllNodesCompleted(string[] nodeIds)
-    {
-        if (nodeIds == null || nodeIds.Length == 0)
-        {
-            return true;
-        }
+		return true;
+	}
 
-        for (int i = 0; i < nodeIds.Length; i++)
-        {
-            if (!IsNodeCompleted(nodeIds[i]))
-            {
-                return false;
-            }
-        }
+	private void EnsureDefaultActiveNode()
+	{
+		if (_session == null)
+		{
+			return;
+		}
 
-        return true;
-    }
+		if (_session.TryGetFlag(new StringName(ActiveNodeKey), out _))
+		{
+			return;
+		}
 
-    private void EnsureDefaultActiveNode()
-    {
-        if (_session == null)
-        {
-            return;
-        }
+		_session.SetFlag(new StringName(ActiveNodeKey), DefaultActiveNodeId);
+	}
 
-        StringName key = new StringName(ActiveNodeKey);
-        if (_session.world_flags.ContainsKey(key))
-        {
-            return;
-        }
-
-        _session.set_flag(key, DefaultActiveNodeId);
-    }
-
-    private StringName BuildCompletedKey(string nodeId)
-    {
-        return new StringName($"{CompletedPrefix}{nodeId.Trim()}");
-    }
+	private StringName BuildCompletedKey(string nodeId)
+	{
+		return new StringName($"{CompletedPrefix}{nodeId.Trim()}");
+	}
 }

@@ -29,19 +29,17 @@ public partial class SystemFeatureLabController : CanvasLayer
 	private RichTextLabel _inventoryText = null!;
 
 	private Label _masteryLabel = null!;
-	private Label _combatSummaryLabel = null!;
 	private ScrollContainer _talentTreeScroll = null!;
 	private Control _talentTreeCanvas = null!;
-	private Label _cardTreeLabel = null!;
-	private Label _roleTreeLabel = null!;
+	private Node2D _talentLineLayer = null!;
+	private Button _cardTreeLabel = null!;
+	private Button _roleTreeLabel = null!;
+	private ColorRect _talentDetailDim = null!;
 	private PanelContainer _talentDetailPanel = null!;
 	private Label _talentDetailTitleLabel = null!;
 	private RichTextLabel _talentDetail = null!;
 	private Button _unlockTalentButton = null!;
 	private Button _refundTalentButton = null!;
-	private Button _grantPointButton = null!;
-	private Button _revokePointButton = null!;
-	private Button _resetTalentButton = null!;
 	private readonly Dictionary<string, Button> _talentButtons = new(StringComparer.Ordinal);
 	private readonly HashSet<string> _purchasedTalentIds = new(StringComparer.Ordinal);
 	private string _selectedTalentId = string.Empty;
@@ -79,37 +77,62 @@ public partial class SystemFeatureLabController : CanvasLayer
 	private List<string> _workingDeck = new();
 	private int _baseMasteryPoints = 6;
 	private string _selectedEquipmentSlotId = EquipmentSlotIds.Weapon;
+	private const int TalentTabIndex = 2;
 
 	private static readonly string[] EquipmentSlotOrder = EquipmentSlotIds.All;
 
-	private readonly EquipmentDefinition[] _equipmentDefinitions =
+		private readonly EquipmentDefinition[] _equipmentDefinitions =
 	{
-		new("rusted_blade", "旧钢刀", "weapon", "拆船废料打磨成的近战武器，稳定提升攻击。", "攻击 +1"),
-		new("ion_pistol", "脉冲短铳", "weapon", "便携式脉冲副武器，输出更高但更依赖供能。", "攻击 +2"),
-		new("patched_coat", "补丁风衣", "armor", "缝补过的旧大衣，提供更扎实的生存空间。", "生命 +4 / 减伤 +5%"),
-		new("reactive_plate", "反应护甲片", "armor", "临时拼装的护甲片，强化防御姿态。", "减伤 +10% / 防御附盾 +1"),
-		new("signal_charm", "信号挂饰", "accessory", "轻量化挂饰，改善战场移动调度。", "移动 +1"),
-		new("tactical_chip", "战术芯片", "accessory", "旧时代战术分析模组，补强防御判断。", "减伤 +5%"),
+		new("equip_magnetic_scabbard", "磁锁刀鞘", "weapon", "近战用武器挂件，提供稳定的基础攻击加成。", "攻击 +1"),
+		new("equip_arc_pipe", "电弧金属管", "weapon", "荒川早期强化的临时武器，强调攻击与射程。", "攻击 +1 / 射程 +1"),
+		new("equip_old_coat", "旧大衣", "armor", "主角初始护具，提供基础生存空间。", "生命 +3 / 减伤 +5%"),
+		new("equip_phase_boots", "相位短靴", "armor", "偏机动取向的护具。", "移动 +1"),
+		new("equip_red_scarf", "红色方巾", "accessory", "主角身份符号，目前作为占位饰品。", "剧情饰品"),
+		new("equip_target_lens", "校准镜片", "accessory", "远程倾向配件，以生命代价换取更稳定的火力。", "射程 +1 / 生命 -2"),
+		new("equip_archive_probe", "档案探针", "accessory", "学习流辅助装置，目前作为占位饰品。", "学习辅助"),
+		new("equip_parallel_battery", "并联电池组", "armor", "高负载供能组件，目前作为占位装备。", "供能占位"),
+		new("equip_forbidden_patch", "禁区补丁", "accessory", "高风险实验型配件，目前作为占位饰品。", "风险占位"),
+		new("equip_insulated_cloak", "绝缘披肩", "armor", "后期抗异常护具，目前作为占位装备。", "绝缘占位"),
 	};
 
-	private readonly TalentNode[] _talents =
+		private readonly TalentNode[] _talents =
 	{
-		new("lab.branch.ranged", "远程基础", 1, "获得远程分支资格，解锁重铳与钩射。", new Vector2(72, 58), Array.Empty<string>(), new[] { "lab.branch.ranged" }, new[] { "ranged" }, new[] { "heavy_shot", "hook_shot" }),
-		new("lab.branch.melee", "近战基础", 1, "获得近战分支资格，解锁燃刃。", new Vector2(42, 166), Array.Empty<string>(), new[] { "lab.branch.melee" }, new[] { "melee" }, new[] { "burning_edge" }),
-		new("lab.branch.flex", "灵活基础", 1, "获得灵活分支资格，解锁沉念。", new Vector2(72, 276), Array.Empty<string>(), new[] { "lab.branch.flex" }, new[] { "flex" }, new[] { "deep_focus" }),
-		new("lab.deck.budget", "卡牌扩容", 1, "构筑预算 +2，并解锁蓄能。", new Vector2(332, 92), new[] { "lab.branch.flex" }, new[] { "lab.deck.budget" }, unlockedCardIds: new[] { "surge" }, deckPointBudgetBonus: 2),
-		new("lab.deck.copies", "卡牌熟练", 1, "同名上限 +1，并解锁快谋。", new Vector2(332, 242), new[] { "lab.branch.flex" }, new[] { "lab.deck.copies" }, unlockedCardIds: new[] { "quick_plan" }, deckMaxCopiesPerCardBonus: 1),
-		new("lab.attack.1", "攻击强化 I", 1, "主角普通攻击 +1。", new Vector2(466, 62), new[] { "lab.branch.melee" }, new[] { "lab.attack.1", "stat.attack_bonus.1" }),
-		new("lab.defense.10", "防御校准", 1, "防御减伤 +10%，并解锁架势。", new Vector2(436, 202), new[] { "lab.branch.melee" }, new[] { "lab.defense.10", "stat.defense_reduction_bonus.10" }, unlockedCardIds: new[] { "brace" }),
-		new("lab.defense.shield", "防御附盾", 1, "防御动作额外获得 2 护盾。", new Vector2(654, 202), new[] { "lab.defense.10" }, new[] { "lab.defense.shield", "stat.defense_shield_bonus.2" }),
-	};
+		new("talent_melee_root", "破门本能", TalentTreeGroup.Card, "melee", 1, "近战分支起点，解锁冲撞。", new Vector2(96, 344), Array.Empty<string>(), new[] { "talent_melee_root" }, new[] { "melee" }, new[] { "card_ram" }),
+		new("talent_melee_counter", "死斗姿态", TalentTreeGroup.Card, "melee", 1, "贴身反击路线，解锁架势。", new Vector2(0, 252), new[] { "talent_melee_root" }, new[] { "talent_melee_counter" }, unlockedCardIds: new[] { "card_stance" }),
+		new("talent_melee_counter_plus", "贴身反击", TalentTreeGroup.Card, "melee", 1, "进一步强化近战反打收益。", new Vector2(0, 138), new[] { "talent_melee_counter" }, new[] { "talent_melee_counter_plus" }),
+		new("talent_melee_blow", "压舱重击", TalentTreeGroup.Card, "melee", 1, "破盾与单点击杀路线，解锁重击。", new Vector2(0, 454), new[] { "talent_melee_root" }, new[] { "talent_melee_blow" }, unlockedCardIds: new[] { "card_heavy_blow" }),
+		new("talent_melee_blow_plus", "盾裂处决", TalentTreeGroup.Card, "melee", 1, "继续强化对护盾目标的压制能力。", new Vector2(0, 568), new[] { "talent_melee_blow" }, new[] { "talent_melee_blow_plus" }),
+		new("talent_melee_core", "劫掠冲动", TalentTreeGroup.Card, "melee", 1, "近战专精节点，正式打开高阶近战牌资格。", new Vector2(174, 470), new[] { "talent_melee_counter", "talent_melee_blow" }, new[] { "talent_melee_core", "melee.specialized" }),
 
-	private readonly EnemyCodexEntry[] _enemyCodexEntries =
+		new("talent_ranged_root", "校准火线", TalentTreeGroup.Card, "ranged", 1, "远程分支起点，解锁快枪。", new Vector2(560, 112), Array.Empty<string>(), new[] { "talent_ranged_root" }, new[] { "ranged" }, new[] { "card_quick_shot" }),
+		new("talent_ranged_control", "弹道干预", TalentTreeGroup.Card, "ranged", 1, "击退与压线控制路线，解锁震荡射击。", new Vector2(744, 8), new[] { "talent_ranged_root" }, new[] { "talent_ranged_control" }, unlockedCardIds: new[] { "card_concussion_shot" }),
+		new("talent_ranged_control_plus", "制退射线", TalentTreeGroup.Card, "ranged", 1, "强化远程控制收益。", new Vector2(952, 0), new[] { "talent_ranged_control" }, new[] { "talent_ranged_control_plus" }),
+		new("talent_ranged_pressure", "制压协议", TalentTreeGroup.Card, "ranged", 1, "准备与压制路线，解锁戒备。", new Vector2(744, 206), new[] { "talent_ranged_root" }, new[] { "talent_ranged_pressure" }, unlockedCardIds: new[] { "card_alert" }),
+		new("talent_ranged_signature", "火线改写", TalentTreeGroup.Card, "ranged", 1, "远程招牌节点，解锁拔枪。", new Vector2(954, 246), new[] { "talent_ranged_pressure" }, new[] { "talent_ranged_signature" }, unlockedCardIds: new[] { "draw_revolver" }),
+		new("talent_ranged_core", "先手判读", TalentTreeGroup.Card, "ranged", 1, "远程专精节点，打开高阶远程牌资格。", new Vector2(652, 316), new[] { "talent_ranged_control", "talent_ranged_pressure" }, new[] { "talent_ranged_core", "ranged.specialized" }),
+
+		new("talent_flex_root", "荒川同调", TalentTreeGroup.Card, "flex", 1, "创造分支起点，解锁电弧泄露。", new Vector2(560, 492), Array.Empty<string>(), new[] { "talent_flex_root" }, new[] { "flex" }, new[] { "card_arc_leak" }),
+		new("talent_flex_field", "现场干预", TalentTreeGroup.Card, "flex", 1, "障碍物互动路线，解锁风化。", new Vector2(744, 618), new[] { "talent_flex_root" }, new[] { "talent_flex_field" }, unlockedCardIds: new[] { "card_weathering" }),
+		new("talent_flex_field_plus", "障碍拆解", TalentTreeGroup.Card, "flex", 1, "强化障碍处理与拆除能力。", new Vector2(952, 736), new[] { "talent_flex_field" }, new[] { "talent_flex_field_plus" }),
+		new("talent_flex_learning", "战斗记录协议", TalentTreeGroup.Card, "flex", 1, "学习机制入口，解锁学习。", new Vector2(744, 420), new[] { "talent_flex_root" }, new[] { "talent_flex_learning" }, unlockedCardIds: new[] { "card_learning" }),
+		new("talent_flex_learning_plus", "系统劫持者", TalentTreeGroup.Card, "flex", 1, "强化学习与异常控制收益。", new Vector2(954, 378), new[] { "talent_flex_learning" }, new[] { "talent_flex_learning_plus" }),
+		new("talent_flex_core", "异常演算", TalentTreeGroup.Card, "flex", 1, "创造专精节点，打开高阶创造牌资格。", new Vector2(966, 544), new[] { "talent_flex_field", "talent_flex_learning" }, new[] { "talent_flex_core", "flex.specialized" }),
+
+		new("talent_role_atk", "应激输出", TalentTreeGroup.Role, "role", 1, "基础输出能力，普通攻击 +1。", new Vector2(1440, 1120), Array.Empty<string>(), new[] { "talent_role_atk", "stat.attack_bonus.1" }),
+		new("talent_role_hp", "生还者框架", TalentTreeGroup.Role, "role", 1, "基础生存能力，最大生命 +4。", new Vector2(1660, 1120), Array.Empty<string>(), new[] { "talent_role_hp", "stat.max_hp_bonus.4" }),
+		new("talent_role_move", "趋前步伐", TalentTreeGroup.Role, "role", 1, "基础机动能力，移动力 +1。", new Vector2(1880, 1120), Array.Empty<string>(), new[] { "talent_role_move", "stat.move_bonus.1" }),
+		new("talent_role_defense", "防御校准", TalentTreeGroup.Role, "role", 1, "从生存路线延伸出的减伤节点。", new Vector2(1660, 946), new[] { "talent_role_hp" }, new[] { "talent_role_defense", "stat.defense_reduction_bonus.10" }),
+		new("talent_role_guard", "守势支架", TalentTreeGroup.Role, "role", 1, "继续强化防御动作的额外护盾。", new Vector2(1660, 772), new[] { "talent_role_defense" }, new[] { "talent_role_guard", "stat.defense_shield_bonus.2" }),
+		new("talent_role_deck", "构筑缓存", TalentTreeGroup.Role, "role", 1, "从机动路线延伸出的构筑承载节点。", new Vector2(1880, 946), new[] { "talent_role_move" }, new[] { "talent_role_deck" }, deckPointBudgetBonus: 2),
+		new("talent_role_copies", "牌组编纂", TalentTreeGroup.Role, "role", 1, "强化构筑承载，同名上限 +1。", new Vector2(1880, 772), new[] { "talent_role_deck" }, new[] { "talent_role_copies" }, deckMaxCopiesPerCardBonus: 1),
+		new("talent_role_core", "基础动作统合", TalentTreeGroup.Role, "role", 1, "把输出、防御与构筑支撑收束为角色树核心。", new Vector2(1718, 560), new[] { "talent_role_atk", "talent_role_guard", "talent_role_copies" }, new[] { "talent_role_core" }),
+	};
+		private readonly EnemyCodexEntry[] _enemyCodexEntries =
 	{
-		new("grunt_debug", "训练敌人", "基础近战测试敌人。用于验证地图进入战斗与基础回合交互。", true, "初始开放"),
-		new("pirate_brute_elite", "搭船客重压者", "擅长贴身压迫与重击，学习其能力可获得高压突进。", false, "在精英战中完成学习后解锁图鉴", "card_pressure_breach"),
-		new("alliance_hunter_elite", "联盟猎手标定兵", "擅长标记与远程收割，学习后可获得猎手标定。", false, "在精英战中完成学习后解锁图鉴", "card_hunter_mark"),
-		new("boss_port_authority", "空港治安主机", "Boss 级远程压制单位，拥有过载光束。", false, "击败章节 Boss 并完成学习后解锁图鉴", "card_overclock_beam"),
+		new("grunt_debug", "训练敌人", "基础近战测试敌人。", true, "初始开放"),
+		new("pirate_brute_elite", "搭船客重压者", "擅长贴身压迫与重击。", false, "在精英战中完成学习后解锁图鉴", "card_pressure_breach"),
+		new("alliance_hunter_elite", "联盟猎手标定员", "擅长标记与远程收割。", false, "在精英战中完成学习后解锁图鉴", "card_hunter_mark"),
+		new("boss_port_authority", "空港治安主机", "Boss 级压制型敌人。", false, "击败章节 Boss 并完成学习后解锁图鉴", "card_overclock_beam"),
 	};
 
 	public override void _Ready()
@@ -121,6 +144,7 @@ public partial class SystemFeatureLabController : CanvasLayer
 		{
 			_session.EnsureDeckBuildInitialized(_cardLibrary);
 			_constructionService = new BattleDeckConstructionService(_cardLibrary, _deckRules);
+			ApplyDebugCardUnlocks();
 		}
 
 		_panelRoot = GetNode<Control>("PanelRoot");
@@ -134,20 +158,18 @@ public partial class SystemFeatureLabController : CanvasLayer
 		_statusEquipButton = GetNode<Button>("PanelRoot/Window/Margin/Root/Tabs/StatusTab/Columns/EquipmentColumn/ActionRow/EquipButton");
 		_statusUnequipButton = GetNode<Button>("PanelRoot/Window/Margin/Root/Tabs/StatusTab/Columns/EquipmentColumn/ActionRow/UnequipButton");
 		_inventoryText = GetNode<RichTextLabel>("PanelRoot/Window/Margin/Root/Tabs/InventoryTab/InventoryText");
-		_masteryLabel = GetNode<Label>("PanelRoot/Window/Margin/Root/Tabs/TalentTab/Header/MasteryLabel");
-		_combatSummaryLabel = GetNode<Label>("PanelRoot/Window/Margin/Root/Tabs/TalentTab/Header/CombatSummaryLabel");
+		_masteryLabel = GetNode<Label>("PanelRoot/Window/Margin/Root/Tabs/TalentTab/Body/MasteryFixedLabel");
 		_talentTreeScroll = GetNode<ScrollContainer>("PanelRoot/Window/Margin/Root/Tabs/TalentTab/Body/TalentTreeScroll");
 		_talentTreeCanvas = GetNode<Control>("PanelRoot/Window/Margin/Root/Tabs/TalentTab/Body/TalentTreeScroll/TalentTreeCanvas");
-		_cardTreeLabel = GetNode<Label>("PanelRoot/Window/Margin/Root/Tabs/TalentTab/Body/TalentTreeScroll/TalentTreeCanvas/CardTreeLabel");
-		_roleTreeLabel = GetNode<Label>("PanelRoot/Window/Margin/Root/Tabs/TalentTab/Body/TalentTreeScroll/TalentTreeCanvas/RoleTreeLabel");
+		_talentLineLayer = GetNode<Node2D>("PanelRoot/Window/Margin/Root/Tabs/TalentTab/Body/TalentTreeScroll/TalentTreeCanvas/TalentLineLayer");
+		_cardTreeLabel = GetNode<Button>("PanelRoot/Window/Margin/Root/Tabs/TalentTab/Body/TalentTreeScroll/TalentTreeCanvas/CardTreeLabel");
+		_roleTreeLabel = GetNode<Button>("PanelRoot/Window/Margin/Root/Tabs/TalentTab/Body/TalentTreeScroll/TalentTreeCanvas/RoleTreeLabel");
+		_talentDetailDim = GetNode<ColorRect>("PanelRoot/Window/Margin/Root/Tabs/TalentTab/Body/DetailDim");
 		_talentDetailPanel = GetNode<PanelContainer>("PanelRoot/Window/Margin/Root/Tabs/TalentTab/Body/DetailPanel");
 		_talentDetailTitleLabel = GetNode<Label>("PanelRoot/Window/Margin/Root/Tabs/TalentTab/Body/DetailPanel/Margin/Content/TitleLabel");
 		_talentDetail = GetNode<RichTextLabel>("PanelRoot/Window/Margin/Root/Tabs/TalentTab/Body/DetailPanel/Margin/Content/DetailText");
 		_unlockTalentButton = GetNode<Button>("PanelRoot/Window/Margin/Root/Tabs/TalentTab/Body/DetailPanel/Margin/Content/Footer/UnlockTalentButton");
 		_refundTalentButton = GetNode<Button>("PanelRoot/Window/Margin/Root/Tabs/TalentTab/Body/DetailPanel/Margin/Content/Footer/RefundTalentButton");
-		_grantPointButton = GetNode<Button>("PanelRoot/Window/Margin/Root/Tabs/TalentTab/Footer/GrantPointButton");
-		_revokePointButton = GetNode<Button>("PanelRoot/Window/Margin/Root/Tabs/TalentTab/Footer/RevokePointButton");
-		_resetTalentButton = GetNode<Button>("PanelRoot/Window/Margin/Root/Tabs/TalentTab/Footer/ResetTalentButton");
 		_cardCodexList = GetNode<ItemList>("PanelRoot/Window/Margin/Root/Tabs/CodexTab/CodexTabs/CardCodex/Columns/ListColumn/CardList");
 		_cardCodexDetail = GetNode<RichTextLabel>("PanelRoot/Window/Margin/Root/Tabs/CodexTab/CodexTabs/CardCodex/Columns/DetailPanel/DetailText");
 		_enemyCodexList = GetNode<ItemList>("PanelRoot/Window/Margin/Root/Tabs/CodexTab/CodexTabs/EnemyCodex/Columns/ListColumn/EnemyList");
@@ -166,15 +188,15 @@ public partial class SystemFeatureLabController : CanvasLayer
 		_seedInventoryButton = GetNode<Button>("PanelRoot/Window/Margin/Root/Tabs/InventoryTab/Footer/SeedInventoryButton");
 		_clearInventoryButton = GetNode<Button>("PanelRoot/Window/Margin/Root/Tabs/InventoryTab/Footer/ClearInventoryButton");
 
-		_tabs.SetTabTitle(0, "背包");
-		_tabs.SetTabTitle(1, "天赋");
-		_tabs.SetTabTitle(2, "图鉴");
-		_tabs.SetTabTitle(3, "构筑");
-		_tabs.SetTabTitle(0, "角色");
-		_tabs.SetTabTitle(1, "背包");
-		_tabs.SetTabTitle(2, "天赋");
-		_tabs.SetTabTitle(3, "图鉴");
-		_tabs.SetTabTitle(4, "构筑");
+		_tabs.SetTabTitle(0, "鑳屽寘");
+		_tabs.SetTabTitle(1, "澶╄祴");
+		_tabs.SetTabTitle(2, "鍥鹃壌");
+		_tabs.SetTabTitle(3, "鏋勭瓚");
+		_tabs.SetTabTitle(0, "瑙掕壊");
+		_tabs.SetTabTitle(1, "鑳屽寘");
+		_tabs.SetTabTitle(2, "澶╄祴");
+		_tabs.SetTabTitle(3, "鍥鹃壌");
+		_tabs.SetTabTitle(4, "鏋勭瓚");
 		_panelRoot.Visible = false;
 		_talentDetailPanel.Visible = false;
 
@@ -182,13 +204,11 @@ public partial class SystemFeatureLabController : CanvasLayer
 		_statusEquipmentCandidateList.ItemSelected += OnEquipmentCandidateSelected;
 		_statusEquipButton.Pressed += OnEquipButtonPressed;
 		_statusUnequipButton.Pressed += OnUnequipButtonPressed;
-		_grantPointButton.Pressed += OnGrantPointPressed;
-		_revokePointButton.Pressed += OnRevokePointPressed;
-		_resetTalentButton.Pressed += OnResetTalentsPressed;
 		_unlockTalentButton.Pressed += OnUnlockTalentPressed;
 		_refundTalentButton.Pressed += OnRefundTalentPressed;
 		_seedInventoryButton.Pressed += OnSeedInventoryPressed;
 		_clearInventoryButton.Pressed += OnClearInventoryPressed;
+		_talentDetailDim.GuiInput += OnTalentDetailDimGuiInput;
 		_availableList.ItemSelected += OnAvailableSelected;
 		_deckList.ItemSelected += OnDeckSelected;
 		_cardCodexList.ItemSelected += OnCardCodexSelected;
@@ -198,10 +218,12 @@ public partial class SystemFeatureLabController : CanvasLayer
 		_deckSaveButton.Pressed += OnDeckSavePressed;
 		_deckResetButton.Pressed += OnDeckResetPressed;
 		_deckStarterButton.Pressed += OnDeckStarterPressed;
-		_talentTreeCanvas.GuiInput += OnTalentTreeGuiInput;
 		_cardTreeLabel.MouseFilter = Control.MouseFilterEnum.Ignore;
 		_roleTreeLabel.MouseFilter = Control.MouseFilterEnum.Ignore;
+		_masteryLabel.MouseFilter = Control.MouseFilterEnum.Ignore;
 		HideTalentTreeScrollBars();
+		ApplyTreeRootStyle(_cardTreeLabel, new Color(0.14f, 0.24f, 0.34f, 0.98f));
+		ApplyTreeRootStyle(_roleTreeLabel, new Color(0.24f, 0.18f, 0.12f, 0.98f));
 
 		BuildTalentButtons();
 		BuildCodexSource();
@@ -217,6 +239,11 @@ public partial class SystemFeatureLabController : CanvasLayer
 		UpdateStatusHint();
 	}
 
+	public override void _Input(InputEvent @event)
+	{
+		HandleTalentTreePointerInput(@event);
+	}
+
 	public override void _UnhandledInput(InputEvent @event)
 	{
 		if (@event is not InputEventKey keyEvent || !keyEvent.Pressed || keyEvent.Echo || keyEvent.Keycode != Key.C)
@@ -230,6 +257,7 @@ public partial class SystemFeatureLabController : CanvasLayer
 		if (_panelRoot.Visible)
 		{
 			RefreshAll();
+			CallDeferred(nameof(ResetTalentTreeView));
 		}
 
 		GetViewport().SetInputAsHandled();
@@ -269,7 +297,7 @@ public partial class SystemFeatureLabController : CanvasLayer
 			}
 		}
 
-		_statusLabel.Text = _panelRoot.Visible ? "系统面板已打开，按 C 关闭" : "就近靠近训练敌人后按 E 进入固定 roomB";
+		_statusLabel.Text = _panelRoot.Visible ? "系统面板已打开，按 C 关闭" : "靠近敌人后按 E 进入战斗";
 	}
 
 	private void OnTalentTreeGuiInput(InputEvent @event)
@@ -290,24 +318,6 @@ public partial class SystemFeatureLabController : CanvasLayer
 				return;
 			}
 		}
-
-		if (@event is InputEventMouseButton mouseButton && mouseButton.ButtonIndex == MouseButton.Left)
-		{
-			_isDraggingTalentTree = mouseButton.Pressed;
-			_lastTalentDragPosition = mouseButton.Position;
-			return;
-		}
-
-		if (!_isDraggingTalentTree || @event is not InputEventMouseMotion mouseMotion)
-		{
-			return;
-		}
-
-		Vector2 delta = mouseMotion.Position - _lastTalentDragPosition;
-		_talentTreeScroll.ScrollHorizontal = Math.Max(0, _talentTreeScroll.ScrollHorizontal - Mathf.RoundToInt(delta.X));
-		_talentTreeScroll.ScrollVertical = Math.Max(0, _talentTreeScroll.ScrollVertical - Mathf.RoundToInt(delta.Y));
-		_lastTalentDragPosition = mouseMotion.Position;
-		GetViewport().SetInputAsHandled();
 	}
 
 	private void HideTalentTreeScrollBars()
@@ -331,6 +341,100 @@ public partial class SystemFeatureLabController : CanvasLayer
 		}
 	}
 
+	private void HandleTalentTreePointerInput(InputEvent @event)
+	{
+		if (!IsTalentTabActive())
+		{
+			_isDraggingTalentTree = false;
+			return;
+		}
+
+		if (@event is InputEventMouseButton wheelEvent
+			&& wheelEvent.Pressed
+			&& _talentTreeScroll.GetGlobalRect().HasPoint(wheelEvent.GlobalPosition))
+		{
+			Vector2 localMousePosition = wheelEvent.GlobalPosition - _talentTreeScroll.GetGlobalRect().Position;
+			if (wheelEvent.ButtonIndex == MouseButton.WheelUp)
+			{
+				ApplyTalentTreeZoom(_talentTreeZoom + 0.1f, localMousePosition);
+				GetViewport().SetInputAsHandled();
+				return;
+			}
+
+			if (wheelEvent.ButtonIndex == MouseButton.WheelDown)
+			{
+				ApplyTalentTreeZoom(_talentTreeZoom - 0.1f, localMousePosition);
+				GetViewport().SetInputAsHandled();
+				return;
+			}
+		}
+
+		if (@event is InputEventMouseButton mouseButton && mouseButton.ButtonIndex == MouseButton.Left)
+		{
+			if (mouseButton.Pressed)
+			{
+				if (!_talentTreeScroll.GetGlobalRect().HasPoint(mouseButton.GlobalPosition))
+				{
+					return;
+				}
+
+				if (_talentDetailPanel.Visible && _talentDetailPanel.GetGlobalRect().HasPoint(mouseButton.GlobalPosition))
+				{
+					return;
+				}
+
+				if (IsPointOverTalentButton(mouseButton.GlobalPosition))
+				{
+					return;
+				}
+
+				_isDraggingTalentTree = true;
+				_lastTalentDragPosition = mouseButton.GlobalPosition;
+				GetViewport().SetInputAsHandled();
+				return;
+			}
+
+			if (_isDraggingTalentTree)
+			{
+				_isDraggingTalentTree = false;
+				GetViewport().SetInputAsHandled();
+			}
+
+			return;
+		}
+
+		if (!_isDraggingTalentTree || @event is not InputEventMouseMotion mouseMotion)
+		{
+			return;
+		}
+
+		Vector2 delta = mouseMotion.GlobalPosition - _lastTalentDragPosition;
+		ScrollTalentTreeBy(delta);
+		_lastTalentDragPosition = mouseMotion.GlobalPosition;
+		GetViewport().SetInputAsHandled();
+	}
+
+	private bool IsTalentTabActive()
+	{
+		return _panelRoot != null
+			&& _panelRoot.Visible
+			&& _tabs != null
+			&& _tabs.CurrentTab == TalentTabIndex;
+	}
+
+	private void ScrollTalentTreeBy(Vector2 delta)
+	{
+		int maxHorizontal = Mathf.Max(0, Mathf.RoundToInt(_talentTreeCanvas.CustomMinimumSize.X * _talentTreeZoom - _talentTreeScroll.Size.X));
+		int maxVertical = Mathf.Max(0, Mathf.RoundToInt(_talentTreeCanvas.CustomMinimumSize.Y * _talentTreeZoom - _talentTreeScroll.Size.Y));
+		_talentTreeScroll.ScrollHorizontal = Mathf.Clamp(_talentTreeScroll.ScrollHorizontal - Mathf.RoundToInt(delta.X), 0, maxHorizontal);
+		_talentTreeScroll.ScrollVertical = Mathf.Clamp(_talentTreeScroll.ScrollVertical - Mathf.RoundToInt(delta.Y), 0, maxVertical);
+	}
+
+	private bool IsPointOverTalentButton(Vector2 globalPosition)
+	{
+		return _talentButtons.Values.Any(button => button.Visible && button.GetGlobalRect().HasPoint(globalPosition));
+	}
+
 	private void ApplyTalentTreeZoom(float targetZoom, Vector2 mousePosition)
 	{
 		float clampedZoom = Mathf.Clamp(targetZoom, 0.75f, 1.6f);
@@ -351,19 +455,37 @@ public partial class SystemFeatureLabController : CanvasLayer
 		_talentTreeScroll.ScrollVertical = Math.Max(0, Mathf.RoundToInt(logicalMouse.Y * _talentTreeZoom - mousePosition.Y));
 	}
 
+	private void ResetTalentTreeView()
+	{
+		_talentTreeZoom = 1.0f;
+		_talentTreeCanvas.Scale = Vector2.One;
+
+		Vector2 focusPoint = GetControlCenter(_cardTreeLabel) + new Vector2(120f, 90f);
+		float viewportWidth = Mathf.Max(1f, _talentTreeScroll.Size.X);
+		float viewportHeight = Mathf.Max(1f, _talentTreeScroll.Size.Y);
+		int scrollX = Mathf.RoundToInt(Mathf.Max(0f, focusPoint.X - viewportWidth * 0.5f));
+		int scrollY = Mathf.RoundToInt(Mathf.Max(0f, focusPoint.Y - viewportHeight * 0.5f));
+		_talentTreeScroll.ScrollHorizontal = scrollX;
+		_talentTreeScroll.ScrollVertical = scrollY;
+	}
+
 	private void BuildTalentButtons()
 	{
 		foreach (TalentNode talent in _talents)
 		{
 			Button button = new()
 			{
-				CustomMinimumSize = new Vector2(104, 42),
+				CustomMinimumSize = new Vector2(132, 52),
 				AutowrapMode = TextServer.AutowrapMode.WordSmart,
+				FocusMode = Control.FocusModeEnum.None,
 			};
 
 			string talentId = talent.Id;
 			button.Pressed += () => OnTalentPressed(talentId);
 			button.Position = talent.TreePosition;
+			button.Size = button.CustomMinimumSize;
+			button.ZIndex = 10;
+			button.MouseFilter = Control.MouseFilterEnum.Stop;
 			_talentTreeCanvas.AddChild(button);
 			_talentButtons[talentId] = button;
 		}
@@ -371,9 +493,35 @@ public partial class SystemFeatureLabController : CanvasLayer
 		RefreshTalentTreeLines();
 	}
 
+	private static void ApplyTreeRootStyle(Button button, Color fill)
+	{
+		StyleBoxFlat style = new()
+		{
+			BgColor = fill,
+			BorderColor = new Color(1.0f, 0.92f, 0.54f, 1.0f),
+			BorderWidthLeft = 3,
+			BorderWidthTop = 3,
+			BorderWidthRight = 3,
+			BorderWidthBottom = 3,
+			CornerRadiusTopLeft = 24,
+			CornerRadiusTopRight = 24,
+			CornerRadiusBottomRight = 24,
+			CornerRadiusBottomLeft = 24,
+			ContentMarginLeft = 10,
+			ContentMarginTop = 6,
+			ContentMarginRight = 10,
+			ContentMarginBottom = 6,
+		};
+		button.AddThemeStyleboxOverride("normal", style);
+		button.AddThemeStyleboxOverride("hover", style);
+		button.AddThemeStyleboxOverride("pressed", style);
+		button.AddThemeStyleboxOverride("disabled", style);
+		button.ZIndex = 12;
+	}
+
 	private void RefreshTalentTreeLines()
 	{
-		foreach (Node child in _talentTreeCanvas.GetChildren().Where(node => node.Name.ToString().StartsWith("TreeLine_", StringComparison.Ordinal)).ToArray())
+		foreach (Node child in _talentLineLayer.GetChildren().ToArray())
 		{
 			child.QueueFree();
 		}
@@ -391,8 +539,11 @@ public partial class SystemFeatureLabController : CanvasLayer
 			Vector2 targetCenter = GetControlCenter(targetButton);
 			if (talent.PrerequisiteTalentIds.Length == 0)
 			{
-				Vector2 rootCenter = talent.TreePosition.X < 400.0f ? cardRootCenter : roleRootCenter;
-				AddTreeLine(rootCenter, targetCenter, new Color(0.58f, 0.82f, 1.0f, 0.96f));
+				Vector2 rootCenter = talent.Group == TalentTreeGroup.Card ? cardRootCenter : roleRootCenter;
+				Color lineColor = _purchasedTalentIds.Contains(talent.Id)
+					? new Color(1.0f, 0.86f, 0.28f, 1.0f)
+					: new Color(0.62f, 0.66f, 0.74f, 0.96f);
+				AddTreeLine(rootCenter, targetCenter, lineColor);
 				continue;
 			}
 
@@ -403,9 +554,10 @@ public partial class SystemFeatureLabController : CanvasLayer
 					continue;
 				}
 
-				Color lineColor = _purchasedTalentIds.Contains(prerequisiteId)
-					? new Color(1.0f, 0.84f, 0.38f, 1.0f)
-					: new Color(0.45f, 0.54f, 0.68f, 0.92f);
+				bool isUnlockedPath = _purchasedTalentIds.Contains(prerequisiteId) && _purchasedTalentIds.Contains(talent.Id);
+				Color lineColor = isUnlockedPath
+					? new Color(1.0f, 0.86f, 0.28f, 1.0f)
+					: new Color(0.62f, 0.66f, 0.74f, 0.96f);
 				AddTreeLine(GetControlCenter(prerequisiteButton), targetCenter, lineColor);
 			}
 		}
@@ -413,29 +565,46 @@ public partial class SystemFeatureLabController : CanvasLayer
 
 	private void AddTreeLine(Vector2 from, Vector2 to, Color color)
 	{
-		float cornerX = from.X + (to.X - from.X) * 0.45f;
-		Vector2 cornerA = new(cornerX, from.Y);
-		Vector2 cornerB = new(cornerX, to.Y);
-		AddTreeSegment(from, cornerA, color);
-		AddTreeSegment(cornerA, cornerB, color);
-		AddTreeSegment(cornerB, to, color);
-	}
-
-	private void AddTreeSegment(Vector2 from, Vector2 to, Color color)
-	{
-		ColorRect segment = new()
+		Line2D line = new()
 		{
 			Name = $"TreeLine_{Guid.NewGuid():N}",
-			Color = color,
-			MouseFilter = Control.MouseFilterEnum.Ignore,
+			Width = 6.0f,
+			DefaultColor = color,
+			Antialiased = false,
+			ZIndex = 0,
 		};
 
-		Vector2 min = new(Mathf.Min(from.X, to.X), Mathf.Min(from.Y, to.Y));
-		Vector2 max = new(Mathf.Max(from.X, to.X), Mathf.Max(from.Y, to.Y));
-		segment.Position = min;
-		segment.Size = new Vector2(Mathf.Max(3.0f, max.X - min.X + 3.0f), Mathf.Max(3.0f, max.Y - min.Y + 3.0f));
-		_talentTreeCanvas.AddChild(segment);
-		_talentTreeCanvas.MoveChild(segment, 0);
+		foreach (Vector2 point in BuildTreeLinePoints(from, to))
+		{
+			line.AddPoint(point);
+		}
+
+		_talentLineLayer.AddChild(line);
+	}
+
+	private static Vector2[] BuildTreeLinePoints(Vector2 from, Vector2 to)
+	{
+		Vector2 delta = to - from;
+		if (Mathf.Abs(delta.X) >= Mathf.Abs(delta.Y))
+		{
+			float midX = from.X + delta.X * 0.45f;
+			return new[]
+			{
+				from,
+				new Vector2(midX, from.Y),
+				new Vector2(midX, to.Y),
+				to,
+			};
+		}
+
+		float midY = from.Y + delta.Y * 0.45f;
+		return new[]
+		{
+			from,
+			new Vector2(from.X, midY),
+			new Vector2(to.X, midY),
+			to,
+		};
 	}
 
 	private static Vector2 GetControlCenter(Control control)
@@ -460,7 +629,10 @@ public partial class SystemFeatureLabController : CanvasLayer
 		}
 
 		_session.ProgressionState.PlayerLevel = Math.Max(3, _session.ProgressionState.PlayerLevel);
+		int levelFloorExperience = _session.RuntimeProgressionRuleSet.GetAccumulatedExperienceForLevel(_session.ProgressionState.PlayerLevel);
+		_session.ProgressionState.PlayerExperience = Math.Max(levelFloorExperience, _session.ProgressionState.PlayerExperience);
 		_session.PlayerLevel = _session.ProgressionState.PlayerLevel;
+		_session.PlayerExperience = _session.ProgressionState.PlayerExperience;
 		_session.PlayerAttackDamage = Math.Max(2, _session.PlayerAttackDamage);
 		_session.PlayerDefenseDamageReductionPercent = Math.Max(50, _session.PlayerDefenseDamageReductionPercent);
 		if (_session.InventoryState.ItemCounts.Count == 0)
@@ -483,6 +655,11 @@ public partial class SystemFeatureLabController : CanvasLayer
 			{
 				_purchasedTalentIds.Add(talent.Id);
 			}
+		}
+
+		foreach (TalentNode rootTalent in _talents.Where(talent => IsDefaultUnlockedTalent(talent.Id)))
+		{
+			_purchasedTalentIds.Add(rootTalent.Id);
 		}
 
 		_baseMasteryPoints = Math.Max(6, _session.ProgressionState.PlayerMasteryPoints + GetSpentPoints());
@@ -531,16 +708,10 @@ public partial class SystemFeatureLabController : CanvasLayer
 			$"攻击: {_session.GetResolvedPlayerAttackDamage()}",
 			$"攻击范围: {_session.PlayerAttackRange}",
 			$"防御减伤: {_session.GetResolvedPlayerDefenseDamageReductionPercent()}%",
-			$"防御附盾: {_session.GetResolvedPlayerDefenseShieldGain()}",
-			string.Empty,
-			$"荒川成长等级: {_session.ArakawaGrowthLevel}",
-			$"荒川能量: {_session.ArakawaCurrentEnergy}/{_session.ArakawaMaxEnergy}",
-			string.Empty,
-			$"已解锁天赋: {_session.ProgressionState.TalentIds.Length}",
-			$"已解锁卡牌: {_session.ProgressionState.UnlockedCardIds.Length}",
-			$"构筑预算加成: +{_session.ProgressionState.DeckPointBudgetBonus}",
+			$"防御护盾: {_session.GetResolvedPlayerDefenseShieldGain()}",
+			$"构筑预算加成: {_session.ProgressionState.DeckPointBudgetBonus}",
+			$"同名上限加成: {_session.ProgressionState.DeckMaxCopiesPerCardBonus}",
 		};
-
 		_statusOverviewText.Text = string.Join('\n', lines);
 		RefreshEquipmentSection();
 	}
@@ -561,7 +732,7 @@ public partial class SystemFeatureLabController : CanvasLayer
 
 		if (_session.InventoryState.ItemCounts.Count == 0)
 		{
-			lines.Add("- （空）");
+			lines.Add("- (空)");
 		}
 		else
 		{
@@ -574,9 +745,8 @@ public partial class SystemFeatureLabController : CanvasLayer
 		lines.Add(string.Empty);
 		lines.Add("[b]额外解锁卡牌[/b]");
 		lines.AddRange(_session.ProgressionState.UnlockedCardIds.Length == 0
-			? new[] { "- （无）" }
+			? new[] { "- (无)" }
 			: _session.ProgressionState.UnlockedCardIds.OrderBy(value => value, StringComparer.Ordinal).Select(value => $"- {value}"));
-
 		_inventoryText.Text = string.Join('\n', lines);
 	}
 
@@ -587,28 +757,36 @@ public partial class SystemFeatureLabController : CanvasLayer
 			return;
 		}
 
-		if (!EquipmentSlotOrder.Contains(_selectedEquipmentSlotId, StringComparer.Ordinal))
-		{
-			_selectedEquipmentSlotId = EquipmentSlotOrder[0];
-		}
-
 		_statusEquipmentSlotList.Clear();
 		foreach (string slotId in EquipmentSlotOrder)
 		{
 			string equippedItemId = _session.GetEquippedItemId(slotId);
-			_statusEquipmentSlotList.AddItem($"{GetEquipmentSlotDisplayName(slotId)}: {GetEquipmentDisplayName(equippedItemId)}");
+			string equippedName = GetEquipmentDisplayName(equippedItemId);
+			_statusEquipmentSlotList.AddItem($"{GetEquipmentSlotDisplayName(slotId)}: {equippedName}");
 		}
 
-		int selectedSlotIndex = Math.Max(0, Array.IndexOf(EquipmentSlotOrder, _selectedEquipmentSlotId));
-		if (_statusEquipmentSlotList.ItemCount > 0)
+		int selectedSlotIndex = Array.IndexOf(EquipmentSlotOrder, _selectedEquipmentSlotId);
+		if (selectedSlotIndex >= 0)
 		{
 			_statusEquipmentSlotList.Select(selectedSlotIndex);
 		}
 
-		_visibleEquipmentCandidates = _session.GetEquipmentDefinitionsForSlot(_selectedEquipmentSlotId)
-			.Where(definition => _session.IsEquipmentOwned(definition.ItemId))
-			.ToArray();
+		List<RuntimeEquipmentDefinition> candidates = new();
+		foreach (Variant key in _session.InventoryState.ItemCounts.Keys)
+		{
+			string itemId = key.AsString();
+			RuntimeEquipmentDefinition? definition = FindEquipmentDefinition(itemId);
+			if (definition == null || !string.Equals(definition.SlotId, _selectedEquipmentSlotId, StringComparison.Ordinal))
+			{
+				continue;
+			}
 
+			candidates.Add(definition);
+		}
+
+		_visibleEquipmentCandidates = candidates
+			.OrderBy(definition => definition.DisplayName, StringComparer.Ordinal)
+			.ToArray();
 		_statusEquipmentCandidateList.Clear();
 		foreach (RuntimeEquipmentDefinition definition in _visibleEquipmentCandidates)
 		{
@@ -664,19 +842,14 @@ public partial class SystemFeatureLabController : CanvasLayer
 
 		List<string> lines = new()
 		{
-			"[b]测试背包[/b]",
-			string.Empty,
-			$"主角 HP: {_session.PlayerCurrentHp}/{_session.PlayerMaxHp}",
-			$"攻击: {_session.GetResolvedPlayerAttackDamage()}",
-			$"防御减伤: {_session.GetResolvedPlayerDefenseDamageReductionPercent()}%",
-			$"防御附盾: {_session.GetResolvedPlayerDefenseShieldGain()}",
+			"[b]背包[/b]",
 			string.Empty,
 			"[b]物品[/b]",
 		};
 
 		if (_session.InventoryState.ItemCounts.Count == 0)
 		{
-			lines.Add("- （空）");
+			lines.Add("- (空)");
 		}
 		else
 		{
@@ -689,9 +862,8 @@ public partial class SystemFeatureLabController : CanvasLayer
 		lines.Add(string.Empty);
 		lines.Add("[b]额外解锁卡牌[/b]");
 		lines.AddRange(_session.ProgressionState.UnlockedCardIds.Length == 0
-			? new[] { "- （无）" }
+			? new[] { "- (无)" }
 			: _session.ProgressionState.UnlockedCardIds.OrderBy(value => value, StringComparer.Ordinal).Select(value => $"- {value}"));
-
 		_inventoryText.Text = string.Join('\n', lines);
 	}
 
@@ -702,8 +874,7 @@ public partial class SystemFeatureLabController : CanvasLayer
 			return;
 		}
 
-		_masteryLabel.Text = $"专精点: {GetAvailablePoints()} / 基础池 {_baseMasteryPoints}";
-		_combatSummaryLabel.Text = $"攻击 {_session.GetResolvedPlayerAttackDamage()}  防御减伤 {_session.GetResolvedPlayerDefenseDamageReductionPercent()}%  护盾+{_session.GetResolvedPlayerDefenseShieldGain()}  预算+{_session.ProgressionState.DeckPointBudgetBonus}";
+		_masteryLabel.Text = $"专精点 {GetAvailablePoints()}";
 	}
 
 	private void RefreshTalentButtons()
@@ -715,16 +886,69 @@ public partial class SystemFeatureLabController : CanvasLayer
 			bool canPurchase = CanPurchase(talent);
 			bool canRefund = CanRefund(talent);
 			bool selected = string.Equals(_selectedTalentId, talent.Id, StringComparison.Ordinal);
-			string status = purchased ? (canRefund ? "已解锁" : "已解锁") : canPurchase ? "可购买" : ArePrerequisitesMet(talent) ? "点数不足" : "前置未满足";
-			string prefix = purchased ? "◆" : canPurchase ? "◇" : "■";
+			string status = purchased
+				? (canRefund ? "已解锁" : "已解锁")
+				: canPurchase ? "可购买" : ArePrerequisitesMet(talent) ? "点数不足" : "前置未满足";
+			string prefix = purchased ? "●" : canPurchase ? "◉" : "○";
 			string selectedPrefix = selected ? ">> " : string.Empty;
 			button.Text = $"{selectedPrefix}{prefix} {talent.DisplayName}\n{status}";
 			button.Modulate = selected
-				? (purchased ? new Color(0.78f, 1.0f, 0.84f, 1f) : canPurchase ? new Color(1f, 0.98f, 0.72f, 1f) : new Color(0.72f, 0.76f, 0.84f, 1f))
-				: purchased ? new Color(0.56f, 0.92f, 0.66f, 1f) : canPurchase ? new Color(1f, 0.9f, 0.54f, 1f) : new Color(0.48f, 0.48f, 0.48f, 1f);
+				? (purchased ? new Color(0.94f, 1.0f, 0.96f, 1f) : canPurchase ? new Color(1f, 0.98f, 0.82f, 1f) : new Color(0.82f, 0.84f, 0.9f, 1f))
+				: purchased ? new Color(0.72f, 0.95f, 0.8f, 1f) : canPurchase ? new Color(1f, 0.9f, 0.54f, 1f) : new Color(0.48f, 0.48f, 0.48f, 1f);
+			ApplyTalentButtonStyle(button, talent, purchased, canPurchase, selected);
 		}
 
 		RefreshTalentTreeLines();
+	}
+
+	private void ApplyTalentButtonStyle(Button button, TalentNode talent, bool purchased, bool canPurchase, bool selected)
+	{
+		Color fill = GetTalentFillColor(talent);
+		Color border = selected
+			? new Color(1.0f, 0.92f, 0.54f, 1.0f)
+			: purchased
+				? fill.Lightened(0.22f)
+				: canPurchase
+					? fill.Lightened(0.08f)
+					: fill.Darkened(0.34f);
+
+		StyleBoxFlat style = new()
+		{
+			BgColor = fill,
+			BorderColor = border,
+			BorderWidthLeft = selected ? 4 : 2,
+			BorderWidthTop = selected ? 4 : 2,
+			BorderWidthRight = selected ? 4 : 2,
+			BorderWidthBottom = selected ? 4 : 2,
+			CornerRadiusTopLeft = talent.PrerequisiteTalentIds.Length == 0 ? 24 : talent.Group == TalentTreeGroup.Card ? 18 : 6,
+			CornerRadiusTopRight = talent.PrerequisiteTalentIds.Length == 0 ? 24 : talent.Group == TalentTreeGroup.Card ? 18 : 6,
+			CornerRadiusBottomRight = talent.PrerequisiteTalentIds.Length == 0 ? 24 : talent.Group == TalentTreeGroup.Card ? 18 : 6,
+			CornerRadiusBottomLeft = talent.PrerequisiteTalentIds.Length == 0 ? 24 : talent.Group == TalentTreeGroup.Card ? 18 : 6,
+			ContentMarginLeft = 6,
+			ContentMarginTop = 4,
+			ContentMarginRight = 6,
+			ContentMarginBottom = 4,
+		};
+		button.AddThemeStyleboxOverride("normal", style);
+		button.AddThemeStyleboxOverride("hover", style);
+		button.AddThemeStyleboxOverride("pressed", style);
+		button.AddThemeStyleboxOverride("disabled", style);
+	}
+
+	private static Color GetTalentFillColor(TalentNode talent)
+	{
+		if (talent.Group == TalentTreeGroup.Role)
+		{
+			return new Color(0.28f, 0.23f, 0.16f, 0.96f);
+		}
+
+		return talent.BranchId switch
+		{
+			"melee" => new Color(0.34f, 0.18f, 0.15f, 0.96f),
+			"ranged" => new Color(0.14f, 0.24f, 0.34f, 0.96f),
+			"flex" => new Color(0.12f, 0.30f, 0.28f, 0.96f),
+			_ => new Color(0.22f, 0.22f, 0.24f, 0.96f),
+		};
 	}
 
 	private void RefreshTalentDetail()
@@ -732,19 +956,21 @@ public partial class SystemFeatureLabController : CanvasLayer
 		TalentNode? talent = _talents.FirstOrDefault(item => string.Equals(item.Id, _selectedTalentId, StringComparison.Ordinal));
 		if (talent == null)
 		{
+			_talentDetailDim.Visible = false;
 			_talentDetailPanel.Visible = false;
 			_talentDetailTitleLabel.Text = "天赋详情";
 			_unlockTalentButton.Disabled = true;
 			_unlockTalentButton.Text = "请先选择天赋";
 			_refundTalentButton.Disabled = true;
 			_refundTalentButton.Text = "未选择节点";
-			_talentDetail.Text = "拖动画布查看完整天赋树，点击节点查看详情。";
+			_talentDetail.Text = "拖动画面查看完整天赋树，点击节点查看详情。";
 			return;
 		}
 
 		bool purchased = _purchasedTalentIds.Contains(talent.Id);
 		bool canPurchase = CanPurchase(talent);
 		bool canRefund = CanRefund(talent);
+		_talentDetailDim.Visible = true;
 		_talentDetailPanel.Visible = true;
 		_talentDetailTitleLabel.Text = $"天赋详情 | {talent.DisplayName}";
 		_talentDetail.Text = string.Join('\n', new[]
@@ -755,16 +981,34 @@ public partial class SystemFeatureLabController : CanvasLayer
 			$"前置: {(talent.PrerequisiteTalentIds.Length == 0 ? "无" : string.Join(", ", talent.PrerequisiteTalentIds))}",
 			$"分支: {(talent.GrantedBranchTags.Length == 0 ? "无" : string.Join(", ", talent.GrantedBranchTags))}",
 			$"解锁卡牌: {(talent.UnlockedCardIds.Length == 0 ? "无" : string.Join(", ", talent.UnlockedCardIds))}",
-			$"预算修正: +{talent.DeckPointBudgetBonus} / 同名上限 +{talent.DeckMaxCopiesPerCardBonus}",
+			$"构筑修正: +{talent.DeckPointBudgetBonus} / 同名上限 +{talent.DeckMaxCopiesPerCardBonus}",
 			$"附加 TalentIds: {(talent.GrantedTalentIds.Length == 0 ? "无" : string.Join(", ", talent.GrantedTalentIds))}",
 			string.Empty,
-			"点击节点只会选中天赋，不会直接解锁。",
-			"请在右侧按钮中确认解锁或退点。",
+			"点击节点只会选中，不会直接解锁。",
+			"请使用右侧按钮确认解锁或退款。",
 		});
 		_unlockTalentButton.Disabled = purchased || !canPurchase;
 		_unlockTalentButton.Text = purchased ? "已解锁" : canPurchase ? $"解锁 ({talent.Cost}点)" : "不可解锁";
 		_refundTalentButton.Disabled = !purchased || !canRefund;
-		_refundTalentButton.Text = canRefund ? "退点" : "不可退点";
+		_refundTalentButton.Text = canRefund ? "退款" : "不可退款";
+	}
+
+	private void OnTalentDetailDimGuiInput(InputEvent @event)
+	{
+		if (@event is not InputEventMouseButton mouseButton || !mouseButton.Pressed || mouseButton.ButtonIndex != MouseButton.Left)
+		{
+			return;
+		}
+
+		if (_talentDetailPanel.GetGlobalRect().HasPoint(mouseButton.GlobalPosition))
+		{
+			return;
+		}
+
+		_selectedTalentId = string.Empty;
+		RefreshTalentButtons();
+		RefreshTalentDetail();
+		GetViewport().SetInputAsHandled();
 	}
 
 	private void RefreshCodexView()
@@ -779,7 +1023,7 @@ public partial class SystemFeatureLabController : CanvasLayer
 		foreach (BattleCardTemplate template in _codexTemplates)
 		{
 			bool unlocked = template.IsOwned(progression);
-			int index = _cardCodexList.AddItem(unlocked ? template.DisplayName : "■■■■");
+			int index = _cardCodexList.AddItem(unlocked ? template.DisplayName : "■■■");
 			if (!unlocked)
 			{
 				_cardCodexList.SetItemCustomFgColor(index, new Color(0.16f, 0.16f, 0.16f, 1.0f));
@@ -790,7 +1034,7 @@ public partial class SystemFeatureLabController : CanvasLayer
 		foreach (EnemyCodexEntry entry in _enemyCodexEntries)
 		{
 			bool unlocked = IsEnemyCodexUnlocked(entry, progression);
-			int index = _enemyCodexList.AddItem(unlocked ? entry.DisplayName : "■■■■");
+			int index = _enemyCodexList.AddItem(unlocked ? entry.DisplayName : "■■■");
 			if (!unlocked)
 			{
 				_enemyCodexList.SetItemCustomFgColor(index, new Color(0.16f, 0.16f, 0.16f, 1.0f));
@@ -839,7 +1083,7 @@ public partial class SystemFeatureLabController : CanvasLayer
 			RelicIds = _session.DeckBuildState.RelicIds,
 		};
 		BattleDeckValidationResult validation = _constructionService.ValidateDeck(snapshot, progression);
-		_deckPoolSummaryLabel.Text = $"可选 {_availableTemplates.Length}";
+		_deckPoolSummaryLabel.Text = $"可选 { _availableTemplates.Length }";
 		_deckSummaryLabel.Text = $"当前 {validation.TotalCardCount} 张 / 影响 {validation.TotalBuildPoints}";
 		_deckValidationText.Text = BuildDeckValidationText(validation);
 		_deckSaveButton.Disabled = !validation.IsValid;
@@ -861,7 +1105,7 @@ public partial class SystemFeatureLabController : CanvasLayer
 		}
 		else
 		{
-			lines.Add("状态: 不通过");
+			lines.Add("状态: 未通过");
 			lines.AddRange(validation.Errors.Select(error => $"- {error}"));
 		}
 
@@ -924,7 +1168,7 @@ public partial class SystemFeatureLabController : CanvasLayer
 			})
 			: string.Join('\n', new[]
 			{
-				"[b]■■■■[/b]",
+				"[b]■■■[/b]",
 				"[ 黑色剪影 ]",
 				$"解锁方式: {BuildCardUnlockHint(template)}",
 			});
@@ -948,12 +1192,11 @@ public partial class SystemFeatureLabController : CanvasLayer
 			})
 			: string.Join('\n', new[]
 			{
-				"[b]■■■■[/b]",
+				"[b]■■■[/b]",
 				"[ 黑色剪影 ]",
 				$"解锁方式: {entry.UnlockHint}",
 			});
 	}
-
 	private bool CanPurchase(TalentNode talent)
 	{
 		return !_purchasedTalentIds.Contains(talent.Id) && ArePrerequisitesMet(talent) && GetAvailablePoints() >= talent.Cost;
@@ -961,6 +1204,11 @@ public partial class SystemFeatureLabController : CanvasLayer
 
 	private bool CanRefund(TalentNode talent)
 	{
+		if (IsDefaultUnlockedTalent(talent.Id))
+		{
+			return false;
+		}
+
 		return _purchasedTalentIds.Contains(talent.Id)
 			&& !_talents.Any(other => _purchasedTalentIds.Contains(other.Id) && other.PrerequisiteTalentIds.Contains(talent.Id, StringComparer.Ordinal));
 	}
@@ -974,7 +1222,7 @@ public partial class SystemFeatureLabController : CanvasLayer
 	{
 		if (template.IsLearnedCard)
 		{
-			return "通过学习强敌招牌技解锁";
+			return "通过学习敌方招牌技能解锁";
 		}
 
 		if (template.RequiredTalentIds.Length > 0 || template.RequiredBranchTags.Length > 0)
@@ -989,7 +1237,6 @@ public partial class SystemFeatureLabController : CanvasLayer
 
 		return template.UnlockedByDefault ? "初始已解锁" : "通过探索、商店或奖励获得";
 	}
-
 	private bool IsEnemyCodexUnlocked(EnemyCodexEntry entry, ProgressionSnapshot progression)
 	{
 		return entry.UnlockedByDefault
@@ -998,7 +1245,14 @@ public partial class SystemFeatureLabController : CanvasLayer
 
 	private int GetSpentPoints()
 	{
-		return _talents.Where(talent => _purchasedTalentIds.Contains(talent.Id)).Sum(talent => talent.Cost);
+		return _talents.Where(talent => _purchasedTalentIds.Contains(talent.Id) && !IsDefaultUnlockedTalent(talent.Id)).Sum(talent => talent.Cost);
+	}
+
+	private static bool IsDefaultUnlockedTalent(string talentId)
+	{
+		return string.Equals(talentId, "talent_melee_root", StringComparison.Ordinal)
+			|| string.Equals(talentId, "talent_ranged_root", StringComparison.Ordinal)
+			|| string.Equals(talentId, "talent_flex_root", StringComparison.Ordinal);
 	}
 
 	private int GetAvailablePoints()
@@ -1137,8 +1391,8 @@ public partial class SystemFeatureLabController : CanvasLayer
 		{
 			$"[b]{template.DisplayName}[/b]",
 			template.Description,
-			$"费用 {template.Cost} / 影响因子 {template.BuildPoints}",
-			$"伤害 {template.Damage} / 治疗 {template.HealingAmount} / 抽牌 {template.DrawCount} / 回能 {template.EnergyGain} / 护盾 {template.ShieldGain}",
+			$"璐圭敤 {template.Cost} / 褰卞搷鍥犲瓙 {template.BuildPoints}",
+			$"浼ゅ {template.Damage} / 娌荤枟 {template.HealingAmount} / 鎶界墝 {template.DrawCount} / 鍥炶兘 {template.EnergyGain} / 鎶ょ浘 {template.ShieldGain}",
 			$"Quick {template.IsQuick} / Exhaust {template.ExhaustsOnPlay}",
 		});
 	}
@@ -1197,7 +1451,7 @@ public partial class SystemFeatureLabController : CanvasLayer
 		}
 
 		_session.ApplyDeckBuildSnapshot(snapshot.ToDictionary());
-		_deckValidationText.Text = BuildDeckValidationText(validation) + "\n已保存到 GlobalGameSession";
+		_deckValidationText.Text = BuildDeckValidationText(validation) + "\n宸蹭繚瀛樺埌 GlobalGameSession";
 	}
 
 	private void OnDeckResetPressed()
@@ -1230,12 +1484,16 @@ public partial class SystemFeatureLabController : CanvasLayer
 		items["charged_core"] = 2;
 		items["medical_gel"] = 3;
 		items["optical_part"] = 1;
-		items["rusted_blade"] = 1;
-		items["ion_pistol"] = 1;
-		items["patched_coat"] = 1;
-		items["reactive_plate"] = 1;
-		items["signal_charm"] = 1;
-		items["tactical_chip"] = 1;
+		items["equip_magnetic_scabbard"] = 1;
+		items["equip_arc_pipe"] = 1;
+		items["equip_old_coat"] = 1;
+		items["equip_phase_boots"] = 1;
+		items["equip_red_scarf"] = 1;
+		items["equip_target_lens"] = 1;
+		items["equip_archive_probe"] = 1;
+		items["equip_parallel_battery"] = 1;
+		items["equip_forbidden_patch"] = 1;
+		items["equip_insulated_cloak"] = 1;
 	}
 
 	private void RecomputeSessionProgression()
@@ -1262,6 +1520,8 @@ public partial class SystemFeatureLabController : CanvasLayer
 		}
 
 		_session.ProgressionState.PlayerLevel = Math.Max(3, _session.ProgressionState.PlayerLevel);
+		int levelFloorExperience = _session.RuntimeProgressionRuleSet.GetAccumulatedExperienceForLevel(_session.ProgressionState.PlayerLevel);
+		_session.ProgressionState.PlayerExperience = Math.Max(levelFloorExperience, _session.ProgressionState.PlayerExperience);
 		_session.ProgressionState.PlayerMasteryPoints = GetAvailablePoints();
 		_session.ProgressionState.TalentIds = talentIds.Where(value => !string.IsNullOrWhiteSpace(value)).Distinct(StringComparer.Ordinal).ToArray();
 		_session.ProgressionState.TalentBranchTags = branchTags.Where(value => !string.IsNullOrWhiteSpace(value)).Distinct(StringComparer.Ordinal).ToArray();
@@ -1270,12 +1530,41 @@ public partial class SystemFeatureLabController : CanvasLayer
 		_session.ProgressionState.DeckMaxCopiesPerCardBonus = copiesBonus;
 
 		_session.PlayerLevel = _session.ProgressionState.PlayerLevel;
+		_session.PlayerExperience = _session.ProgressionState.PlayerExperience;
 		_session.PlayerMasteryPoints = _session.ProgressionState.PlayerMasteryPoints;
 		_session.TalentIds = _session.ProgressionState.TalentIds;
 		_session.TalentBranchTags = _session.ProgressionState.TalentBranchTags;
 		_session.UnlockedCardIds = _session.ProgressionState.UnlockedCardIds;
 		_session.DeckPointBudgetBonus = budgetBonus;
 		_session.DeckMaxCopiesPerCardBonus = copiesBonus;
+		ApplyDebugCardUnlocks();
+	}
+
+	private void ApplyDebugCardUnlocks()
+	{
+		if (_session == null || _cardLibrary == null)
+		{
+			return;
+		}
+
+		string[] debugUnlockedCardIds = _cardLibrary.Entries
+			.Where(template => template != null && !template.IsLearnedCard)
+			.Select(template => template.CardId)
+			.Where(cardId => !string.IsNullOrWhiteSpace(cardId))
+			.Distinct(StringComparer.Ordinal)
+			.ToArray();
+		_session.ProgressionState.UnlockedCardIds = _session.ProgressionState.UnlockedCardIds
+			.Concat(debugUnlockedCardIds)
+			.Where(cardId => !string.IsNullOrWhiteSpace(cardId))
+			.Distinct(StringComparer.Ordinal)
+			.ToArray();
+		_session.ProgressionState.TalentBranchTags = _session.ProgressionState.TalentBranchTags
+			.Concat(new[] { "melee", "ranged", "flex" })
+			.Where(tag => !string.IsNullOrWhiteSpace(tag))
+			.Distinct(StringComparer.Ordinal)
+			.ToArray();
+		_session.UnlockedCardIds = _session.ProgressionState.UnlockedCardIds;
+		_session.TalentBranchTags = _session.ProgressionState.TalentBranchTags;
 	}
 
 	private RuntimeEquipmentDefinition? FindEquipmentDefinition(string itemId)
@@ -1292,24 +1581,31 @@ public partial class SystemFeatureLabController : CanvasLayer
 
 		return FindEquipmentDefinition(itemId)?.DisplayName ?? itemId;
 	}
-
 	private static string GetEquipmentSlotDisplayName(string slotId)
 	{
 		return slotId switch
 		{
-			EquipmentSlotIds.Weapon => "武器",
-			EquipmentSlotIds.Armor => "护甲",
-			EquipmentSlotIds.Accessory => "饰品",
+			EquipmentSlotIds.Weapon => "姝﹀櫒",
+			EquipmentSlotIds.Armor => "鎶ょ敳",
+			EquipmentSlotIds.Accessory => "楗板搧",
 			_ => slotId,
 		};
 	}
 
+	private enum TalentTreeGroup
+	{
+		Card = 0,
+		Role = 1,
+	}
+
 	private sealed class TalentNode
 	{
-		public TalentNode(string id, string displayName, int cost, string description, Vector2 treePosition, string[] prerequisiteTalentIds, string[] grantedTalentIds, string[]? grantedBranchTags = null, string[]? unlockedCardIds = null, int deckPointBudgetBonus = 0, int deckMaxCopiesPerCardBonus = 0)
+		public TalentNode(string id, string displayName, TalentTreeGroup group, string branchId, int cost, string description, Vector2 treePosition, string[] prerequisiteTalentIds, string[] grantedTalentIds, string[]? grantedBranchTags = null, string[]? unlockedCardIds = null, int deckPointBudgetBonus = 0, int deckMaxCopiesPerCardBonus = 0)
 		{
 			Id = id;
 			DisplayName = displayName;
+			Group = group;
+			BranchId = branchId;
 			Cost = cost;
 			Description = description;
 			TreePosition = treePosition;
@@ -1323,6 +1619,8 @@ public partial class SystemFeatureLabController : CanvasLayer
 
 		public string Id { get; }
 		public string DisplayName { get; }
+		public TalentTreeGroup Group { get; }
+		public string BranchId { get; }
 		public int Cost { get; }
 		public string Description { get; }
 		public Vector2 TreePosition { get; }

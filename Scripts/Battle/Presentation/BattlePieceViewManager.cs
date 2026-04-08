@@ -11,10 +11,12 @@ namespace CardChessDemo.Battle.Presentation;
 
 public sealed class BattlePieceViewManager
 {
+    private static readonly Color ActiveEnemyTurnBorderColor = new(1.0f, 0.22f, 0.22f, 0.95f);
     private readonly Node _pieceRoot;
     private readonly Node _killFxRoot;
     private readonly BattlePrefabLibrary _prefabLibrary;
     private readonly Dictionary<string, BattleAnimatedViewBase> _views = new(StringComparer.Ordinal);
+    private string _activeTurnObjectId = string.Empty;
     public BattlePieceViewManager(Node pieceRoot, Node killFxRoot, BattlePrefabLibrary prefabLibrary)
     {
         _pieceRoot = pieceRoot;
@@ -388,6 +390,26 @@ public sealed class BattlePieceViewManager
         if (_views.TryGetValue(objectId, out BattleAnimatedViewBase? view))
         {
             view.PlayTintPulse(tintColor);
+        }
+    }
+
+    public void SetActiveTurnObject(string objectId)
+    {
+        if (string.Equals(_activeTurnObjectId, objectId, StringComparison.Ordinal))
+        {
+            return;
+        }
+
+        if (_views.TryGetValue(_activeTurnObjectId, out BattleAnimatedViewBase? previousView))
+        {
+            previousView.SetActiveTurnHighlight(false, ActiveEnemyTurnBorderColor);
+        }
+
+        _activeTurnObjectId = objectId ?? string.Empty;
+
+        if (_views.TryGetValue(_activeTurnObjectId, out BattleAnimatedViewBase? currentView))
+        {
+            currentView.SetActiveTurnHighlight(true, ActiveEnemyTurnBorderColor);
         }
     }
 

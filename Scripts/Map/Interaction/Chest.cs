@@ -7,13 +7,34 @@ public partial class Chest : InteractableTemplate
 	[Export] public string ChestName = "Sword Chest";
 	[Export] public string ItemDescription = "你发现了一把生锈的剑。";
 
+	private const string ClosedAnimationName = "closed";
+	private const string OpenAnimationName = "open";
+
 	private bool _isOpened;
 	private bool _isOpening;
-	private Sprite2D? _sprite;
+	private AnimatedSprite2D? _animatedSprite;
 
 	public override void _Ready()
 	{
-		_sprite = GetNodeOrNull<Sprite2D>("Sprite2D");
+		_animatedSprite = GetNodeOrNull<AnimatedSprite2D>("AnimatedSprite2D");
+		if (_animatedSprite == null)
+		{
+			return;
+		}
+
+		if (_animatedSprite.SpriteFrames != null && _animatedSprite.SpriteFrames.HasAnimation(ClosedAnimationName))
+		{
+			_animatedSprite.Play(ClosedAnimationName);
+			_animatedSprite.Stop();
+		}
+		else if (_animatedSprite.SpriteFrames != null && _animatedSprite.SpriteFrames.HasAnimation(OpenAnimationName))
+		{
+			_animatedSprite.Play(OpenAnimationName);
+			_animatedSprite.Frame = 0;
+			_animatedSprite.Stop();
+		}
+
+		_animatedSprite.AnimationFinished += OnAnimatedChestFinished;
 	}
 
 	public override string GetInteractText(Player player)
@@ -35,20 +56,80 @@ public partial class Chest : InteractableTemplate
 	{
 		_isOpening = true;
 		_isOpened = true;
-		GD.Print($"{ChestName}：{ItemDescription}");
-
-		if (HasNode("AnimationPlayer"))
-		{
-			GetNode<AnimationPlayer>("AnimationPlayer").Play("open");
-		}
-
+		GD.Print($"{ChestName}: {ItemDescription}");
 		PlayInteractionPulse();
-		Tween tween = CreateTween();
-		if (_sprite != null)
+
+		bool hasOpenAnimation = _animatedSprite != null
+			&& _animatedSprite.SpriteFrames != null
+			&& _animatedSprite.SpriteFrames.HasAnimation(OpenAnimationName);
+		if (hasOpenAnimation)
 		{
-			tween.TweenProperty(_sprite, "modulate", new Color(0.75f, 0.75f, 0.75f), 0.15f);
+			_animatedSprite!.Play(OpenAnimationName);
+		}
+		else
+		{
+			_isOpening = false;
+		}
+	}
+
+	private void OnAnimatedChestFinished()
+	{
+		if (_animatedSprite == null)
+		{
+			_isOpening = false;
+			return;
 		}
 
-		tween.Finished += () => _isOpening = false;
+		if (_animatedSprite.Animation != OpenAnimationName)
+		{
+			return;
+		}
+
+		if (_animatedSprite.SpriteFrames != null)
+		{
+			int frameCount = _animatedSprite.SpriteFrames.GetFrameCount(OpenAnimationName);
+			_animatedSprite.Frame = Mathf.Max(0, frameCount - 1);
+		}
+
+		_animatedSprite.Stop();
+		_isOpening = false;
+	}
+
+	public override Godot.Collections.Dictionary BuildRuntimeSnapshot()
+	{
+		Godot.Collections.Dictionary snapshot = base.BuildRuntimeSnapshot();
+		snapshot["is_opened"] = _isOpened;
+		return snapshot;
+	}
+
+	public override void ApplyRuntimeSnapshot(Godot.Collections.Dictionary snapshot)
+	{
+		base.ApplyRuntimeSnapshot(snapshot);
+
+		if (snapshot.TryGetValue("is_opened", out Variant isOpened))
+		{
+			_isOpened = isOpened.AsBool();
+		}
+
+		_isOpening = false;
+		if (_animatedSprite == null)
+		{
+			return;
+		}
+
+		if (_isOpened && _animatedSprite.SpriteFrames != null && _animatedSprite.SpriteFrames.HasAnimation(OpenAnimationName))
+		{
+			_animatedSprite.Play(OpenAnimationName);
+			int frameCount = _animatedSprite.SpriteFrames.GetFrameCount(OpenAnimationName);
+			_animatedSprite.Frame = Mathf.Max(0, frameCount - 1);
+			_animatedSprite.Stop();
+			return;
+		}
+
+		if (_animatedSprite.SpriteFrames != null && _animatedSprite.SpriteFrames.HasAnimation(ClosedAnimationName))
+		{
+			_animatedSprite.Play(ClosedAnimationName);
+			_animatedSprite.Stop();
+		}
 	}
 }

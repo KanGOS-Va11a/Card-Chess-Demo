@@ -1,6 +1,6 @@
-[gd_scene format=3 uid="uid://c1ojey6clae1h"]
+[gd_scene format=3 uid="uid://dt1wv24a11tt2"]
 
-[ext_resource type="Script" uid="uid://d1ch3stl9g0u1" path="res://Scripts/Item/Chest.cs" id="1_yhaw6"]
+[ext_resource type="Script" path="res://Scripts/Item/Chest.cs" id="1_yhaw6"]
 [ext_resource type="Texture2D" uid="uid://cqccafampgoje" path="res://icon.svg" id="2_1oqmg"]
 
 [sub_resource type="CircleShape2D" id="CircleShape2D_apm08"]
@@ -15,8 +15,8 @@ size = Vector2(130, 132)
 collision_layer = 2
 collision_mask = 0
 script = ExtResource("1_yhaw6")
-CompletedFlowNodeId = "hub_prepare"
-NextActiveFlowNodeId = "hub_gate_maze"
+ChestName = null
+ItemDescription = null
 
 [node name="Sprite2D" type="Sprite2D" parent="Chest" unique_id=381271938]
 texture = ExtResource("2_1oqmg")

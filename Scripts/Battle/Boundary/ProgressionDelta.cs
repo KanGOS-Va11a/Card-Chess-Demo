@@ -18,6 +18,8 @@ public sealed class ProgressionDelta
 
 	public string[] ArakawaUnlockIds { get; set; } = Array.Empty<string>();
 
+	public string[] UnlockedCardIds { get; set; } = Array.Empty<string>();
+
 	public bool TryValidate(out string failureReason)
 	{
 		if (PlayerLevelDelta < 0)
@@ -46,6 +48,7 @@ public sealed class ProgressionDelta
 			["arakawa_growth_level_delta"] = ArakawaGrowthLevelDelta,
 			["talent_unlock_ids"] = ToVariantArray(TalentUnlockIds),
 			["arakawa_unlock_ids"] = ToVariantArray(ArakawaUnlockIds),
+			["unlocked_card_ids"] = ToVariantArray(UnlockedCardIds),
 		};
 	}
 
@@ -64,6 +67,7 @@ public sealed class ProgressionDelta
 			ArakawaGrowthLevelDelta = dictionary.TryGetValue("arakawa_growth_level_delta", out Variant growthDelta) ? growthDelta.AsInt32() : 0,
 			TalentUnlockIds = dictionary.TryGetValue("talent_unlock_ids", out Variant talentUnlockIds) ? ToStringArray(talentUnlockIds) : Array.Empty<string>(),
 			ArakawaUnlockIds = dictionary.TryGetValue("arakawa_unlock_ids", out Variant arakawaUnlockIds) ? ToStringArray(arakawaUnlockIds) : Array.Empty<string>(),
+			UnlockedCardIds = dictionary.TryGetValue("unlocked_card_ids", out Variant unlockedCardIds) ? ToStringArray(unlockedCardIds) : Array.Empty<string>(),
 		};
 	}
 

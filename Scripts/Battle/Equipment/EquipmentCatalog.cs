@@ -66,18 +66,25 @@ public sealed class EquipmentCatalog
 		return new EquipmentCatalog(new[]
 		{
 			new EquipmentDefinition(
-				"rusted_blade",
-				"旧钢刀",
+				"equip_magnetic_scabbard",
+				"磁锁刀鞘",
 				EquipmentSlotIds.Weapon,
-				"拆船废料打磨成的近战武器，稳定提升攻击。",
+				"近战过渡武器。当前版本先落实普通攻击加成，并保留对护盾目标增伤的设计语义。",
 				new EquipmentModifierDefinition("player.attack_bonus", 1, "攻击 +1")),
 			new EquipmentDefinition(
-				"ion_pistol",
-				"脉冲短铳",
+				"equip_arc_pipe",
+				"电弧金属管",
 				EquipmentSlotIds.Weapon,
-				"便携式脉冲副武器，牺牲部分稳定性换取更远射程。",
+				"荒川首次强化的武器。当前版本先落实基础攻击加成，后续再补电弧地形联动的额外伤害。",
 				new EquipmentModifierDefinition("player.attack_bonus", 1, "攻击 +1"),
 				new EquipmentModifierDefinition("player.attack_range_bonus", 1, "射程 +1")),
+			new EquipmentDefinition(
+				"equip_target_lens",
+				"校准瞄具",
+				EquipmentSlotIds.Accessory,
+				"远程过渡装备。强化直线攻击射程判定，并以生命代价换取更稳定的远程输出。",
+				new EquipmentModifierDefinition("player.attack_range_bonus", 1, "射程 +1"),
+				new EquipmentModifierDefinition("player.max_hp_bonus", -2, "生命 -2")),
 			new EquipmentDefinition(
 				"drawn_revolver",
 				"Drawn Revolver",
@@ -86,31 +93,43 @@ public sealed class EquipmentCatalog
 				new EquipmentModifierDefinition("player.attack_bonus", 2, "Attack +2"),
 				new EquipmentModifierDefinition("player.attack_range_bonus", 1, "Range +1")),
 			new EquipmentDefinition(
-				"patched_coat",
-				"补丁风衣",
+				"equip_old_coat",
+				"旧大衣",
 				EquipmentSlotIds.Armor,
-				"缝补过的旧大衣，提供更扎实的生存空间。",
-				new EquipmentModifierDefinition("player.max_hp_bonus", 4, "生命 +4"),
+				"主角初始护甲。提供稳定的基础生存空间。",
+				new EquipmentModifierDefinition("player.max_hp_bonus", 3, "生命 +3"),
 				new EquipmentModifierDefinition("player.defense_reduction_bonus", 5, "减伤 +5%")),
 			new EquipmentDefinition(
-				"reactive_plate",
-				"反应护甲片",
+				"equip_phase_boots",
+				"护相短靴",
 				EquipmentSlotIds.Armor,
-				"临时拼装的护甲片，强化防御姿态。",
-				new EquipmentModifierDefinition("player.defense_reduction_bonus", 10, "减伤 +10%"),
-				new EquipmentModifierDefinition("player.defense_shield_bonus", 1, "防御附盾 +1")),
-			new EquipmentDefinition(
-				"signal_charm",
-				"信号挂饰",
-				EquipmentSlotIds.Accessory,
-				"轻量化挂饰，改善战场移动调度。",
+				"创造 / 机动向过渡装备。当前版本先落实移动力提升。",
 				new EquipmentModifierDefinition("player.move_bonus", 1, "移动 +1")),
 			new EquipmentDefinition(
-				"tactical_chip",
-				"战术芯片",
+				"equip_red_scarf",
+				"红色方巾",
 				EquipmentSlotIds.Accessory,
-				"旧时代战术分析模组，补强防御判断。",
-				new EquipmentModifierDefinition("player.defense_reduction_bonus", 5, "减伤 +5%")),
+				"主角身份符号。当前版本先作为正式饰品定义接入，首次近战抽牌效果待补事件触发器。"),
+			new EquipmentDefinition(
+				"equip_archive_probe",
+				"档案探针",
+				EquipmentSlotIds.Accessory,
+				"学习流核心辅助装备。当前版本先接入正式定义，后续补学习窗口延长与专用槽位效果。"),
+			new EquipmentDefinition(
+				"equip_parallel_battery",
+				"并联电池组",
+				EquipmentSlotIds.Armor,
+				"高费与学习牌承载器。当前版本先接入正式定义，后续补初始能量与构筑承载联动。"),
+			new EquipmentDefinition(
+				"equip_forbidden_patch",
+				"禁区补丁",
+				EquipmentSlotIds.Accessory,
+				"高风险实验型装备。当前版本先接入正式定义，后续补超规槽位与额外代价。"),
+			new EquipmentDefinition(
+				"equip_insulated_cloak",
+				"绝缘披肩",
+				EquipmentSlotIds.Armor,
+				"创造流后期稳定器。当前版本先接入正式定义，后续补首次电弧伤害免疫与 flex 修正。"),
 		});
 	}
 }

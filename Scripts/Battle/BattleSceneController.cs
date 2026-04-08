@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading.Tasks;
 using Godot;
 using CardChessDemo.Battle.Actions;
 using CardChessDemo.Battle.AI;
@@ -31,6 +32,11 @@ public partial class BattleSceneController : Node2D
 	private const string SnipeCardId = "card_snipe";
 	private const string AlertCardId = "card_alert";
 	private const string RollCallCardId = "card_roll_call";
+	private const string LearningCardId = "card_learning";
+	private const string StanceCardId = "card_stance";
+	private const string HeavyBlowCardId = "card_heavy_blow";
+	private const string ConcussionShotCardId = "card_concussion_shot";
+	private const string WeatheringCardId = "card_weathering";
 	private const string DrawnRevolverWeaponItemId = "drawn_revolver";
 	private const int DrawnRevolverBasicAttackCharges = 6;
 	private const string BattleBackgroundTexturePath = "res://Assets/Background/94180512_p2_master1200.jpg";
@@ -106,7 +112,11 @@ public partial class BattleSceneController : Node2D
 	private ColorRect? _battleFailFlash;
 	private Label? _battleFailLabel;
 	private bool _battleFailureSequenceStarted;
+	private bool _battleVictorySequenceStarted;
 	private bool _battleResultCommitted;
+	private bool _playerCounterStanceActive;
+	private int _playerCounterStanceExpiresOnTurnIndex = -1;
+	private int _playerCounterStanceDamage = 6;
 	private bool _isArakawaWheelOpen;
 	private ArakawaAbilityMode _arakawaAbilityMode = ArakawaAbilityMode.None;
 	private BattleRequest? _activeBattleRequest;
@@ -124,6 +134,8 @@ public partial class BattleSceneController : Node2D
 	private readonly List<string> _currentTurnActionLogEntries = new();
 	private readonly List<string> _previousTurnActionLogEntries = new();
 	private readonly List<PendingDelayedCardEffect> _pendingDelayedCardEffects = new();
+	private readonly Dictionary<string, EnemyLearnState> _enemyLearnStates = new(StringComparer.Ordinal);
+	private readonly HashSet<string> _pendingLearnedCardIds = new(StringComparer.Ordinal);
 	private int _currentTurnActionLogTurnIndex = 1;
 	private int _previousTurnActionLogTurnIndex;
 
@@ -139,6 +151,18 @@ public partial class BattleSceneController : Node2D
 		public int TriggerTurnIndex { get; init; }
 		public int Radius { get; init; }
 		public int Damage { get; init; }
+	}
+
+	private sealed class EnemyLearnRewardProfile
+	{
+		public string NormalCardId { get; init; } = string.Empty;
+		public string SignatureCardId { get; init; } = string.Empty;
+	}
+
+	private sealed class EnemyLearnState
+	{
+		public bool SignatureAvailable { get; set; }
+		public int ResetOnTurnIndex { get; set; } = -1;
 	}
 
 	public override void _Ready()
@@ -215,7 +239,9 @@ public partial class BattleSceneController : Node2D
 			TargetingService,
 			_actionService,
 			new EnemyAiRegistry(),
-			this);
+			this,
+			OnEnemyAttackResolved,
+			OnActiveEnemyTurnChanged);
 
 		BattleBoardOverlay? overlay = GetNodeOrNull<BattleBoardOverlay>("RoomContainer/BoardOverlay");
 		overlay?.Bind(CurrentRoom);
@@ -395,6 +421,10 @@ public partial class BattleSceneController : Node2D
 		if (!_battleFailureSequenceStarted && GlobalSession?.PlayerCurrentHp <= 0)
 		{
 			StartBattleFailureSequence();
+		}
+		else if (TryResolveVictory())
+		{
+			return;
 		}
 
 		bool hasHoveredCell = CurrentRoom.TryScreenToCell(GetGlobalMousePosition(), out Vector2I hoveredCell);
@@ -1457,6 +1487,11 @@ public partial class BattleSceneController : Node2D
 		_actionService?.ResolveTurnEnd(BoardObjectFaction.Enemy, TurnState.TurnIndex);
 		TurnState.AdvanceToNextTurn();
 		AdvanceBattleActionLogTurn(TurnState.TurnIndex);
+		if (_playerCounterStanceActive && TurnState.TurnIndex >= _playerCounterStanceExpiresOnTurnIndex)
+		{
+			_playerCounterStanceActive = false;
+			_playerCounterStanceExpiresOnTurnIndex = -1;
+		}
 		if (_playerDeck != null)
 		{
 			TurnState.ConfigureEnergyRechargeInterval(_playerDeck.EnergyRegenIntervalTurns);
@@ -1469,6 +1504,50 @@ public partial class BattleSceneController : Node2D
 		_playerDeck?.StartPlayerTurn();
 		_actionService?.ResolveTurnStart(BoardObjectFaction.Player, TurnState.TurnIndex);
 		ResolvePendingDelayedCardEffectsForTurnStart(TurnState.TurnIndex);
+		TryResolveVictory();
+	}
+
+	private bool TryResolveVictory()
+	{
+		if (_battleResultCommitted || _battleFailureSequenceStarted || _battleVictorySequenceStarted || Registry == null)
+		{
+			return false;
+		}
+
+		bool hasRemainingEnemy = Registry.AllObjects.Any(boardObject =>
+			boardObject.ObjectType == BoardObjectType.Unit
+			&& boardObject.Faction == BoardObjectFaction.Enemy);
+		if (hasRemainingEnemy)
+		{
+			return false;
+		}
+
+		StartBattleVictorySequence();
+		return true;
+	}
+
+	private async void StartBattleVictorySequence()
+	{
+		if (_battleVictorySequenceStarted || _battleResultCommitted)
+		{
+			return;
+		}
+
+		_battleVictorySequenceStarted = true;
+		double resolveDelay = Math.Max(
+			PlayerActionResolveBufferSeconds,
+			_actionService?.LastImpactPresentationDurationSeconds ?? 0.0d);
+		if (resolveDelay > 0.0d)
+		{
+			await ToSignal(GetTree().CreateTimer(resolveDelay), SceneTreeTimer.SignalName.Timeout);
+		}
+
+		if (_battleResultCommitted || _battleFailureSequenceStarted)
+		{
+			return;
+		}
+
+		CommitBattleResult(BattleOutcome.Victory);
 	}
 
 	private bool TryResolveRetreatSuccess()
@@ -1491,6 +1570,137 @@ public partial class BattleSceneController : Node2D
 
 		CommitBattleResult(BattleOutcome.Retreat);
 		return true;
+	}
+
+	private void OnEnemyAttackResolved(string attackerId, string targetId, int attackRange)
+	{
+		if (!_playerCounterStanceActive || _actionService == null || StateManager == null || Registry == null)
+		{
+			return;
+		}
+
+		BattleObjectState? playerState = StateManager.GetPrimaryPlayerState();
+		if (playerState == null || playerState.CurrentHp <= 0 || !string.Equals(playerState.ObjectId, targetId, StringComparison.Ordinal) || attackRange > 1)
+		{
+			return;
+		}
+
+		if (!Registry.TryGet(attackerId, out BoardObject? attackerObject) || attackerObject == null)
+		{
+			return;
+		}
+
+		DamageApplicationResult result = _actionService.ApplyDamageToTarget(
+			attackerId,
+			_playerCounterStanceDamage,
+			ResolveDirectionVector(playerState.ObjectId, attackerId),
+			out _,
+			out string failureReason,
+			allowKillKnockback: true);
+		if (!string.IsNullOrWhiteSpace(failureReason))
+		{
+			return;
+		}
+
+		int damageAmount = SumImpactAmount(result, CombatImpactType.HealthDamage, CombatImpactType.ShieldDamage);
+		if (damageAmount > 0)
+		{
+			AppendBattleActionLog($"{playerState.DisplayName}->{ResolveObjectDisplayName(attackerId)} 架势反击{damageAmount}");
+		}
+	}
+
+	private void OnActiveEnemyTurnChanged(string enemyObjectId)
+	{
+		_pieceViewManager?.SetActiveTurnObject(enemyObjectId);
+	}
+
+	private EnemyLearnRewardProfile? ResolveEnemyLearnRewardProfile(string definitionId)
+	{
+		return definitionId switch
+		{
+			"scene01_tutorial_enemy" => new EnemyLearnRewardProfile
+			{
+				NormalCardId = "card_patrol_strike",
+				SignatureCardId = "card_last_chase",
+			},
+			_ => null,
+		};
+	}
+
+	private bool IsSignatureLearnStateAvailable(BoardObject targetObject)
+	{
+		if (_enemyLearnStates.TryGetValue(targetObject.ObjectId, out EnemyLearnState? state) && state.SignatureAvailable)
+		{
+			return true;
+		}
+
+		if (StateManager?.Get(targetObject.ObjectId) is not BattleObjectState targetState)
+		{
+			return false;
+		}
+
+		return targetObject.DefinitionId == "scene01_tutorial_enemy"
+			&& targetState.MaxHp > 0
+			&& targetState.CurrentHp * 2 <= targetState.MaxHp;
+	}
+
+	private void ActivateEnemySignatureLearnState(string enemyObjectId, int resetOnTurnIndex = -1)
+	{
+		if (string.IsNullOrWhiteSpace(enemyObjectId))
+		{
+			return;
+		}
+
+		if (!_enemyLearnStates.TryGetValue(enemyObjectId, out EnemyLearnState? state))
+		{
+			state = new EnemyLearnState();
+			_enemyLearnStates[enemyObjectId] = state;
+		}
+
+		state.SignatureAvailable = true;
+		state.ResetOnTurnIndex = resetOnTurnIndex;
+	}
+
+	private void ResetEnemyLearnStatesForTurnStart(int currentTurnIndex)
+	{
+		foreach (KeyValuePair<string, EnemyLearnState> entry in _enemyLearnStates.ToArray())
+		{
+			if (entry.Value.ResetOnTurnIndex != currentTurnIndex)
+			{
+				continue;
+			}
+
+			entry.Value.SignatureAvailable = false;
+			entry.Value.ResetOnTurnIndex = -1;
+		}
+	}
+
+	private Vector2 ResolveDirectionVector(string attackerId, string targetId)
+	{
+		Vector2I directionCell = ResolveDirectionCell(attackerId, targetId);
+		return new Vector2(directionCell.X, directionCell.Y);
+	}
+
+	private Vector2I ResolveDirectionCell(string attackerId, string targetId)
+	{
+		if (Registry == null
+			|| !Registry.TryGet(attackerId, out BoardObject? attackerObject)
+			|| attackerObject == null
+			|| !Registry.TryGet(targetId, out BoardObject? targetObject)
+			|| targetObject == null)
+		{
+			return Vector2I.Right;
+		}
+
+		Vector2I direction = new(
+			Math.Sign(targetObject.Cell.X - attackerObject.Cell.X),
+			Math.Sign(targetObject.Cell.Y - attackerObject.Cell.Y));
+		if (CurrentRoom != null && CurrentRoom.Topology.TryNormalizeCardinalDirection(direction, out Vector2I normalizedDirection))
+		{
+			return normalizedDirection;
+		}
+
+		return direction == Vector2I.Zero ? Vector2I.Right : direction;
 	}
 
 	private void ApplyPendingBattleRequest()
@@ -1578,12 +1788,27 @@ public partial class BattleSceneController : Node2D
 		}
 
 		_battleResultCommitted = true;
+		Godot.Collections.Dictionary runtimeFlags = new()
+		{
+			["room_layout_id"] = CurrentRoom?.LayoutId ?? string.Empty,
+		};
+		if (_pendingLearnedCardIds.Count > 0)
+		{
+			Godot.Collections.Array<string> learnedCardIds = new();
+			foreach (string cardId in _pendingLearnedCardIds.OrderBy(value => value, StringComparer.Ordinal))
+			{
+				learnedCardIds.Add(cardId);
+			}
+
+			runtimeFlags["learned_card_ids"] = learnedCardIds;
+		}
 		GlobalSession.CompleteBattle(BattleResult.FromSession(
 			GlobalSession,
 			outcome,
 			_activeBattleRequest?.RequestId ?? string.Empty,
 			EncounterId,
-			outcome == BattleOutcome.Victory ? EncounterId : string.Empty));
+			outcome == BattleOutcome.Victory ? EncounterId : string.Empty,
+			runtimeFlags));
 		ReturnToPendingMapSceneIfAny();
 	}
 
@@ -1639,6 +1864,11 @@ public partial class BattleSceneController : Node2D
 			EnsureDebugStartingHandCard(ensuredStartingHand, definitionMap, DrawRevolverCardId);
 			EnsureDebugStartingHandCard(ensuredStartingHand, definitionMap, ArcLeakCardId);
 			EnsureDebugStartingHandCard(ensuredStartingHand, definitionMap, RamCardId);
+			EnsureDebugStartingHandCard(ensuredStartingHand, definitionMap, LearningCardId);
+			EnsureDebugStartingHandCard(ensuredStartingHand, definitionMap, StanceCardId);
+			EnsureDebugStartingHandCard(ensuredStartingHand, definitionMap, HeavyBlowCardId);
+			EnsureDebugStartingHandCard(ensuredStartingHand, definitionMap, ConcussionShotCardId);
+			EnsureDebugStartingHandCard(ensuredStartingHand, definitionMap, WeatheringCardId);
 			EnsureDebugStartingHandCard(ensuredStartingHand, definitionMap, AimCardId);
 			EnsureDebugStartingHandCard(ensuredStartingHand, definitionMap, AlertCardId);
 			EnsureDebugStartingHandCard(ensuredStartingHand, definitionMap, RollCallCardId);
@@ -1866,6 +2096,11 @@ public partial class BattleSceneController : Node2D
 			return;
 		}
 
+		if (GlobalSession.PeekLastBattleResult() is BattleResult resultSummary && resultSummary.DidPlayerWin)
+		{
+			await ShowBattleResultOverlayAsync(resultSummary);
+		}
+
 		if (GD.Load<PackedScene>(BattleReturnTransitionOverlayScenePath) is PackedScene overlayScene
 			&& overlayScene.Instantiate() is CardChessDemo.Map.BattleReturnTransitionOverlay overlay)
 		{
@@ -1879,6 +2114,89 @@ public partial class BattleSceneController : Node2D
 		{
 			GD.PushError($"BattleSceneController: return to map failed, error={result}");
 		}
+	}
+
+	private async Task ShowBattleResultOverlayAsync(BattleResult result)
+	{
+		CanvasLayer overlayLayer = new() { Layer = 120 };
+		ColorRect dim = new()
+		{
+			AnchorRight = 1.0f,
+			AnchorBottom = 1.0f,
+			Color = new Color(0.04f, 0.05f, 0.08f, 0.84f),
+			MouseFilter = Control.MouseFilterEnum.Stop,
+		};
+		PanelContainer panel = new()
+		{
+			CustomMinimumSize = new Vector2(250.0f, 132.0f),
+			Position = new Vector2(35.0f, 24.0f),
+			MouseFilter = Control.MouseFilterEnum.Stop,
+		};
+		VBoxContainer content = new();
+		Label titleLabel = new()
+		{
+			Text = "战斗结算",
+			HorizontalAlignment = HorizontalAlignment.Center,
+		};
+		RichTextLabel detailLabel = new()
+		{
+			FitContent = true,
+			ScrollActive = false,
+			AutowrapMode = TextServer.AutowrapMode.WordSmart,
+			Text = BuildBattleResultSummaryText(result),
+			CustomMinimumSize = new Vector2(220.0f, 80.0f),
+		};
+		Label continueLabel = new()
+		{
+			Text = "按 E / Enter 继续",
+			HorizontalAlignment = HorizontalAlignment.Right,
+		};
+
+		content.AddChild(titleLabel);
+		content.AddChild(detailLabel);
+		content.AddChild(continueLabel);
+		panel.AddChild(content);
+		overlayLayer.AddChild(dim);
+		overlayLayer.AddChild(panel);
+		GetTree().Root.AddChild(overlayLayer);
+
+		while (GodotObject.IsInstanceValid(overlayLayer))
+		{
+			await ToSignal(GetTree(), SceneTree.SignalName.ProcessFrame);
+			if (Input.IsActionJustPressed("interact") || Input.IsActionJustPressed("ui_accept"))
+			{
+				break;
+			}
+		}
+
+		if (GodotObject.IsInstanceValid(overlayLayer))
+		{
+			overlayLayer.QueueFree();
+		}
+	}
+
+	private static string BuildBattleResultSummaryText(BattleResult result)
+	{
+		List<string> lines = new();
+		ProgressionDelta progressionDelta = result.GetProgressionDeltaModel();
+		if (progressionDelta.ExperienceDelta > 0)
+		{
+			lines.Add($"经验 +{progressionDelta.ExperienceDelta}");
+		}
+
+		foreach (Godot.Collections.Dictionary rewardEntryRaw in result.RewardEntries)
+		{
+			BattleRewardEntry rewardEntry = BattleRewardEntry.FromDictionary(rewardEntryRaw);
+			if (rewardEntry.RewardType == "learned_card")
+			{
+				lines.Add($"卡牌解锁: {rewardEntry.RewardId}");
+				continue;
+			}
+
+			lines.Add($"{rewardEntry.RewardType}: {rewardEntry.RewardId} x{rewardEntry.Amount}");
+		}
+
+		return lines.Count == 0 ? "无奖励" : string.Join("\n", lines);
 	}
 	private void ConfigureCameraForBattle()
 	{
@@ -2434,6 +2752,257 @@ public partial class BattleSceneController : Node2D
 			return TryApplyRamCard(attackerId, targetObject, out failureReason);
 		}
 
+		if (cardInstance.Definition.CardId == StanceCardId)
+		{
+			return TryApplyStanceCard(attackerId, out failureReason);
+		}
+
+		if (cardInstance.Definition.CardId == HeavyBlowCardId)
+		{
+			return TryApplyHeavyBlowCard(attackerId, targetObject, out failureReason);
+		}
+
+		if (cardInstance.Definition.CardId == ConcussionShotCardId)
+		{
+			return TryApplyConcussionShotCard(attackerId, targetObject, out failureReason);
+		}
+
+		if (cardInstance.Definition.CardId == WeatheringCardId)
+		{
+			return TryApplyWeatheringCard(attackerId, out failureReason);
+		}
+
+		if (cardInstance.Definition.CardId == LearningCardId)
+		{
+			return TryApplyLearningCard(attackerId, targetObject, out failureReason);
+		}
+
+		return true;
+	}
+
+	private bool TryApplyLearningCard(string attackerId, BoardObject? targetObject, out string failureReason)
+	{
+		failureReason = string.Empty;
+		if (targetObject == null || targetObject.ObjectType != BoardObjectType.Unit || targetObject.Faction != BoardObjectFaction.Enemy)
+		{
+			failureReason = "Learning card requires an enemy target.";
+			return false;
+		}
+
+		EnemyLearnRewardProfile? rewardProfile = ResolveEnemyLearnRewardProfile(targetObject.DefinitionId);
+		if (rewardProfile == null)
+		{
+			failureReason = "This enemy does not support learning rewards yet.";
+			return false;
+		}
+
+		bool signatureAvailable = IsSignatureLearnStateAvailable(targetObject);
+		string learnedCardId = signatureAvailable ? rewardProfile.SignatureCardId : rewardProfile.NormalCardId;
+		if (string.IsNullOrWhiteSpace(learnedCardId))
+		{
+			failureReason = "Learning reward card is missing.";
+			return false;
+		}
+
+		_pendingLearnedCardIds.Add(learnedCardId);
+		AppendBattleActionLog($"{ResolveObjectDisplayName(attackerId)}->{ResolveObjectDisplayName(targetObject.ObjectId)} 学习{(signatureAvailable ? "·特技" : "·基础")}");
+		return true;
+	}
+
+	private bool TryApplyStanceCard(string attackerId, out string failureReason)
+	{
+		failureReason = string.Empty;
+		if (TurnState == null)
+		{
+			failureReason = "Turn state is not initialized.";
+			return false;
+		}
+
+		_playerCounterStanceActive = true;
+		_playerCounterStanceExpiresOnTurnIndex = TurnState.TurnIndex + 1;
+		_playerCounterStanceDamage = 6;
+		AppendBattleActionLog($"{ResolveObjectDisplayName(attackerId)}->架势待发");
+		return true;
+	}
+
+	private bool TryApplyHeavyBlowCard(string attackerId, BoardObject? targetObject, out string failureReason)
+	{
+		failureReason = string.Empty;
+		if (_actionService == null || targetObject == null)
+		{
+			failureReason = "Heavy blow target is missing.";
+			return false;
+		}
+
+		int totalDamage = 6 + (targetObject.CurrentShield > 0 ? Mathf.CeilToInt(6.0f * 0.5f) : 0);
+		Vector2 knockbackDirection = ResolveDirectionVector(attackerId, targetObject.ObjectId);
+		DamageApplicationResult result = _actionService.ApplyDamageToTarget(
+			targetObject.ObjectId,
+			totalDamage,
+			knockbackDirection,
+			out bool wasDestroyed,
+			out string damageFailureReason,
+			allowKillKnockback: true);
+		if (!string.IsNullOrWhiteSpace(damageFailureReason))
+		{
+			failureReason = damageFailureReason;
+			return false;
+		}
+
+		int damageAmount = SumImpactAmount(result, CombatImpactType.HealthDamage, CombatImpactType.ShieldDamage);
+		if (damageAmount > 0)
+		{
+			if (wasDestroyed && targetObject.ObjectType == BoardObjectType.Unit && targetObject.Faction == BoardObjectFaction.Enemy)
+			{
+				Vector2I attackerCell = Registry != null && Registry.TryGet(attackerId, out BoardObject? attackerObjectForFocus) && attackerObjectForFocus != null
+					? attackerObjectForFocus.Cell
+					: targetObject.Cell;
+				TriggerBattleCameraFocusForCells(attackerCell, targetObject.Cell);
+			}
+
+			AppendBattleActionLog($"{ResolveObjectDisplayName(attackerId)}->{ResolveObjectDisplayName(targetObject.ObjectId)} 重击{damageAmount}");
+		}
+
+		return true;
+	}
+
+	private bool TryApplyConcussionShotCard(string attackerId, BoardObject? targetObject, out string failureReason)
+	{
+		failureReason = string.Empty;
+		if (_actionService == null || targetObject == null || Registry == null || QueryService == null || CurrentRoom == null)
+		{
+			failureReason = "Concussion shot systems are not initialized.";
+			return false;
+		}
+
+		Vector2I direction = ResolveDirectionCell(attackerId, targetObject.ObjectId);
+		DamageApplicationResult result = _actionService.ApplyDamageToTarget(
+			targetObject.ObjectId,
+			3,
+			new Vector2(direction.X, direction.Y),
+			out _,
+			out string damageFailureReason,
+			allowKillKnockback: false);
+		if (!string.IsNullOrWhiteSpace(damageFailureReason))
+		{
+			failureReason = damageFailureReason;
+			return false;
+		}
+
+		int damageAmount = SumImpactAmount(result, CombatImpactType.HealthDamage, CombatImpactType.ShieldDamage);
+		if (damageAmount > 0)
+		{
+			AppendBattleActionLog($"{ResolveObjectDisplayName(attackerId)}->{ResolveObjectDisplayName(targetObject.ObjectId)} 震荡射击{damageAmount}");
+		}
+
+		if (targetObject.IsDestroyed)
+		{
+			return true;
+		}
+
+		Vector2I nextCell = targetObject.Cell + direction;
+		if (!CurrentRoom.Topology.IsInsideBoard(nextCell))
+		{
+			return true;
+		}
+
+		List<BoardObject> blockers = QueryService.GetObjectsAtCell(nextCell)
+			.Where(boardObject => boardObject.ObjectId != targetObject.ObjectId)
+			.Where(boardObject => boardObject.ObjectType == BoardObjectType.Unit || boardObject.ObjectType == BoardObjectType.Obstacle || boardObject.BlocksMovement || !boardObject.StackableWithUnit)
+			.ToList();
+		if (blockers.Count == 0 && QueryService.TryMoveObject(targetObject.ObjectId, nextCell, out _))
+		{
+			StateManager?.SyncAllFromRegistry();
+			_pieceViewManager?.Sync(Registry, StateManager!, CurrentRoom);
+			_pieceViewManager?.PlayMove(targetObject.ObjectId);
+			return true;
+		}
+
+		BoardObject? collisionObject = blockers.FirstOrDefault();
+		DamageApplicationResult targetCollisionResult = _actionService.ApplyDamageToTarget(
+			targetObject.ObjectId,
+			2,
+			new Vector2(direction.X, direction.Y),
+			out _,
+			out string collisionFailureReason,
+			allowKillKnockback: false);
+		if (!string.IsNullOrWhiteSpace(collisionFailureReason))
+		{
+			failureReason = collisionFailureReason;
+			return false;
+		}
+
+		int collisionDamage = SumImpactAmount(targetCollisionResult, CombatImpactType.HealthDamage, CombatImpactType.ShieldDamage);
+		if (collisionDamage > 0)
+		{
+			AppendBattleActionLog($"{ResolveObjectDisplayName(targetObject.ObjectId)}->撞击{collisionDamage}");
+		}
+
+		if (collisionObject != null)
+		{
+			DamageApplicationResult blockerResult = _actionService.ApplyDamageToTarget(
+				collisionObject.ObjectId,
+				2,
+				new Vector2(direction.X, direction.Y),
+				out _,
+				out string blockerFailureReason,
+				allowKillKnockback: false);
+			if (!string.IsNullOrWhiteSpace(blockerFailureReason))
+			{
+				failureReason = blockerFailureReason;
+				return false;
+			}
+
+			int blockerDamage = SumImpactAmount(blockerResult, CombatImpactType.HealthDamage, CombatImpactType.ShieldDamage);
+			if (blockerDamage > 0)
+			{
+				AppendBattleActionLog($"{ResolveObjectDisplayName(collisionObject.ObjectId)}->被震撞{blockerDamage}");
+			}
+		}
+
+		return true;
+	}
+
+	private bool TryApplyWeatheringCard(string attackerId, out string failureReason)
+	{
+		failureReason = string.Empty;
+		if (_actionService == null || Registry == null || !Registry.TryGet(attackerId, out BoardObject? attackerObject) || attackerObject == null)
+		{
+			failureReason = "Weathering attacker was not found.";
+			return false;
+		}
+
+		BoardObject[] targets = Registry.AllObjects
+			.Where(boardObject => boardObject.ObjectType == BoardObjectType.Obstacle)
+			.Where(boardObject => Mathf.Abs(boardObject.Cell.X - attackerObject.Cell.X) + Mathf.Abs(boardObject.Cell.Y - attackerObject.Cell.Y) <= 2)
+			.ToArray();
+		if (targets.Length == 0)
+		{
+			failureReason = "No obstacle is in weathering range.";
+			return false;
+		}
+
+		foreach (BoardObject obstacle in targets)
+		{
+			DamageApplicationResult result = _actionService.ApplyDamageToTarget(
+				obstacle.ObjectId,
+				3,
+				Vector2.Zero,
+				out _,
+				out string damageFailureReason,
+				allowKillKnockback: false);
+			if (!string.IsNullOrWhiteSpace(damageFailureReason))
+			{
+				continue;
+			}
+
+			int damageAmount = SumImpactAmount(result, CombatImpactType.HealthDamage, CombatImpactType.ShieldDamage);
+			if (damageAmount > 0)
+			{
+				AppendBattleActionLog($"{ResolveObjectDisplayName(attackerId)}->{ResolveObjectDisplayName(obstacle.ObjectId)} 风化{damageAmount}");
+			}
+		}
+
 		return true;
 	}
 
@@ -2708,6 +3277,8 @@ public partial class BattleSceneController : Node2D
 		{
 			return;
 		}
+
+		ResetEnemyLearnStatesForTurnStart(currentTurnIndex);
 
 		for (int index = _pendingDelayedCardEffects.Count - 1; index >= 0; index--)
 		{

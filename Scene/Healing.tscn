@@ -1,4 +1,4 @@
-[gd_scene format=3 uid="uid://disesyij2btfk"]
+[gd_scene format=3 uid="uid://cgyp1rf0rfueb"]
 
 [ext_resource type="Script" uid="uid://cp05snpqauo0p" path="res://Scripts/Map/Interaction/HealStation.cs" id="1_pqxix"]
 [ext_resource type="Texture2D" uid="uid://cqccafampgoje" path="res://icon.svg" id="1_tqhqu"]

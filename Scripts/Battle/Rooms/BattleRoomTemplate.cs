@@ -450,18 +450,21 @@ public partial class BattleRoomTemplate : Node2D
 	private static BoardObjectSpawnDefinition CreateEnemySpawn(int index, Vector2I cell, string definitionId, Vector2I facing)
 	{
 		string resolvedDefinitionId = string.IsNullOrWhiteSpace(definitionId) ? "battle_enemy" : definitionId;
+		EnemySpawnProfile profile = ResolveEnemySpawnProfile(resolvedDefinitionId);
 
 		return new BoardObjectSpawnDefinition
 		{
 			ObjectId = $"enemy_{index:00}",
 			DefinitionId = resolvedDefinitionId,
-			AiId = "melee_basic",
+			AiId = profile.AiId,
 			ObjectType = BoardObjectType.Unit,
 			Cell = cell,
 			Faction = BoardObjectFaction.Enemy,
 			Tags = new[] { EnemyTag.ToString(), resolvedDefinitionId },
-			MaxShield = 2,
-			CurrentShield = 2,
+			MaxHp = profile.MaxHp,
+			CurrentHp = profile.MaxHp,
+			MaxShield = profile.MaxShield,
+			CurrentShield = profile.MaxShield,
 			StackableWithUnit = false,
 			InitialFacing = facing,
 			InitialStatePayload = new Godot.Collections.Dictionary
@@ -471,6 +474,25 @@ public partial class BattleRoomTemplate : Node2D
 			},
 		};
 	}
+
+	private static EnemySpawnProfile ResolveEnemySpawnProfile(string definitionId)
+	{
+		return definitionId switch
+		{
+			"scene01_tutorial_enemy" => new EnemySpawnProfile("scene01_learning", 6, 1),
+			"pirate_blocker" => new EnemySpawnProfile("melee_basic", 7, 2),
+			"pirate_scout" => new EnemySpawnProfile("scout_flanker", 5, 1),
+			"pirate_shocker" => new EnemySpawnProfile("melee_basic", 6, 1),
+			"pirate_gunner" => new EnemySpawnProfile("ranged_line", 5, 0),
+			"pirate_pipe_bomber" => new EnemySpawnProfile("ranged_line", 5, 0),
+			"pirate_brute_elite" => new EnemySpawnProfile("melee_basic", 10, 3),
+			"scrap_medic_elite" => new EnemySpawnProfile("ranged_line", 8, 2),
+			"boss_rust_captain" => new EnemySpawnProfile("melee_basic", 16, 4),
+			_ => new EnemySpawnProfile("melee_basic", 6, 2),
+		};
+	}
+
+	private readonly record struct EnemySpawnProfile(string AiId, int MaxHp, int MaxShield);
 
 	private static BoardObjectSpawnDefinition CreateDestructibleObstacleSpawn(int index, Vector2I cell)
 	{
