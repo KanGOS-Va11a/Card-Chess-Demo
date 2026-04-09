@@ -6,6 +6,7 @@
 [ext_resource type="PackedScene" uid="uid://bo41kkri4csjl" path="res://Scene/Battle/Rooms/GruntDebugRoomB.tscn" id="4_fypyy"]
 [ext_resource type="Resource" uid="uid://dy3y14c3mod7u" path="res://Resources/Battle/Rooms/DebugBattleRoomPool.tres" id="5_4mo8r"]
 [ext_resource type="Resource" uid="uid://cfuduyxkf0keq" path="res://Resources/Battle/Presentation/DefaultBattlePrefabLibrary.tres" id="6_prefab"]
+[ext_resource type="Resource" path="res://Resources/Battle/Enemies/DefaultBattleEnemyLibrary.tres" id="6_enemy"]
 [ext_resource type="PackedScene" path="res://Scene/Battle/UI/BattleHud.tscn" id="7_hud"]
 [ext_resource type="Resource" uid="uid://bmpjfpqs2pghk" path="res://Resources/Battle/Encounters/DebugBattleEncounterLibrary.tres" id="8_encounter"]
 [ext_resource type="Script" uid="uid://co7rnt3ribqx8" path="res://Scripts/Battle/Visual/BattleFloatingTextLayer.cs" id="9_float"]
@@ -15,6 +16,7 @@ script = ExtResource("1_hq08r")
 BattleRoomScenes = [ExtResource("3_oxbdf"), ExtResource("4_fypyy")]
 BattleRoomPools = ExtResource("5_4mo8r")
 BattlePrefabLibrary = ExtResource("6_prefab")
+BattleEnemyLibrary = ExtResource("6_enemy")
 EncounterLibrary = ExtResource("8_encounter")
 EncounterId = "grunt_debug"
 RandomSeed = 20260320

@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using CardChessDemo.Battle.Board;
+using CardChessDemo.Battle.Enemies;
 using CardChessDemo.Battle.Presentation;
 using CardChessDemo.Battle.Shared;
 using CardChessDemo.Battle.Stats;
@@ -15,16 +16,18 @@ public sealed class BattleObjectStateManager
     private readonly Dictionary<string, BattleObjectState> _states = new(StringComparer.Ordinal);
     private readonly BoardObjectRegistry _registry;
     private readonly BattlePrefabLibrary _prefabLibrary;
+    private readonly BattleEnemyLibrary? _enemyLibrary;
     private readonly GlobalGameSession _session;
     private int _playerAttackDamageBonus;
     private string _temporaryWeaponOverrideItemId = string.Empty;
     private int _temporaryWeaponBasicAttackChargesRemaining;
 
-    public BattleObjectStateManager(BoardObjectRegistry registry, BattlePrefabLibrary prefabLibrary, GlobalGameSession session)
+    public BattleObjectStateManager(BoardObjectRegistry registry, BattlePrefabLibrary prefabLibrary, GlobalGameSession session, BattleEnemyLibrary? enemyLibrary = null)
     {
         _registry = registry;
         _prefabLibrary = prefabLibrary;
         _session = session;
+        _enemyLibrary = enemyLibrary;
     }
 
     public IEnumerable<BattleObjectState> AllStates => _states.Values.OrderBy(state => state.ObjectType).ThenBy(state => state.ObjectId);
@@ -148,10 +151,11 @@ public sealed class BattleObjectStateManager
 
             ApplyRuntimeCombatData(boardObject);
             BattlePrefabEntry? prefabEntry = _prefabLibrary.FindEntry(boardObject.DefinitionId);
+            BattleEnemyDefinition? enemyDefinition = ResolveEnemyDefinition(boardObject);
             state.Cell = boardObject.Cell;
             state.MaxHp = boardObject.MaxHp > 0 ? boardObject.MaxHp : state.MaxHp;
             state.MaxShield = boardObject.MaxShield;
-            state.CurrentHp = ResolveCurrentHp(boardObject, prefabEntry);
+            state.CurrentHp = ResolveCurrentHp(boardObject, prefabEntry, enemyDefinition);
             state.CurrentShield = ResolveCurrentShield(boardObject);
             state.HasDefenseStance = boardObject.HasDefenseStance;
             state.DefenseDamageReductionPercent = boardObject.DefenseDamageReductionPercent;
@@ -183,6 +187,7 @@ public sealed class BattleObjectStateManager
     private BattleObjectState CreateState(BoardObject boardObject)
     {
         BattlePrefabEntry? prefabEntry = _prefabLibrary.FindEntry(boardObject.DefinitionId);
+        BattleEnemyDefinition? enemyDefinition = ResolveEnemyDefinition(boardObject);
         bool isPlayer = boardObject.HasTag("player");
         ResolvedPlayerStats resolvedStats = _session.ResolvePlayerStats(_temporaryWeaponOverrideItemId);
 
@@ -190,20 +195,20 @@ public sealed class BattleObjectStateManager
             boardObject.ObjectId,
             boardObject.DefinitionId,
             boardObject.AiId,
-            prefabEntry?.DisplayName ?? boardObject.DefinitionId,
+            enemyDefinition?.DisplayName ?? prefabEntry?.DisplayName ?? boardObject.DefinitionId,
             boardObject.ObjectType,
             boardObject.Faction)
         {
             Cell = boardObject.Cell,
-            MaxHp = boardObject.MaxHp > 0 ? boardObject.MaxHp : prefabEntry?.DefaultMaxHp ?? 0,
+            MaxHp = boardObject.MaxHp > 0 ? boardObject.MaxHp : enemyDefinition?.MaxHp ?? prefabEntry?.DefaultMaxHp ?? 0,
             MaxShield = boardObject.MaxShield,
-            CurrentHp = ResolveCurrentHp(boardObject, prefabEntry),
+            CurrentHp = ResolveCurrentHp(boardObject, prefabEntry, enemyDefinition),
             CurrentShield = ResolveCurrentShield(boardObject),
             HasDefenseStance = boardObject.HasDefenseStance,
             DefenseDamageReductionPercent = boardObject.DefenseDamageReductionPercent,
-            MovePointsPerTurn = prefabEntry?.DefaultMovePointsPerTurn ?? 0,
-            AttackRange = prefabEntry?.DefaultAttackRange ?? 1,
-            AttackDamage = prefabEntry?.DefaultAttackDamage ?? 1,
+            MovePointsPerTurn = enemyDefinition?.MovePointsPerTurn ?? prefabEntry?.DefaultMovePointsPerTurn ?? 0,
+            AttackRange = enemyDefinition?.AttackRange ?? prefabEntry?.DefaultAttackRange ?? 1,
+            AttackDamage = enemyDefinition?.AttackDamage ?? prefabEntry?.DefaultAttackDamage ?? 1,
             IsPlayer = isPlayer,
         };
 
@@ -225,6 +230,7 @@ public sealed class BattleObjectStateManager
     private void ApplyRuntimeCombatData(BoardObject boardObject)
     {
         BattlePrefabEntry? prefabEntry = _prefabLibrary.FindEntry(boardObject.DefinitionId);
+        BattleEnemyDefinition? enemyDefinition = ResolveEnemyDefinition(boardObject);
         bool isPlayer = boardObject.HasTag("player");
 
         if (isPlayer)
@@ -238,10 +244,12 @@ public sealed class BattleObjectStateManager
             return;
         }
 
-        int resolvedMaxHp = boardObject.MaxHp > 0 ? boardObject.MaxHp : prefabEntry?.DefaultMaxHp ?? 0;
+        int resolvedMaxHp = boardObject.MaxHp > 0 ? boardObject.MaxHp : enemyDefinition?.MaxHp ?? prefabEntry?.DefaultMaxHp ?? 0;
         int resolvedCurrentHp = boardObject.CurrentHp > 0
             ? boardObject.CurrentHp
-            : prefabEntry?.DefaultCurrentHp > 0
+            : enemyDefinition?.MaxHp > 0
+                ? enemyDefinition.MaxHp
+                : prefabEntry?.DefaultCurrentHp > 0
                 ? prefabEntry.DefaultCurrentHp
                 : resolvedMaxHp;
         int resolvedMaxShield = boardObject.MaxShield;
@@ -250,7 +258,15 @@ public sealed class BattleObjectStateManager
         boardObject.ApplyCombatDefaults(resolvedMaxHp, resolvedCurrentHp, resolvedMaxShield, resolvedCurrentShield);
     }
 
-    private static int ResolveCurrentHp(BoardObject boardObject, BattlePrefabEntry? prefabEntry)
+    private BattleEnemyDefinition? ResolveEnemyDefinition(BoardObject boardObject)
+    {
+        return boardObject.Faction == BoardObjectFaction.Enemy
+            && boardObject.ObjectType == BoardObjectType.Unit
+            ? _enemyLibrary?.FindEntry(boardObject.DefinitionId)
+            : null;
+    }
+
+    private static int ResolveCurrentHp(BoardObject boardObject, BattlePrefabEntry? prefabEntry, BattleEnemyDefinition? enemyDefinition)
     {
         if (boardObject.CurrentHp > 0)
         {
@@ -260,6 +276,11 @@ public sealed class BattleObjectStateManager
         if (boardObject.MaxHp > 0)
         {
             return boardObject.MaxHp;
+        }
+
+        if (enemyDefinition?.MaxHp > 0)
+        {
+            return enemyDefinition.MaxHp;
         }
 
         if (prefabEntry?.DefaultCurrentHp > 0)

@@ -31,7 +31,12 @@ public partial class TalentTreeLineCanvas : Control
 				continue;
 			}
 
-			DrawPolyline(line.Points, line.Color, line.Width, true);
+			DrawPolyline(line.Points, line.Color, line.Width, false);
+			float jointRadius = Mathf.Max(1.0f, line.Width * 0.5f);
+			foreach (Vector2 point in line.Points)
+			{
+				DrawCircle(point, jointRadius, line.Color);
+			}
 		}
 	}
 }

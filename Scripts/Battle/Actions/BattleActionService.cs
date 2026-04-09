@@ -16,6 +16,7 @@ namespace CardChessDemo.Battle.Actions;
 public sealed class BattleActionService
 {
     public event Action<string>? ActionLogged;
+    public event Action<string, string>? EnemyDefeated;
     public const string ArcTerrainId = "arc";
     public const int ArcTerrainDamage = 2;
     public const string FireTerrainId = "fire";
@@ -533,6 +534,11 @@ public sealed class BattleActionService
         {
             if (!isPlayerTarget)
             {
+                if (target.ObjectType == BoardObjectType.Unit && target.Faction == BoardObjectFaction.Enemy)
+                {
+                    EnemyDefeated?.Invoke(target.ObjectId, target.DefinitionId);
+                }
+
                 if (target.ObjectType == BoardObjectType.Unit)
                 {
                     _ = _pieceViewManager.PlayKillSequenceAsync(

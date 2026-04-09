@@ -12,6 +12,7 @@ namespace CardChessDemo.Map;
 
 public partial class SystemFeatureLabController : CanvasLayer
 {
+	private const string TalentBackgroundTexturePath = "res://Assets/Background/94180512_p2_master1200.jpg";
 	[Export] public NodePath PlayerPath { get; set; } = new("../Player");
 
 	private Control _panelRoot = null!;
@@ -29,8 +30,12 @@ public partial class SystemFeatureLabController : CanvasLayer
 	private RichTextLabel _inventoryText = null!;
 
 	private Label _masteryLabel = null!;
+	private Control _talentBody = null!;
 	private ScrollContainer _talentTreeScroll = null!;
 	private Control _talentTreeCanvas = null!;
+	private Control _talentDragSurface = null!;
+	private Control? _talentBackground;
+	private TextureRect? _talentBodyBackground;
 	private Node _talentLineLayer = null!;
 	private TalentTreeLineCanvas? _talentLineCanvas;
 	private Button _cardTreeLabel = null!;
@@ -47,6 +52,10 @@ public partial class SystemFeatureLabController : CanvasLayer
 	private bool _isDraggingTalentTree;
 	private Vector2 _lastTalentDragPosition = Vector2.Zero;
 	private float _talentTreeZoom = 1.0f;
+	private Vector2 _talentViewVelocity = Vector2.Zero;
+	private float _talentViewHoldTime;
+	private Rect2 _talentContentBounds = new Rect2(0, 0, 1, 1);
+	private int _pendingTalentViewResetFrames;
 
 	private ItemList _cardCodexList = null!;
 	private RichTextLabel _cardCodexDetail = null!;
@@ -159,9 +168,12 @@ public partial class SystemFeatureLabController : CanvasLayer
 		_statusEquipButton = GetNode<Button>("PanelRoot/Window/Margin/Root/Tabs/StatusTab/Columns/EquipmentColumn/ActionRow/EquipButton");
 		_statusUnequipButton = GetNode<Button>("PanelRoot/Window/Margin/Root/Tabs/StatusTab/Columns/EquipmentColumn/ActionRow/UnequipButton");
 		_inventoryText = GetNode<RichTextLabel>("PanelRoot/Window/Margin/Root/Tabs/InventoryTab/InventoryText");
+		_talentBody = GetNode<Control>("PanelRoot/Window/Margin/Root/Tabs/TalentTab/Body");
 		_masteryLabel = GetNode<Label>("PanelRoot/Window/Margin/Root/Tabs/TalentTab/Body/MasteryFixedLabel");
 		_talentTreeScroll = GetNode<ScrollContainer>("PanelRoot/Window/Margin/Root/Tabs/TalentTab/Body/TalentTreeScroll");
 		_talentTreeCanvas = GetNode<Control>("PanelRoot/Window/Margin/Root/Tabs/TalentTab/Body/TalentTreeScroll/TalentTreeCanvas");
+		_talentBackground = GetNodeOrNull<Control>("PanelRoot/Window/Margin/Root/Tabs/TalentTab/Body/TalentTreeScroll/TalentTreeCanvas/TalentBackground");
+		_talentDragSurface = GetNode<Control>("PanelRoot/Window/Margin/Root/Tabs/TalentTab/Body/TalentTreeScroll/TalentTreeCanvas/TalentDragSurface");
 		_talentLineLayer = GetNode("PanelRoot/Window/Margin/Root/Tabs/TalentTab/Body/TalentTreeScroll/TalentTreeCanvas/TalentLineLayer");
 		_talentLineCanvas = _talentLineLayer as TalentTreeLineCanvas;
 		_cardTreeLabel = GetNode<Button>("PanelRoot/Window/Margin/Root/Tabs/TalentTab/Body/TalentTreeScroll/TalentTreeCanvas/CardTreeLabel");
@@ -222,6 +234,7 @@ public partial class SystemFeatureLabController : CanvasLayer
 		_deckList.ItemSelected += OnDeckSelected;
 		_cardCodexList.ItemSelected += OnCardCodexSelected;
 		_enemyCodexList.ItemSelected += OnEnemyCodexSelected;
+		_tabs.TabChanged += OnTabsTabChanged;
 		_deckAddButton.Pressed += OnDeckAddPressed;
 		_deckRemoveButton.Pressed += OnDeckRemovePressed;
 		_deckSaveButton.Pressed += OnDeckSavePressed;
@@ -230,7 +243,13 @@ public partial class SystemFeatureLabController : CanvasLayer
 		_cardTreeLabel.MouseFilter = Control.MouseFilterEnum.Ignore;
 		_roleTreeLabel.MouseFilter = Control.MouseFilterEnum.Ignore;
 		_masteryLabel.MouseFilter = Control.MouseFilterEnum.Ignore;
+		_talentTreeScroll.GuiInput += OnTalentTreeGuiInput;
+		_talentTreeCanvas.GuiInput += OnTalentTreeGuiInput;
+		_talentDragSurface.GuiInput += OnTalentTreeGuiInput;
 		HideTalentTreeScrollBars();
+		_talentTreeCanvas.CustomMinimumSize = new Vector2(3200.0f, 2200.0f);
+		SyncTalentCanvasOverlaySizes();
+		ConfigureTalentBackground();
 		ApplyTreeRootStyle(_cardTreeLabel, new Color(0.14f, 0.24f, 0.34f, 0.98f));
 		ApplyTreeRootStyle(_roleTreeLabel, new Color(0.24f, 0.18f, 0.12f, 0.98f));
 
@@ -247,11 +266,44 @@ public partial class SystemFeatureLabController : CanvasLayer
 	{
 		UpdateStatusHint();
 		ApplyReadableStatusHint();
+		if (_panelRoot != null && _panelRoot.Visible && _tabs != null && _tabs.CurrentTab == TalentTabIndex)
+		{
+			_masteryLabel.Text = $"Points {GetAvailablePoints()} | WASD Move";
+			if (_pendingTalentViewResetFrames > 0)
+			{
+				_pendingTalentViewResetFrames -= 1;
+				if (_pendingTalentViewResetFrames == 0)
+				{
+					ResetTalentTreeView();
+				}
+			}
+		}
+		UpdateTalentTreeKeyboardPan((float)delta);
 	}
 
 	public override void _Input(InputEvent @event)
 	{
-		HandleTalentTreePointerInput(@event);
+		if (!IsTalentTabActive() || !_isDraggingTalentTree)
+		{
+			return;
+		}
+
+		if (@event is InputEventMouseMotion mouseMotion)
+		{
+			Vector2 delta = mouseMotion.GlobalPosition - _lastTalentDragPosition;
+			ScrollTalentTreeBy(delta);
+			_lastTalentDragPosition = mouseMotion.GlobalPosition;
+			GetViewport().SetInputAsHandled();
+			return;
+		}
+
+		if (@event is InputEventMouseButton mouseButton
+			&& mouseButton.ButtonIndex == MouseButton.Left
+			&& !mouseButton.Pressed)
+		{
+			_isDraggingTalentTree = false;
+			GetViewport().SetInputAsHandled();
+		}
 	}
 
 	public override void _UnhandledInput(InputEvent @event)
@@ -269,7 +321,7 @@ public partial class SystemFeatureLabController : CanvasLayer
 			RefreshAll();
 			ApplyVisibleUiOverrides();
 			ApplyReadableUiTextOverrides();
-			CallDeferred(nameof(ResetTalentTreeView));
+			ScheduleTalentViewReset();
 		}
 
 		GetViewport().SetInputAsHandled();
@@ -314,24 +366,23 @@ public partial class SystemFeatureLabController : CanvasLayer
 
 	private void OnTalentTreeGuiInput(InputEvent @event)
 	{
-		if (@event is InputEventMouseButton wheelEvent && wheelEvent.Pressed)
+		if (!IsTalentTabActive())
 		{
-			GetViewport().SetInputAsHandled();
-		}
-
-		if (@event is InputEventMouseButton mouseButton && mouseButton.ButtonIndex == MouseButton.Left)
-		{
-			_isDraggingTalentTree = mouseButton.Pressed;
-			_lastTalentDragPosition = mouseButton.Position;
 			return;
 		}
 
-		if (_isDraggingTalentTree && @event is InputEventMouseMotion mouseMotion)
+		if (@event is InputEventMouseButton wheelEvent && wheelEvent.Pressed)
 		{
-			Vector2 delta = mouseMotion.Position - _lastTalentDragPosition;
-			_talentTreeScroll.ScrollHorizontal = Math.Max(0, _talentTreeScroll.ScrollHorizontal - Mathf.RoundToInt(delta.X));
-			_talentTreeScroll.ScrollVertical = Math.Max(0, _talentTreeScroll.ScrollVertical - Mathf.RoundToInt(delta.Y));
-			_lastTalentDragPosition = mouseMotion.Position;
+			GetViewport().SetInputAsHandled();
+			return;
+		}
+
+		if (@event is InputEventMouseButton mouseButton
+			&& mouseButton.ButtonIndex == MouseButton.Left
+			&& mouseButton.Pressed)
+		{
+			_isDraggingTalentTree = true;
+			_lastTalentDragPosition = mouseButton.GlobalPosition;
 			GetViewport().SetInputAsHandled();
 		}
 	}
@@ -439,10 +490,10 @@ public partial class SystemFeatureLabController : CanvasLayer
 
 	private void ScrollTalentTreeBy(Vector2 delta)
 	{
-		int maxHorizontal = Mathf.Max(0, Mathf.RoundToInt(_talentTreeCanvas.CustomMinimumSize.X * _talentTreeZoom - _talentTreeScroll.Size.X));
-		int maxVertical = Mathf.Max(0, Mathf.RoundToInt(_talentTreeCanvas.CustomMinimumSize.Y * _talentTreeZoom - _talentTreeScroll.Size.Y));
-		_talentTreeScroll.ScrollHorizontal = Mathf.Clamp(_talentTreeScroll.ScrollHorizontal - Mathf.RoundToInt(delta.X), 0, maxHorizontal);
-		_talentTreeScroll.ScrollVertical = Mathf.Clamp(_talentTreeScroll.ScrollVertical - Mathf.RoundToInt(delta.Y), 0, maxVertical);
+		Vector2I limitsX = GetTalentScrollLimits(true);
+		Vector2I limitsY = GetTalentScrollLimits(false);
+		_talentTreeScroll.ScrollHorizontal = Mathf.Clamp(_talentTreeScroll.ScrollHorizontal - Mathf.RoundToInt(delta.X), limitsX.X, limitsX.Y);
+		_talentTreeScroll.ScrollVertical = Mathf.Clamp(_talentTreeScroll.ScrollVertical - Mathf.RoundToInt(delta.Y), limitsY.X, limitsY.Y);
 	}
 
 	private bool IsPointOverTalentButton(Vector2 globalPosition)
@@ -452,7 +503,7 @@ public partial class SystemFeatureLabController : CanvasLayer
 
 	private void ApplyTalentTreeZoom(float targetZoom, Vector2 mousePosition)
 	{
-		float clampedZoom = Mathf.Clamp(targetZoom, 0.75f, 1.6f);
+		float clampedZoom = 1.0f;
 		if (Mathf.IsEqualApprox(clampedZoom, _talentTreeZoom))
 		{
 			return;
@@ -460,28 +511,276 @@ public partial class SystemFeatureLabController : CanvasLayer
 
 		float oldZoom = _talentTreeZoom;
 		Vector2 logicalMouse = new(
-			(_talentTreeScroll.ScrollHorizontal + mousePosition.X) / oldZoom,
-			(_talentTreeScroll.ScrollVertical + mousePosition.Y) / oldZoom);
+			_talentTreeScroll.ScrollHorizontal + mousePosition.X,
+			_talentTreeScroll.ScrollVertical + mousePosition.Y);
 
 		_talentTreeZoom = clampedZoom;
-		_talentTreeCanvas.Scale = new Vector2(_talentTreeZoom, _talentTreeZoom);
-
-		_talentTreeScroll.ScrollHorizontal = Math.Max(0, Mathf.RoundToInt(logicalMouse.X * _talentTreeZoom - mousePosition.X));
-		_talentTreeScroll.ScrollVertical = Math.Max(0, Mathf.RoundToInt(logicalMouse.Y * _talentTreeZoom - mousePosition.Y));
+		_talentTreeCanvas.Scale = Vector2.One;
+		Vector2I limitsX = GetTalentScrollLimits(true);
+		Vector2I limitsY = GetTalentScrollLimits(false);
+		_talentTreeScroll.ScrollHorizontal = Mathf.Clamp(Mathf.RoundToInt(logicalMouse.X - mousePosition.X), limitsX.X, limitsX.Y);
+		_talentTreeScroll.ScrollVertical = Mathf.Clamp(Mathf.RoundToInt(logicalMouse.Y - mousePosition.Y), limitsY.X, limitsY.Y);
 	}
 
 	private void ResetTalentTreeView()
 	{
-		_talentTreeZoom = 0.82f;
-		_talentTreeCanvas.Scale = Vector2.One * _talentTreeZoom;
+		_talentTreeZoom = 1.0f;
+		_talentTreeCanvas.Scale = Vector2.One;
+		SyncTalentCanvasOverlaySizes();
+		ConfigureTalentBackground();
+		_talentViewVelocity = Vector2.Zero;
+		_talentViewHoldTime = 0.0f;
 
-		Vector2 focusPoint = GetControlCenter(_cardTreeLabel) + new Vector2(220f, 140f);
+		Vector2 focusPoint = (GetControlCenter(_cardTreeLabel) + GetControlCenter(_roleTreeLabel)) * 0.5f;
 		float viewportWidth = Mathf.Max(1f, _talentTreeScroll.Size.X);
 		float viewportHeight = Mathf.Max(1f, _talentTreeScroll.Size.Y);
-		int scrollX = Mathf.RoundToInt(Mathf.Max(0f, focusPoint.X * _talentTreeZoom - viewportWidth * 0.5f));
-		int scrollY = Mathf.RoundToInt(Mathf.Max(0f, focusPoint.Y * _talentTreeZoom - viewportHeight * 0.5f));
-		_talentTreeScroll.ScrollHorizontal = scrollX;
-		_talentTreeScroll.ScrollVertical = scrollY;
+		int scrollX = Mathf.RoundToInt(focusPoint.X - viewportWidth * 0.5f);
+		int scrollY = Mathf.RoundToInt(focusPoint.Y - viewportHeight * 0.5f);
+		Vector2I limitsX = GetTalentScrollLimits(true);
+		Vector2I limitsY = GetTalentScrollLimits(false);
+		_talentTreeScroll.ScrollHorizontal = Mathf.Clamp(scrollX, limitsX.X, limitsX.Y);
+		_talentTreeScroll.ScrollVertical = Mathf.Clamp(scrollY, limitsY.X, limitsY.Y);
+	}
+
+	private async void BeginResetTalentTreeViewAfterLayout()
+	{
+		if (!IsInsideTree())
+		{
+			return;
+		}
+
+		await ToSignal(GetTree(), SceneTree.SignalName.ProcessFrame);
+		await ToSignal(GetTree(), SceneTree.SignalName.ProcessFrame);
+		ResetTalentTreeView();
+	}
+
+	private void ScheduleTalentViewReset()
+	{
+		_pendingTalentViewResetFrames = 2;
+		CallDeferred(nameof(BeginResetTalentTreeViewAfterLayout));
+	}
+
+	private void OnTabsTabChanged(long tabIndex)
+	{
+		if (tabIndex == TalentTabIndex && _panelRoot != null && _panelRoot.Visible)
+		{
+			ScheduleTalentViewReset();
+		}
+	}
+
+	private void SyncTalentCanvasOverlaySizes()
+	{
+		Vector2 canvasSize = _talentTreeCanvas.CustomMinimumSize;
+		_talentDragSurface.Position = Vector2.Zero;
+		_talentDragSurface.Size = canvasSize;
+		if (_talentBackground != null)
+		{
+			_talentBackground.Position = Vector2.Zero;
+			_talentBackground.Size = canvasSize;
+		}
+
+		if (_talentLineCanvas != null)
+		{
+			_talentLineCanvas.Position = Vector2.Zero;
+			_talentLineCanvas.Size = canvasSize;
+		}
+	}
+
+	private void RecalculateTalentContentBounds()
+	{
+		List<Rect2> rects = new();
+		foreach (Button button in _talentButtons.Values)
+		{
+			rects.Add(new Rect2(button.Position, button.Size));
+		}
+
+		rects.Add(new Rect2(_cardTreeLabel.Position, _cardTreeLabel.Size));
+		rects.Add(new Rect2(_roleTreeLabel.Position, _roleTreeLabel.Size));
+
+		if (rects.Count == 0)
+		{
+			_talentContentBounds = new Rect2(0, 0, _talentTreeCanvas.CustomMinimumSize.X, _talentTreeCanvas.CustomMinimumSize.Y);
+			return;
+		}
+
+		float minX = rects.Min(rect => rect.Position.X);
+		float minY = rects.Min(rect => rect.Position.Y);
+		float maxX = rects.Max(rect => rect.End.X);
+		float maxY = rects.Max(rect => rect.End.Y);
+		const float padding = 220.0f;
+		_talentContentBounds = new Rect2(
+			new Vector2(Mathf.Max(0.0f, minX - padding), Mathf.Max(0.0f, minY - padding)),
+			new Vector2(
+				Mathf.Min(_talentTreeCanvas.CustomMinimumSize.X, maxX + padding) - Mathf.Max(0.0f, minX - padding),
+				Mathf.Min(_talentTreeCanvas.CustomMinimumSize.Y, maxY + padding) - Mathf.Max(0.0f, minY - padding)));
+	}
+
+	private void UpdateTalentCanvasSizeFromContentBounds()
+	{
+		float width = Mathf.Max(2600.0f, _talentContentBounds.End.X + 420.0f);
+		float height = Mathf.Max(2200.0f, _talentContentBounds.End.Y + 420.0f);
+		_talentTreeCanvas.CustomMinimumSize = new Vector2(width, height);
+		SyncTalentCanvasOverlaySizes();
+	}
+
+	private void ConfigureTalentBackground()
+	{
+		Texture2D? sourceTexture = GD.Load<Texture2D>(TalentBackgroundTexturePath);
+		if (sourceTexture == null)
+		{
+			return;
+		}
+
+		Texture2D backgroundTexture = BuildTalentBackgroundTexture(sourceTexture);
+		if (_talentBodyBackground == null)
+		{
+			_talentBodyBackground = new TextureRect
+			{
+				Name = "TalentBodyBackgroundRuntime",
+				MouseFilter = Control.MouseFilterEnum.Ignore,
+				Texture = backgroundTexture,
+				Modulate = new Color(1.45f, 1.45f, 1.45f, 1.0f),
+				ExpandMode = TextureRect.ExpandModeEnum.IgnoreSize,
+				StretchMode = TextureRect.StretchModeEnum.Scale,
+				ZIndex = -100,
+			};
+			_talentBody.AddChild(_talentBodyBackground);
+			_talentBody.MoveChild(_talentBodyBackground, 0);
+		}
+
+		_talentBodyBackground.AnchorRight = 1.0f;
+		_talentBodyBackground.AnchorBottom = 1.0f;
+		_talentBodyBackground.OffsetLeft = 0.0f;
+		_talentBodyBackground.OffsetTop = 0.0f;
+		_talentBodyBackground.OffsetRight = 0.0f;
+		_talentBodyBackground.OffsetBottom = 0.0f;
+		_talentBodyBackground.Texture = backgroundTexture;
+		_talentBodyBackground.Visible = true;
+
+		TextureRect? textureRect = _talentBackground as TextureRect;
+		if (textureRect == null)
+		{
+			textureRect = new TextureRect
+			{
+				Name = "TalentBackgroundRuntime",
+				MouseFilter = Control.MouseFilterEnum.Ignore,
+				ZIndex = -50,
+				ExpandMode = TextureRect.ExpandModeEnum.IgnoreSize,
+				StretchMode = TextureRect.StretchModeEnum.Scale,
+			};
+			_talentTreeCanvas.AddChild(textureRect);
+			_talentTreeCanvas.MoveChild(textureRect, 0);
+			_talentBackground = textureRect;
+		}
+
+		textureRect.Texture = backgroundTexture;
+		textureRect.Visible = true;
+		textureRect.Modulate = new Color(1.35f, 1.35f, 1.35f, 1.0f);
+		textureRect.StretchMode = TextureRect.StretchModeEnum.Scale;
+		textureRect.Position = Vector2.Zero;
+		textureRect.Size = _talentTreeCanvas.CustomMinimumSize;
+
+		StyleBoxFlat backgroundPanel = new()
+		{
+			BgColor = new Color(0.06f, 0.08f, 0.11f, 0.0f),
+			BorderColor = new Color(0.36f, 0.48f, 0.6f, 0.22f),
+			BorderWidthLeft = 1,
+			BorderWidthTop = 1,
+			BorderWidthRight = 1,
+			BorderWidthBottom = 1,
+			CornerRadiusTopLeft = 6,
+			CornerRadiusTopRight = 6,
+			CornerRadiusBottomRight = 6,
+			CornerRadiusBottomLeft = 6,
+		};
+		_talentTreeScroll.AddThemeStyleboxOverride("panel", backgroundPanel);
+	}
+
+	private static Texture2D BuildTalentBackgroundTexture(Texture2D sourceTexture)
+	{
+		Vector2 size = sourceTexture.GetSize();
+		if (size.X <= 0.0f || size.Y <= 0.0f)
+		{
+			return sourceTexture;
+		}
+
+		AtlasTexture cropped = new()
+		{
+			Atlas = sourceTexture,
+			Region = new Rect2(
+				0.0f,
+				size.Y * 0.05f,
+				size.X,
+				size.Y * 0.72f),
+		};
+		return cropped;
+	}
+
+	private void UpdateTalentTreeKeyboardPan(float delta)
+	{
+		if (!IsTalentTabActive())
+		{
+			_talentViewVelocity = Vector2.Zero;
+			_talentViewHoldTime = 0.0f;
+			return;
+		}
+
+		Vector2 input = Vector2.Zero;
+		if (Input.IsKeyPressed(Key.A))
+		{
+			input.X -= 1.0f;
+		}
+
+		if (Input.IsKeyPressed(Key.D))
+		{
+			input.X += 1.0f;
+		}
+
+		if (Input.IsKeyPressed(Key.W))
+		{
+			input.Y -= 1.0f;
+		}
+
+		if (Input.IsKeyPressed(Key.S))
+		{
+			input.Y += 1.0f;
+		}
+
+		if (input == Vector2.Zero)
+		{
+			_talentViewHoldTime = 0.0f;
+			_talentViewVelocity = _talentViewVelocity.MoveToward(Vector2.Zero, 2400.0f * delta);
+		}
+		else
+		{
+			input = input.Normalized();
+			_talentViewHoldTime = Mathf.Min(_talentViewHoldTime + delta, 0.55f);
+			float speed = Mathf.Lerp(90.0f, 720.0f, _talentViewHoldTime / 0.55f);
+			_talentViewVelocity = _talentViewVelocity.MoveToward(input * speed, 3200.0f * delta);
+		}
+
+		if (_talentViewVelocity.LengthSquared() <= 0.01f)
+		{
+			return;
+		}
+
+		AddTalentTreeScroll(_talentViewVelocity * delta);
+	}
+
+	private void AddTalentTreeScroll(Vector2 deltaPixels)
+	{
+		Vector2I limitsX = GetTalentScrollLimits(true);
+		Vector2I limitsY = GetTalentScrollLimits(false);
+		_talentTreeScroll.ScrollHorizontal = Mathf.Clamp(_talentTreeScroll.ScrollHorizontal + Mathf.RoundToInt(deltaPixels.X), limitsX.X, limitsX.Y);
+		_talentTreeScroll.ScrollVertical = Mathf.Clamp(_talentTreeScroll.ScrollVertical + Mathf.RoundToInt(deltaPixels.Y), limitsY.X, limitsY.Y);
+	}
+
+	private Vector2I GetTalentScrollLimits(bool horizontal)
+	{
+		float viewportSize = horizontal ? _talentTreeScroll.Size.X : _talentTreeScroll.Size.Y;
+		float canvasSize = horizontal ? _talentTreeCanvas.CustomMinimumSize.X : _talentTreeCanvas.CustomMinimumSize.Y;
+		int absoluteMax = Mathf.Max(0, Mathf.RoundToInt(canvasSize - viewportSize));
+		return new Vector2I(0, absoluteMax);
 	}
 
 	private void ApplyVisibleUiOverrides()
@@ -587,14 +886,14 @@ public partial class SystemFeatureLabController : CanvasLayer
 		{
 			Button button = new()
 			{
-				CustomMinimumSize = new Vector2(132, 52),
-				AutowrapMode = TextServer.AutowrapMode.WordSmart,
+				CustomMinimumSize = new Vector2(GetTalentButtonWidth(talent.DisplayName), 38),
+				AutowrapMode = TextServer.AutowrapMode.Off,
 				FocusMode = Control.FocusModeEnum.None,
 			};
 
 			string talentId = talent.Id;
 			button.Pressed += () => OnTalentPressed(talentId);
-			button.Position = talent.TreePosition;
+			button.Position = GetDisplayedTalentPosition(talent);
 			button.Size = button.CustomMinimumSize;
 			button.ZIndex = 10;
 			button.MouseFilter = Control.MouseFilterEnum.Stop;
@@ -602,7 +901,52 @@ public partial class SystemFeatureLabController : CanvasLayer
 			_talentButtons[talentId] = button;
 		}
 
+		_cardTreeLabel.Position = new Vector2(840.0f, 640.0f);
+		_cardTreeLabel.Size = new Vector2(128.0f, 44.0f);
+		_roleTreeLabel.Position = new Vector2(1640.0f, 1688.0f);
+		_roleTreeLabel.Size = new Vector2(156.0f, 44.0f);
+		RecalculateTalentContentBounds();
+		UpdateTalentCanvasSizeFromContentBounds();
+
 		RefreshTalentTreeLines();
+	}
+
+	private static Vector2 GetDisplayedTalentPosition(TalentNode talent)
+	{
+		return talent.Id switch
+		{
+			"talent_melee_root" => new Vector2(640.0f, 900.0f),
+			"talent_melee_counter" => new Vector2(510.0f, 830.0f),
+			"talent_melee_counter_plus" => new Vector2(390.0f, 770.0f),
+			"talent_melee_blow" => new Vector2(515.0f, 970.0f),
+			"talent_melee_blow_plus" => new Vector2(395.0f, 1030.0f),
+			"talent_melee_core" => new Vector2(250.0f, 900.0f),
+
+			"talent_ranged_root" => new Vector2(900.0f, 420.0f),
+			"talent_ranged_control" => new Vector2(780.0f, 320.0f),
+			"talent_ranged_control_plus" => new Vector2(670.0f, 230.0f),
+			"talent_ranged_pressure" => new Vector2(1020.0f, 320.0f),
+			"talent_ranged_signature" => new Vector2(1130.0f, 230.0f),
+			"talent_ranged_core" => new Vector2(900.0f, 180.0f),
+
+			"talent_flex_root" => new Vector2(1160.0f, 900.0f),
+			"talent_flex_field" => new Vector2(1280.0f, 970.0f),
+			"talent_flex_field_plus" => new Vector2(1400.0f, 1030.0f),
+			"talent_flex_learning" => new Vector2(1280.0f, 830.0f),
+			"talent_flex_learning_plus" => new Vector2(1400.0f, 770.0f),
+			"talent_flex_core" => new Vector2(1520.0f, 900.0f),
+
+			"talent_role_atk" => new Vector2(1420.0f, 1516.0f),
+			"talent_role_hp" => new Vector2(1600.0f, 1516.0f),
+			"talent_role_move" => new Vector2(1780.0f, 1516.0f),
+			"talent_role_defense" => new Vector2(1600.0f, 1372.0f),
+			"talent_role_deck" => new Vector2(1780.0f, 1372.0f),
+			"talent_role_guard" => new Vector2(1600.0f, 1228.0f),
+			"talent_role_copies" => new Vector2(1780.0f, 1228.0f),
+			"talent_role_core" => new Vector2(1690.0f, 1084.0f),
+
+			_ => talent.TreePosition,
+		};
 	}
 
 	private static void ApplyTreeRootStyle(Button button, Color fill)
@@ -659,7 +1003,7 @@ public partial class SystemFeatureLabController : CanvasLayer
 				Color lineColor = _purchasedTalentIds.Contains(talent.Id)
 					? new Color(1.0f, 0.86f, 0.28f, 1.0f)
 					: new Color(0.56f, 0.60f, 0.66f, 1.0f);
-				lines.Add(new TalentTreeLineCanvas.PolylineData(BuildTreeLinePoints(rootCenter, targetCenter), lineColor, 8.0f));
+				lines.Add(new TalentTreeLineCanvas.PolylineData(BuildTreeLinePoints(rootCenter, targetCenter), lineColor, 12.0f));
 				continue;
 			}
 
@@ -674,7 +1018,7 @@ public partial class SystemFeatureLabController : CanvasLayer
 				Color lineColor = isUnlockedPath
 					? new Color(1.0f, 0.86f, 0.28f, 1.0f)
 					: new Color(0.56f, 0.60f, 0.66f, 1.0f);
-				lines.Add(new TalentTreeLineCanvas.PolylineData(BuildTreeLinePoints(GetControlCenter(prerequisiteButton), targetCenter), lineColor, 8.0f));
+				lines.Add(new TalentTreeLineCanvas.PolylineData(BuildTreeLinePoints(GetControlCenter(prerequisiteButton), targetCenter), lineColor, 12.0f));
 			}
 		}
 
@@ -711,24 +1055,31 @@ public partial class SystemFeatureLabController : CanvasLayer
 	private static Vector2[] BuildTreeLinePoints(Vector2 from, Vector2 to)
 	{
 		Vector2 delta = to - from;
+		float signX = Mathf.Sign(delta.X);
+		float signY = Mathf.Sign(delta.Y);
+		float diagonal = Mathf.Clamp(Mathf.Min(Mathf.Abs(delta.X), Mathf.Abs(delta.Y)) * 0.35f, 18.0f, 72.0f);
 		if (Mathf.Abs(delta.X) >= Mathf.Abs(delta.Y))
 		{
-			float midX = from.X + delta.X * 0.45f;
+			float midX = from.X + delta.X * 0.5f;
 			return new[]
 			{
 				from,
-				new Vector2(midX, from.Y),
-				new Vector2(midX, to.Y),
+				new Vector2(midX - signX * diagonal, from.Y),
+				new Vector2(midX, from.Y + signY * diagonal),
+				new Vector2(midX, to.Y - signY * diagonal),
+				new Vector2(midX + signX * diagonal, to.Y),
 				to,
 			};
 		}
 
-		float midY = from.Y + delta.Y * 0.45f;
+		float midY = from.Y + delta.Y * 0.5f;
 		return new[]
 		{
 			from,
-			new Vector2(from.X, midY),
-			new Vector2(to.X, midY),
+			new Vector2(from.X, midY - signY * diagonal),
+			new Vector2(from.X + signX * diagonal, midY),
+			new Vector2(to.X - signX * diagonal, midY),
+			new Vector2(to.X, midY + signY * diagonal),
 			to,
 		};
 	}
@@ -736,6 +1087,12 @@ public partial class SystemFeatureLabController : CanvasLayer
 	private static Vector2 GetControlCenter(Control control)
 	{
 		return control.Position + control.Size * 0.5f;
+	}
+
+	private static float GetTalentButtonWidth(string displayName)
+	{
+		int charCount = string.IsNullOrWhiteSpace(displayName) ? 4 : displayName.Length;
+		return Mathf.Clamp(38.0f + charCount * 16.0f, 116.0f, 196.0f);
 	}
 
 	private void BuildCodexSource()
@@ -806,6 +1163,7 @@ public partial class SystemFeatureLabController : CanvasLayer
 		RefreshStatusView();
 		RefreshBagView();
 		RefreshTalentSummary();
+		_masteryLabel.Text = $"专精点 {GetAvailablePoints()} | WASD 移动视图";
 		RefreshTalentButtons();
 		RefreshTalentDetail();
 		RefreshCodexView();
@@ -887,8 +1245,8 @@ public partial class SystemFeatureLabController : CanvasLayer
 		foreach (string slotId in EquipmentSlotOrder)
 		{
 			string equippedItemId = _session.GetEquippedItemId(slotId);
-			string equippedName = GetEquipmentDisplayName(equippedItemId);
-			_statusEquipmentSlotList.AddItem($"{GetEquipmentSlotDisplayName(slotId)}: {equippedName}");
+			string equippedName = GetEquipmentDisplayNameSafe(equippedItemId);
+			_statusEquipmentSlotList.AddItem($"{GetEquipmentSlotDisplayNameSafe(slotId)}: {equippedName}");
 		}
 
 		int selectedSlotIndex = Array.IndexOf(EquipmentSlotOrder, _selectedEquipmentSlotId);
@@ -919,6 +1277,9 @@ public partial class SystemFeatureLabController : CanvasLayer
 			string suffix = string.Equals(_session.GetEquippedItemId(_selectedEquipmentSlotId), definition.ItemId, StringComparison.Ordinal)
 				? " [已装备]"
 				: string.Empty;
+			suffix = string.Equals(_session.GetEquippedItemId(_selectedEquipmentSlotId), definition.ItemId, StringComparison.Ordinal)
+				? " [已装备]"
+				: string.Empty;
 			_statusEquipmentCandidateList.AddItem($"{definition.DisplayName}{suffix}");
 		}
 
@@ -928,6 +1289,7 @@ public partial class SystemFeatureLabController : CanvasLayer
 		if (_visibleEquipmentCandidates.Length == 0)
 		{
 			_statusEquipmentDetailText.Text = $"[b]{GetEquipmentSlotDisplayName(_selectedEquipmentSlotId)}[/b]\n当前没有可装备物品。";
+			_statusEquipmentDetailText.Text = $"[b]{GetEquipmentSlotDisplayNameSafe(_selectedEquipmentSlotId)}[/b]\n当前没有可装备物品。";
 			return;
 		}
 
@@ -950,6 +1312,16 @@ public partial class SystemFeatureLabController : CanvasLayer
 		{
 			$"[b]{definition.DisplayName}[/b]",
 			$"部位: {GetEquipmentSlotDisplayName(definition.SlotId)}",
+			$"拥有数量: {ownedCount}",
+			$"状态: {(equipped ? "已装备" : "未装备")}",
+			$"效果: {definition.BuildModifierSummary()}",
+			string.Empty,
+			definition.Description,
+		});
+		_statusEquipmentDetailText.Text = string.Join('\n', new[]
+		{
+			$"[b]{definition.DisplayName}[/b]",
+			$"部位: {GetEquipmentSlotDisplayNameSafe(definition.SlotId)}",
 			$"拥有数量: {ownedCount}",
 			$"状态: {(equipped ? "已装备" : "未装备")}",
 			$"效果: {definition.BuildModifierSummary()}",
@@ -1021,6 +1393,8 @@ public partial class SystemFeatureLabController : CanvasLayer
 			string prefix = purchased ? "●" : canPurchase ? "◉" : "○";
 			string selectedPrefix = selected ? ">> " : string.Empty;
 			button.Text = $"{selectedPrefix}{prefix} {talent.DisplayName}\n{status}";
+			prefix = purchased ? "●" : canPurchase ? "◆" : "○";
+			button.Text = $"{selectedPrefix}{prefix} {talent.DisplayName}";
 			button.Modulate = selected
 				? (purchased ? new Color(0.94f, 1.0f, 0.96f, 1f) : canPurchase ? new Color(1f, 0.98f, 0.82f, 1f) : new Color(0.82f, 0.84f, 0.9f, 1f))
 				: purchased ? new Color(0.72f, 0.95f, 0.8f, 1f) : canPurchase ? new Color(1f, 0.9f, 0.54f, 1f) : new Color(0.48f, 0.48f, 0.48f, 1f);
@@ -1062,6 +1436,8 @@ public partial class SystemFeatureLabController : CanvasLayer
 		button.AddThemeStyleboxOverride("hover", style);
 		button.AddThemeStyleboxOverride("pressed", style);
 		button.AddThemeStyleboxOverride("disabled", style);
+		button.AddThemeFontSizeOverride("font_size", 16);
+		button.ClipText = true;
 	}
 
 	private static Color GetTalentFillColor(TalentNode talent)
@@ -1699,6 +2075,36 @@ public partial class SystemFeatureLabController : CanvasLayer
 	private RuntimeEquipmentDefinition? FindEquipmentDefinition(string itemId)
 	{
 		return _session?.FindEquipmentDefinition(itemId);
+	}
+
+	private string GetEquipmentDisplayNameSafe(string itemId)
+	{
+		if (string.IsNullOrWhiteSpace(itemId))
+		{
+			return "未装备";
+		}
+
+		return FindEquipmentDefinition(itemId)?.DisplayName ?? itemId;
+	}
+
+	private static string GetEquipmentSlotDisplayNameSafe(string slotId)
+	{
+		if (string.Equals(slotId, EquipmentSlotIds.Weapon, StringComparison.Ordinal))
+		{
+			return "武器";
+		}
+
+		if (string.Equals(slotId, EquipmentSlotIds.Armor, StringComparison.Ordinal))
+		{
+			return "护甲";
+		}
+
+		if (string.Equals(slotId, EquipmentSlotIds.Accessory, StringComparison.Ordinal))
+		{
+			return "配件";
+		}
+
+		return slotId;
 	}
 
 	private string GetEquipmentDisplayName(string itemId)

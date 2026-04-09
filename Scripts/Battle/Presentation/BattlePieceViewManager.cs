@@ -4,6 +4,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using Godot;
 using CardChessDemo.Battle.Board;
+using CardChessDemo.Battle.Enemies;
 using CardChessDemo.Battle.Rooms;
 using CardChessDemo.Battle.State;
 
@@ -15,13 +16,15 @@ public sealed class BattlePieceViewManager
     private readonly Node _pieceRoot;
     private readonly Node _killFxRoot;
     private readonly BattlePrefabLibrary _prefabLibrary;
+    private readonly BattleEnemyLibrary? _enemyLibrary;
     private readonly Dictionary<string, BattleAnimatedViewBase> _views = new(StringComparer.Ordinal);
     private string _activeTurnObjectId = string.Empty;
-    public BattlePieceViewManager(Node pieceRoot, Node killFxRoot, BattlePrefabLibrary prefabLibrary)
+    public BattlePieceViewManager(Node pieceRoot, Node killFxRoot, BattlePrefabLibrary prefabLibrary, BattleEnemyLibrary? enemyLibrary = null)
     {
         _pieceRoot = pieceRoot;
         _killFxRoot = killFxRoot;
         _prefabLibrary = prefabLibrary;
+        _enemyLibrary = enemyLibrary;
     }
 
     public void Rebuild(BoardObjectRegistry registry, BattleObjectStateManager stateManager, BattleRoomTemplate room)
@@ -422,12 +425,17 @@ public sealed class BattlePieceViewManager
         }
 
         BattlePrefabEntry? entry = _prefabLibrary.FindEntry(boardObject.DefinitionId);
-        if (entry?.PrefabScene == null)
+        BattleEnemyDefinition? enemyDefinition = boardObject.Faction == BoardObjectFaction.Enemy
+            && boardObject.ObjectType == BoardObjectType.Unit
+            ? _enemyLibrary?.FindEntry(boardObject.DefinitionId)
+            : null;
+        PackedScene? prefabScene = enemyDefinition?.PrefabScene ?? entry?.PrefabScene;
+        if (prefabScene == null)
         {
             return null;
         }
 
-        BattleAnimatedViewBase? view = entry.PrefabScene.Instantiate<BattleAnimatedViewBase>();
+        BattleAnimatedViewBase? view = prefabScene.Instantiate<BattleAnimatedViewBase>();
         view.Bind(state);
         _pieceRoot.AddChild(view);
         view.SetBoardPosition(room.CellToLocalCenter(state.Cell));

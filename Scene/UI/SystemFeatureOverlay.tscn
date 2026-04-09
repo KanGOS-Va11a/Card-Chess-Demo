@@ -2,6 +2,8 @@
 
 [ext_resource type="Script" path="res://Scripts/Map/UI/SystemFeatureLabController.cs" id="1_ctrl"]
 [ext_resource type="Script" path="res://Scripts/Map/UI/SystemFeatureOverlayAdapter.cs" id="2_adapter"]
+[ext_resource type="Script" path="res://Scripts/Map/UI/TalentTreeLineCanvas.cs" id="3_line_canvas"]
+[ext_resource type="Texture2D" path="res://Assets/Background/94180512_p2_master1200.jpg" id="4_talent_bg"]
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_window"]
 bg_color = Color(0.08, 0.1, 0.14, 0.96)
@@ -248,8 +250,46 @@ theme_override_styles/panel = SubResource("StyleBoxFlat_panel")
 custom_minimum_size = Vector2(2300, 1700)
 layout_mode = 2
 
-[node name="TalentLineLayer" type="Node2D" parent="PanelRoot/Window/Margin/Root/Tabs/TalentTab/Body/TalentTreeScroll/TalentTreeCanvas"]
-z_index = -10
+[node name="TalentBackground" type="TextureRect" parent="PanelRoot/Window/Margin/Root/Tabs/TalentTab/Body/TalentTreeScroll/TalentTreeCanvas"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_right = 2300.0
+offset_bottom = 1700.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+z_index = -2
+texture = ExtResource("4_talent_bg")
+modulate = Color(1, 1, 1, 0.82)
+expand_mode = 1
+stretch_mode = 6
+
+[node name="TalentDragSurface" type="Control" parent="PanelRoot/Window/Margin/Root/Tabs/TalentTab/Body/TalentTreeScroll/TalentTreeCanvas"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_right = 2300.0
+offset_bottom = 1700.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 0
+z_index = -1
+
+[node name="TalentLineLayer" type="Control" parent="PanelRoot/Window/Margin/Root/Tabs/TalentTab/Body/TalentTreeScroll/TalentTreeCanvas"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_right = 2300.0
+offset_bottom = 1700.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+z_index = 2
+script = ExtResource("3_line_canvas")
 
 [node name="CardTreeRegionBackdrop" type="ColorRect" parent="PanelRoot/Window/Margin/Root/Tabs/TalentTab/Body/TalentTreeScroll/TalentTreeCanvas"]
 z_index = -30
@@ -257,7 +297,7 @@ offset_left = 40.0
 offset_top = 40.0
 offset_right = 1120.0
 offset_bottom = 980.0
-color = Color(0.08, 0.14, 0.2, 0.18)
+color = Color(0.08, 0.14, 0.2, 0.06)
 
 [node name="RoleTreeRegionBackdrop" type="ColorRect" parent="PanelRoot/Window/Margin/Root/Tabs/TalentTab/Body/TalentTreeScroll/TalentTreeCanvas"]
 z_index = -30
@@ -265,7 +305,7 @@ offset_left = 1280.0
 offset_top = 440.0
 offset_right = 2240.0
 offset_bottom = 1560.0
-color = Color(0.18, 0.12, 0.08, 0.18)
+color = Color(0.18, 0.12, 0.08, 0.06)
 
 [node name="MasteryCornerLabel" type="Label" parent="PanelRoot/Window/Margin/Root/Tabs/TalentTab/Body/TalentTreeScroll/TalentTreeCanvas"]
 visible = false

@@ -77,21 +77,21 @@ public partial class SystemFeatureOverlayAdapter : Node
 	{
 		if (_hintLabel != null)
 		{
-			_hintLabel.Text = "WASD 移动  E 交互  C 打开系统菜单";
+			_hintLabel.Text = "WASD Move  E Interact  C System";
 		}
 
 		if (_statusLabel != null)
 		{
-			_statusLabel.Text = "靠近可交互对象后按 E 交互";
+			_statusLabel.Text = "Approach an interactable target and press E";
 		}
 
 		if (_tabs != null)
 		{
-			_tabs.SetTabTitle(0, "角色");
-			_tabs.SetTabTitle(1, "背包");
-			_tabs.SetTabTitle(2, "天赋");
-			_tabs.SetTabTitle(3, "图鉴");
-			_tabs.SetTabTitle(4, "构筑");
+			_tabs.SetTabTitle(0, "Status");
+			_tabs.SetTabTitle(1, "Bag");
+			_tabs.SetTabTitle(2, "Talent");
+			_tabs.SetTabTitle(3, "Codex");
+			_tabs.SetTabTitle(4, "Deck");
 		}
 	}
 
@@ -106,7 +106,7 @@ public partial class SystemFeatureOverlayAdapter : Node
 		Area2D? interactionArea = playerNode?.GetNodeOrNull<Area2D>("InteractionArea");
 		if (interactionArea == null)
 		{
-			_statusLabel.Text = "未找到玩家交互范围。";
+			_statusLabel.Text = "Player interaction area was not found";
 			return;
 		}
 
@@ -115,14 +115,14 @@ public partial class SystemFeatureOverlayAdapter : Node
 			if (area.GetParent() is IInteractable interactable && area.GetParent() is Node ownerNode)
 			{
 				Player? player = playerNode as Player ?? _controller.GetNodeOrNull<Player>(_controller.PlayerPath);
-				_statusLabel.Text = $"可交互对象：{ownerNode.Name} · {interactable.GetInteractText(player!)}";
+				_statusLabel.Text = $"Interactable: {ownerNode.Name} · {interactable.GetInteractText(player!)}";
 				return;
 			}
 		}
 
 		_statusLabel.Text = _panelRoot.Visible
-			? "系统菜单已打开，按 C 或 Esc 关闭。"
-			: "靠近可交互对象后按 E 交互，按 C 打开系统菜单。";
+			? "System menu is open. Press C or Esc to close"
+			: "Approach an interactable target and press E. Press C for the system menu";
 	}
 
 	private void OnDimGuiInput(InputEvent @event)
@@ -152,7 +152,7 @@ public partial class SystemFeatureOverlayAdapter : Node
 		_hintLabel.Visible = !visible;
 		SetPlayerInputEnabled(!visible);
 
-		if (visible && _controller != null)
+		if (visible)
 		{
 			_controller.CallDeferred("RefreshAll");
 		}

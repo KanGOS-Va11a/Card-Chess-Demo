@@ -10,6 +10,7 @@ using CardChessDemo.Battle.Board;
 using CardChessDemo.Battle.Boundary;
 using CardChessDemo.Battle.Cards;
 using CardChessDemo.Battle.Data;
+using CardChessDemo.Battle.Enemies;
 using CardChessDemo.Battle.Encounters;
 using CardChessDemo.Battle.Equipment;
 using CardChessDemo.Battle.Presentation;
@@ -69,6 +70,7 @@ public partial class BattleSceneController : Node2D
 	[Export] public PackedScene[] BattleRoomScenes { get; set; } = Array.Empty<PackedScene>();
 	[Export] public BattleRoomPoolDefinition? BattleRoomPools { get; set; }
 	[Export] public BattlePrefabLibrary? BattlePrefabLibrary { get; set; }
+	[Export] public BattleEnemyLibrary? BattleEnemyLibrary { get; set; }
 	[Export] public BattleEncounterLibrary? EncounterLibrary { get; set; }
 	[Export] public BattleCardLibrary? BattleCardLibrary { get; set; }
 	[Export] public BattleDeckBuildRules? BattleDeckBuildRules { get; set; }
@@ -128,6 +130,8 @@ public partial class BattleSceneController : Node2D
 	private Sprite2D? _battleBackground;
 	private Rect2 _cameraPanBounds = new();
 	private Vector2 _cameraRestPosition = Vector2.Zero;
+	private Vector2 _cameraPanVelocity = Vector2.Zero;
+	private float _cameraPanHoldTime;
 	private Tween? _cameraResetTween;
 	private Tween? _cameraCinematicTween;
 	private bool _isCameraCinematicBusy;
@@ -136,6 +140,8 @@ public partial class BattleSceneController : Node2D
 	private readonly List<PendingDelayedCardEffect> _pendingDelayedCardEffects = new();
 	private readonly Dictionary<string, EnemyLearnState> _enemyLearnStates = new(StringComparer.Ordinal);
 	private readonly HashSet<string> _pendingLearnedCardIds = new(StringComparer.Ordinal);
+	private readonly List<string> _defeatedEnemyDefinitionIds = new();
+	private int _initialEnemyUnitCount;
 	private int _currentTurnActionLogTurnIndex = 1;
 	private int _previousTurnActionLogTurnIndex;
 
@@ -173,6 +179,7 @@ public partial class BattleSceneController : Node2D
 		ApplyPendingBattleRequest();
 		ApplyPendingEncounterId();
 		BattlePrefabLibrary ??= GD.Load<BattlePrefabLibrary>("res://Resources/Battle/Presentation/DefaultBattlePrefabLibrary.tres");
+		BattleEnemyLibrary ??= GD.Load<BattleEnemyLibrary>("res://Resources/Battle/Enemies/DefaultBattleEnemyLibrary.tres");
 		EncounterLibrary ??= GD.Load<BattleEncounterLibrary>("res://Resources/Battle/Encounters/DebugBattleEncounterLibrary.tres");
 		BattleCardLibrary ??= GD.Load<BattleCardLibrary>("res://Resources/Battle/Cards/DefaultBattleCardLibrary.tres");
 		BattleDeckBuildRules ??= GD.Load<BattleDeckBuildRules>("res://Resources/Battle/Cards/DefaultBattleDeckBuildRules.tres");
@@ -207,7 +214,7 @@ public partial class BattleSceneController : Node2D
 		ConfigureBattleBackground(roomContainer);
 		ConfigureBattleFloorLayerVisibility();
 
-		RoomLayoutDefinition layout = CurrentRoom.BuildLayoutDefinition(EncounterEnemyDefinitionId);
+		RoomLayoutDefinition layout = CurrentRoom.BuildLayoutDefinition(EncounterEnemyDefinitionId, BattleEnemyLibrary);
 		BoardInitializer initializer = new(BoardState, Registry);
 		initializer.InitializeFromLayout(layout);
 		Pathfinder = new BoardPathfinder(CurrentRoom.Topology, QueryService);
@@ -218,20 +225,26 @@ public partial class BattleSceneController : Node2D
 			throw new InvalidOperationException("BattleSceneController: GlobalSession or BattlePrefabLibrary is missing.");
 		}
 
-		StateManager = new BattleObjectStateManager(Registry, BattlePrefabLibrary, GlobalSession);
+		StateManager = new BattleObjectStateManager(Registry, BattlePrefabLibrary, GlobalSession, BattleEnemyLibrary);
 		StateManager.Initialize();
 		StateManager.SyncAllFromRegistry();
+		_initialEnemyUnitCount = Registry.AllObjects.Count(boardObject =>
+			boardObject.ObjectType == BoardObjectType.Unit
+			&& boardObject.Faction == BoardObjectFaction.Enemy);
+		_defeatedEnemyDefinitionIds.Clear();
 
 		Node pieceRoot = GetNode<Node>("RoomContainer/PieceRoot");
 		Node killFxRoot = EnsureRoomLayerRoot("KillFxRoot", false);
 		_pieceViewManager = new BattlePieceViewManager(
 			pieceRoot,
 			killFxRoot,
-			BattlePrefabLibrary);
+			BattlePrefabLibrary,
+			BattleEnemyLibrary);
 		_pieceViewManager.Rebuild(Registry, StateManager, CurrentRoom);
 		_floatingTextLayer = GetNodeOrNull<BattleFloatingTextLayer>("RoomContainer/FloatingTextLayer");
 		_actionService = new BattleActionService(BoardState, Registry, QueryService, Pathfinder, StateManager, _pieceViewManager, CurrentRoom, GlobalSession, _floatingTextLayer);
 		_actionService.ActionLogged += OnBattleActionLogged;
+		_actionService.EnemyDefeated += OnEnemyDefeated;
 		_enemyTurnResolver = new EnemyTurnResolver(
 			Registry,
 			StateManager,
@@ -407,6 +420,7 @@ public partial class BattleSceneController : Node2D
 		if (_actionService != null)
 		{
 			_actionService.ActionLogged -= OnBattleActionLogged;
+			_actionService.EnemyDefeated -= OnEnemyDefeated;
 		}
 	}
 
@@ -1616,22 +1630,36 @@ public partial class BattleSceneController : Node2D
 
 	private EnemyLearnRewardProfile? ResolveEnemyLearnRewardProfile(string definitionId)
 	{
-		return definitionId switch
+		BattleEnemyDefinition? enemyDefinition = BattleEnemyLibrary?.FindEntry(definitionId);
+		if (enemyDefinition == null)
 		{
-			"scene01_tutorial_enemy" => new EnemyLearnRewardProfile
-			{
-				NormalCardId = "card_patrol_strike",
-				SignatureCardId = "card_last_chase",
-			},
-			_ => null,
+			return null;
+		}
+
+		if (string.IsNullOrWhiteSpace(enemyDefinition.NormalLearnCardId)
+			&& string.IsNullOrWhiteSpace(enemyDefinition.SignatureLearnCardId))
+		{
+			return null;
+		}
+
+		return new EnemyLearnRewardProfile
+		{
+			NormalCardId = enemyDefinition.NormalLearnCardId,
+			SignatureCardId = enemyDefinition.SignatureLearnCardId,
 		};
 	}
 
 	private bool IsSignatureLearnStateAvailable(BoardObject targetObject)
 	{
+		BattleEnemyDefinition? enemyDefinition = BattleEnemyLibrary?.FindEntry(targetObject.DefinitionId);
 		if (_enemyLearnStates.TryGetValue(targetObject.ObjectId, out EnemyLearnState? state) && state.SignatureAvailable)
 		{
 			return true;
+		}
+
+		if (enemyDefinition?.SignatureLearnRequiresRuntimeFlag == true)
+		{
+			return false;
 		}
 
 		if (StateManager?.Get(targetObject.ObjectId) is not BattleObjectState targetState)
@@ -1639,7 +1667,7 @@ public partial class BattleSceneController : Node2D
 			return false;
 		}
 
-		return targetObject.DefinitionId == "scene01_tutorial_enemy"
+		return enemyDefinition?.SignatureLearnAvailableAtHalfHpOrBelow == true
 			&& targetState.MaxHp > 0
 			&& targetState.CurrentHp * 2 <= targetState.MaxHp;
 	}
@@ -1788,10 +1816,24 @@ public partial class BattleSceneController : Node2D
 		}
 
 		_battleResultCommitted = true;
+		int remainingEnemyCount = Registry?.AllObjects.Count(boardObject =>
+			boardObject.ObjectType == BoardObjectType.Unit
+			&& boardObject.Faction == BoardObjectFaction.Enemy) ?? 0;
 		Godot.Collections.Dictionary runtimeFlags = new()
 		{
 			["room_layout_id"] = CurrentRoom?.LayoutId ?? string.Empty,
+			["initial_enemy_count"] = _initialEnemyUnitCount,
+			["defeated_enemy_count"] = _defeatedEnemyDefinitionIds.Count,
+			["remaining_enemy_count"] = remainingEnemyCount,
+			["all_enemies_defeated"] = outcome == BattleOutcome.Victory && remainingEnemyCount == 0,
 		};
+		Godot.Collections.Array<string> defeatedEnemyDefinitionIds = new();
+		foreach (string definitionId in _defeatedEnemyDefinitionIds)
+		{
+			defeatedEnemyDefinitionIds.Add(definitionId);
+		}
+
+		runtimeFlags["defeated_enemy_definition_ids"] = defeatedEnemyDefinitionIds;
 		if (_pendingLearnedCardIds.Count > 0)
 		{
 			Godot.Collections.Array<string> learnedCardIds = new();
@@ -1810,6 +1852,16 @@ public partial class BattleSceneController : Node2D
 			outcome == BattleOutcome.Victory ? EncounterId : string.Empty,
 			runtimeFlags));
 		ReturnToPendingMapSceneIfAny();
+	}
+
+	private void OnEnemyDefeated(string enemyObjectId, string definitionId)
+	{
+		if (string.IsNullOrWhiteSpace(definitionId))
+		{
+			return;
+		}
+
+		_defeatedEnemyDefinitionIds.Add(definitionId);
 	}
 
 	private BattleDeckRuntimeInit? BuildDeckRuntimeInit(IReadOnlyList<BattleCardDefinition> prototypeDeck)
@@ -2096,7 +2148,8 @@ public partial class BattleSceneController : Node2D
 			return;
 		}
 
-		if (GlobalSession.PeekLastBattleResult() is BattleResult resultSummary && resultSummary.DidPlayerWin)
+		if (GlobalSession.PeekLastBattleResult() is BattleResult resultSummary
+			&& (resultSummary.DidPlayerWin || resultSummary.DidPlayerRetreat || resultSummary.DidPlayerFail))
 		{
 			await ShowBattleResultOverlayAsync(resultSummary);
 		}
@@ -2175,6 +2228,21 @@ public partial class BattleSceneController : Node2D
 		}
 	}
 
+	private static string BuildBattleResultTitleText(BattleResult result)
+	{
+		if (result.DidPlayerRetreat)
+		{
+			return "撤离结算";
+		}
+
+		if (result.DidPlayerFail)
+		{
+			return "战败结算";
+		}
+
+		return "战斗结算";
+	}
+
 	private static string BuildBattleResultSummaryText(BattleResult result)
 	{
 		List<string> lines = new();
@@ -2190,6 +2258,18 @@ public partial class BattleSceneController : Node2D
 			if (rewardEntry.RewardType == "learned_card")
 			{
 				lines.Add($"卡牌解锁: {rewardEntry.RewardId}");
+				continue;
+			}
+
+			if (rewardEntry.RewardType == "enemy_defeat_exp")
+			{
+				lines.Add($"击败敌人 {rewardEntry.RewardId}: 经验 +{rewardEntry.Amount}");
+				continue;
+			}
+
+			if (rewardEntry.RewardType == "encounter_clear_bonus")
+			{
+				lines.Add($"全灭奖励: 经验 +{rewardEntry.Amount}");
 				continue;
 			}
 
@@ -2266,45 +2346,59 @@ public partial class BattleSceneController : Node2D
 	{
 		if (_battleCamera == null || _isCameraCinematicBusy)
 		{
+			_cameraPanVelocity = Vector2.Zero;
+			_cameraPanHoldTime = 0.0f;
 			return;
 		}
 
 		float horizontalFactor = 0.0f;
 		float verticalFactor = 0.0f;
 
-		if (Input.IsKeyPressed(Key.Left))
+		if (Input.IsKeyPressed(Key.A))
 		{
 			horizontalFactor -= 1.0f;
 		}
 
-		if (Input.IsKeyPressed(Key.Right))
+		if (Input.IsKeyPressed(Key.D))
 		{
 			horizontalFactor += 1.0f;
 		}
 
-		if (Input.IsKeyPressed(Key.Up))
+		if (Input.IsKeyPressed(Key.W))
 		{
 			verticalFactor -= 1.0f;
 		}
 
-		if (Input.IsKeyPressed(Key.Down))
+		if (Input.IsKeyPressed(Key.S))
 		{
 			verticalFactor += 1.0f;
 		}
 
 		if (Mathf.IsZeroApprox(horizontalFactor) && Mathf.IsZeroApprox(verticalFactor))
 		{
+			_cameraPanHoldTime = 0.0f;
+			_cameraPanVelocity = _cameraPanVelocity.MoveToward(Vector2.Zero, 640.0f * (float)delta);
+		}
+		else
+		{
+			_cameraResetTween?.Kill();
+			Vector2 deltaMove = new(horizontalFactor, verticalFactor);
+			if (deltaMove.LengthSquared() > 1.0f)
+			{
+				deltaMove = deltaMove.Normalized();
+			}
+
+			_cameraPanHoldTime = Mathf.Min(_cameraPanHoldTime + (float)delta, 0.45f);
+			float rampedSpeed = Mathf.Lerp(48.0f, CameraPanPixelsPerSecond, _cameraPanHoldTime / 0.45f);
+			_cameraPanVelocity = _cameraPanVelocity.MoveToward(deltaMove * rampedSpeed, 960.0f * (float)delta);
+		}
+
+		if (_cameraPanVelocity.LengthSquared() <= 0.01f)
+		{
 			return;
 		}
 
-		_cameraResetTween?.Kill();
-		Vector2 deltaMove = new(horizontalFactor, verticalFactor);
-		if (deltaMove.LengthSquared() > 1.0f)
-		{
-			deltaMove = deltaMove.Normalized();
-		}
-
-		Vector2 nextPosition = _battleCamera.Position + deltaMove * CameraPanPixelsPerSecond * (float)delta;
+		Vector2 nextPosition = _battleCamera.Position + _cameraPanVelocity * (float)delta;
 		_battleCamera.Position = ClampBattleCameraPosition(nextPosition);
 	}
 
@@ -2315,6 +2409,8 @@ public partial class BattleSceneController : Node2D
 			return;
 		}
 
+		_cameraPanVelocity = Vector2.Zero;
+		_cameraPanHoldTime = 0.0f;
 		_cameraResetTween?.Kill();
 		_cameraResetTween = CreateTween();
 		_cameraResetTween.SetEase(Tween.EaseType.Out);

@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using Godot;
 using CardChessDemo.Battle.Board;
 using CardChessDemo.Battle.Data;
+using CardChessDemo.Battle.Enemies;
 
 namespace CardChessDemo.Battle.Rooms;
 
@@ -103,7 +104,7 @@ public partial class BattleRoomTemplate : Node2D
 		return cells;
 	}
 
-	public RoomLayoutDefinition BuildLayoutDefinition(string enemyDefinitionId = "battle_enemy")
+	public RoomLayoutDefinition BuildLayoutDefinition(string enemyDefinitionId = "battle_enemy", BattleEnemyLibrary? enemyLibrary = null)
 	{
 		EnsureReferences();
 		EnsureTopology();
@@ -136,7 +137,7 @@ public partial class BattleRoomTemplate : Node2D
 			{
 				enemyCounter++;
 				enemySpawnCells.Add(cell);
-				spawns.Add(CreateEnemySpawn(enemyCounter, cell, enemyDefinitionId, ResolveFacingForCell(cell, FacingLeft)));
+				spawns.Add(CreateEnemySpawn(enemyCounter, cell, enemyDefinitionId, ResolveFacingForCell(cell, FacingLeft), enemyLibrary));
 				continue;
 			}
 
@@ -447,10 +448,10 @@ public partial class BattleRoomTemplate : Node2D
 		};
 	}
 
-	private static BoardObjectSpawnDefinition CreateEnemySpawn(int index, Vector2I cell, string definitionId, Vector2I facing)
+	private static BoardObjectSpawnDefinition CreateEnemySpawn(int index, Vector2I cell, string definitionId, Vector2I facing, BattleEnemyLibrary? enemyLibrary)
 	{
 		string resolvedDefinitionId = string.IsNullOrWhiteSpace(definitionId) ? "battle_enemy" : definitionId;
-		EnemySpawnProfile profile = ResolveEnemySpawnProfile(resolvedDefinitionId);
+		EnemySpawnProfile profile = ResolveEnemySpawnProfile(resolvedDefinitionId, enemyLibrary);
 
 		return new BoardObjectSpawnDefinition
 		{
@@ -475,8 +476,16 @@ public partial class BattleRoomTemplate : Node2D
 		};
 	}
 
-	private static EnemySpawnProfile ResolveEnemySpawnProfile(string definitionId)
+	private static EnemySpawnProfile ResolveEnemySpawnProfile(string definitionId, BattleEnemyLibrary? enemyLibrary)
 	{
+		if (enemyLibrary?.FindEntry(definitionId) is BattleEnemyDefinition enemyDefinition)
+		{
+			return new EnemySpawnProfile(
+				string.IsNullOrWhiteSpace(enemyDefinition.AiId) ? "melee_basic" : enemyDefinition.AiId,
+				Math.Max(1, enemyDefinition.MaxHp),
+				Math.Max(0, enemyDefinition.StartingShield));
+		}
+
 		return definitionId switch
 		{
 			"scene01_tutorial_enemy" => new EnemySpawnProfile("scene01_learning", 6, 1),
