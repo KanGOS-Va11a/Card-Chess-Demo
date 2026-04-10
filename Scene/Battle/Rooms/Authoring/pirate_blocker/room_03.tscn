@@ -1,0 +1,26 @@
+[gd_scene format=3]
+
+[ext_resource type="Script" path="res://Scripts/Battle/Rooms/BattleRoomTemplate.cs" id="1_room"]
+
+[node name="pirate_blocker_room_03" type="Node2D"]
+script = ExtResource("1_room")
+LayoutId = "pirate_blocker_room_03"
+BoardSize = Vector2i(16, 8)
+SupportedEnemyTypeIds = PackedStringArray("pirate_blocker")
+RoomTags = PackedStringArray("authoring", "blank", "pirate_blocker")
+DefaultPlayerCell = Vector2i(2, 6)
+DefaultEnemyCells = Array[Vector2i]([])
+DefaultDestructibleObstacleCells = Array[Vector2i]([])
+DefaultIndestructibleObstacleCells = Array[Vector2i]([])
+DefaultSlowPassObstacleCells = Array[Vector2i]([])
+DefaultArcTerrainCells = Array[Vector2i]([])
+DefaultFireTerrainCells = Array[Vector2i]([])
+DefaultEscapeCells = Array[Vector2i]([])
+
+[node name="FloorLayer" type="TileMapLayer" parent="."]
+
+[node name="MarkerLayer" type="TileMapLayer" parent="."]
+
+[node name="EscapeLayer" type="TileMapLayer" parent="."]
+
+[node name="FacingLayer" type="TileMapLayer" parent="."]

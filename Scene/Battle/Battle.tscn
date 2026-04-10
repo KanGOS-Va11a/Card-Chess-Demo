@@ -2,8 +2,8 @@
 
 [ext_resource type="Script" uid="uid://b1v3ts2ne8faa" path="res://Scripts/Battle/BattleSceneController.cs" id="1_hq08r"]
 [ext_resource type="Script" uid="uid://v6k5hylri703" path="res://Scripts/Battle/Visual/BattleBoardOverlay.cs" id="2_7r48u"]
-[ext_resource type="PackedScene" uid="uid://b0scsa813e0hn" path="res://Scene/Battle/Rooms/GruntDebugRoomA.tscn" id="3_oxbdf"]
-[ext_resource type="PackedScene" uid="uid://bo41kkri4csjl" path="res://Scene/Battle/Rooms/GruntDebugRoomB.tscn" id="4_fypyy"]
+[ext_resource type="PackedScene" uid="uid://b0scsa813e0hn" path="res://Scene/Battle/Rooms/Debug/GruntDebugRoomA.tscn" id="3_oxbdf"]
+[ext_resource type="PackedScene" uid="uid://bo41kkri4csjl" path="res://Scene/Battle/Rooms/Debug/GruntDebugRoomB.tscn" id="4_fypyy"]
 [ext_resource type="Resource" uid="uid://dy3y14c3mod7u" path="res://Resources/Battle/Rooms/DebugBattleRoomPool.tres" id="5_4mo8r"]
 [ext_resource type="Resource" uid="uid://cfuduyxkf0keq" path="res://Resources/Battle/Presentation/DefaultBattlePrefabLibrary.tres" id="6_prefab"]
 [ext_resource type="Resource" path="res://Resources/Battle/Enemies/DefaultBattleEnemyLibrary.tres" id="6_enemy"]

@@ -50,6 +50,15 @@ public partial class BattleRoomTemplate : Node2D
 	[Export] public int FacingUpTileId { get; set; } = 8;
 	[Export] public int FacingRightTileId { get; set; } = 9;
 	[Export] public int FacingDownTileId { get; set; } = 10;
+	[Export] public int Scene01TutorialEnemyMarkerTileId { get; set; } = 11;
+	[Export] public int PirateBlockerMarkerTileId { get; set; } = 12;
+	[Export] public int PirateScoutMarkerTileId { get; set; } = 13;
+	[Export] public int PirateShockerMarkerTileId { get; set; } = 14;
+	[Export] public int PirateGunnerMarkerTileId { get; set; } = 15;
+	[Export] public int PiratePipeBomberMarkerTileId { get; set; } = 16;
+	[Export] public int PirateBruteEliteMarkerTileId { get; set; } = 17;
+	[Export] public int ScrapMedicEliteMarkerTileId { get; set; } = 18;
+	[Export] public int SewerGatekeeperMarkerTileId { get; set; } = 19;
 
 	private TileMapLayer _floorLayer = null!;
 	private TileMapLayer _markerLayer = null!;
@@ -138,6 +147,14 @@ public partial class BattleRoomTemplate : Node2D
 				enemyCounter++;
 				enemySpawnCells.Add(cell);
 				spawns.Add(CreateEnemySpawn(enemyCounter, cell, enemyDefinitionId, ResolveFacingForCell(cell, FacingLeft), enemyLibrary));
+				continue;
+			}
+
+			if (TryResolveEnemyDefinitionIdForMarkerTile(tileId, enemyDefinitionId, out string resolvedEnemyDefinitionId))
+			{
+				enemyCounter++;
+				enemySpawnCells.Add(cell);
+				spawns.Add(CreateEnemySpawn(enemyCounter, cell, resolvedEnemyDefinitionId, ResolveFacingForCell(cell, FacingLeft), enemyLibrary));
 				continue;
 			}
 
@@ -415,6 +432,11 @@ public partial class BattleRoomTemplate : Node2D
 
 	private int ResolveObstacleMarkerTileId(BoardObject boardObject)
 	{
+		if (boardObject.ObjectType == BoardObjectType.Unit && boardObject.Faction == BoardObjectFaction.Enemy)
+		{
+			return ResolveEnemyMarkerTileId(boardObject.DefinitionId);
+		}
+
 		if (boardObject.HasTag(SlowPassObstacleTag.ToString()))
 		{
 			return SlowPassObstacleMarkerTileId;
@@ -426,6 +448,58 @@ public partial class BattleRoomTemplate : Node2D
 		}
 
 		return DestructibleObstacleMarkerTileId;
+	}
+
+	private bool TryResolveEnemyDefinitionIdForMarkerTile(int tileId, string fallbackDefinitionId, out string resolvedDefinitionId)
+	{
+		resolvedDefinitionId = tileId switch
+		{
+			var value when value == Scene01TutorialEnemyMarkerTileId => "scene01_tutorial_enemy",
+			var value when value == PirateBlockerMarkerTileId => "pirate_blocker",
+			var value when value == PirateScoutMarkerTileId => "pirate_scout",
+			var value when value == PirateShockerMarkerTileId => "pirate_shocker",
+			var value when value == PirateGunnerMarkerTileId => "pirate_gunner",
+			var value when value == PiratePipeBomberMarkerTileId => "pirate_pipe_bomber",
+			var value when value == PirateBruteEliteMarkerTileId => "pirate_brute_elite",
+			var value when value == ScrapMedicEliteMarkerTileId => "scrap_medic_elite",
+			var value when value == SewerGatekeeperMarkerTileId => "sewer_gatekeeper",
+			_ => string.Empty,
+		};
+
+		if (!string.IsNullOrWhiteSpace(resolvedDefinitionId))
+		{
+			return true;
+		}
+
+		if (tileId == EnemyMarkerTileId)
+		{
+			resolvedDefinitionId = enemyDefinitionIdOrFallback(fallbackDefinitionId);
+			return true;
+		}
+
+		return false;
+
+		static string enemyDefinitionIdOrFallback(string value)
+		{
+			return string.IsNullOrWhiteSpace(value) ? "battle_enemy" : value;
+		}
+	}
+
+	private int ResolveEnemyMarkerTileId(string definitionId)
+	{
+		return definitionId switch
+		{
+			"scene01_tutorial_enemy" => Scene01TutorialEnemyMarkerTileId,
+			"pirate_blocker" => PirateBlockerMarkerTileId,
+			"pirate_scout" => PirateScoutMarkerTileId,
+			"pirate_shocker" => PirateShockerMarkerTileId,
+			"pirate_gunner" => PirateGunnerMarkerTileId,
+			"pirate_pipe_bomber" => PiratePipeBomberMarkerTileId,
+			"pirate_brute_elite" => PirateBruteEliteMarkerTileId,
+			"scrap_medic_elite" => ScrapMedicEliteMarkerTileId,
+			"sewer_gatekeeper" => SewerGatekeeperMarkerTileId,
+			_ => EnemyMarkerTileId,
+		};
 	}
 
 	private static BoardObjectSpawnDefinition CreatePlayerSpawn(int index, Vector2I cell, Vector2I facing)

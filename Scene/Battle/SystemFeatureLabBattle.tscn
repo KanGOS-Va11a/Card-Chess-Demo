@@ -2,8 +2,8 @@
 
 [ext_resource type="Script" path="res://Scripts/Battle/BattleSceneController.cs" id="1_hq08r"]
 [ext_resource type="Script" path="res://Scripts/Battle/Visual/BattleBoardOverlay.cs" id="2_7r48u"]
-[ext_resource type="PackedScene" path="res://Scene/Battle/Rooms/GruntDebugRoomA.tscn" id="3_room_a"]
-[ext_resource type="PackedScene" path="res://Scene/Battle/Rooms/GruntDebugRoomB.tscn" id="4_room_b"]
+[ext_resource type="PackedScene" path="res://Scene/Battle/Rooms/Debug/GruntDebugRoomA.tscn" id="3_room_a"]
+[ext_resource type="PackedScene" path="res://Scene/Battle/Rooms/Debug/GruntDebugRoomB.tscn" id="4_room_b"]
 [ext_resource type="Resource" path="res://Resources/Battle/Rooms/DebugBattleRoomPool.tres" id="5_room_pool"]
 [ext_resource type="Resource" path="res://Resources/Battle/Presentation/DefaultBattlePrefabLibrary.tres" id="6_prefab"]
 [ext_resource type="Resource" path="res://Resources/Battle/Enemies/DefaultBattleEnemyLibrary.tres" id="6_enemy"]
