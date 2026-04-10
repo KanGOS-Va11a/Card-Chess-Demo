@@ -64,6 +64,7 @@ public partial class SystemFeatureLabController : CanvasLayer
 	private RichTextLabel _cardCodexDetail = null!;
 	private ItemList _enemyCodexList = null!;
 	private RichTextLabel _enemyCodexDetail = null!;
+	private TabContainer _codexTabs = null!;
 
 	private Label _deckPoolSummaryLabel = null!;
 	private Label _deckSummaryLabel = null!;
@@ -86,6 +87,7 @@ public partial class SystemFeatureLabController : CanvasLayer
 	private BattleDeckConstructionService? _constructionService;
 	private BattleCardTemplate[] _availableTemplates = Array.Empty<BattleCardTemplate>();
 	private BattleCardTemplate[] _codexTemplates = Array.Empty<BattleCardTemplate>();
+	private EnemyCodexEntry[] _resolvedEnemyCodexEntries = Array.Empty<EnemyCodexEntry>();
 	private RuntimeEquipmentDefinition[] _visibleEquipmentCandidates = Array.Empty<RuntimeEquipmentDefinition>();
 	private List<string> _workingDeck = new();
 	private int _baseMasteryPoints = 6;
@@ -250,6 +252,7 @@ public partial class SystemFeatureLabController : CanvasLayer
 		_cardCodexDetail = GetNode<RichTextLabel>("PanelRoot/Window/Margin/Root/Tabs/CodexTab/CodexTabs/CardCodex/Columns/DetailPanel/DetailText");
 		_enemyCodexList = GetNode<ItemList>("PanelRoot/Window/Margin/Root/Tabs/CodexTab/CodexTabs/EnemyCodex/Columns/ListColumn/EnemyList");
 		_enemyCodexDetail = GetNode<RichTextLabel>("PanelRoot/Window/Margin/Root/Tabs/CodexTab/CodexTabs/EnemyCodex/Columns/DetailPanel/DetailText");
+		_codexTabs = GetNode<TabContainer>("PanelRoot/Window/Margin/Root/Tabs/CodexTab/CodexTabs");
 		_deckPoolSummaryLabel = GetNode<Label>("PanelRoot/Window/Margin/Root/Tabs/DeckTab/Header/PoolSummaryLabel");
 		_deckSummaryLabel = GetNode<Label>("PanelRoot/Window/Margin/Root/Tabs/DeckTab/Header/DeckSummaryLabel");
 		_availableList = GetNode<ItemList>("PanelRoot/Window/Margin/Root/Tabs/DeckTab/Columns/AvailableColumn/AvailableList");
@@ -899,6 +902,8 @@ public partial class SystemFeatureLabController : CanvasLayer
 		_refundTalentButton.Text = "Refund";
 		GetNode<Label>("PanelRoot/Window/Margin/Root/Tabs/CodexTab/CodexTabs/CardCodex/Columns/ListColumn/Title").Text = "Card Codex";
 		GetNode<Label>("PanelRoot/Window/Margin/Root/Tabs/CodexTab/CodexTabs/EnemyCodex/Columns/ListColumn/Title").Text = "Enemy Codex";
+		_codexTabs.SetTabTitle(0, "Cards");
+		_codexTabs.SetTabTitle(1, "Enemies");
 		GetNode<RichTextLabel>("PanelRoot/Window/Margin/Root/Tabs/CodexTab/CodexTabs/CardCodex/Columns/DetailPanel/DetailText").Text = "Select a card.";
 		GetNode<RichTextLabel>("PanelRoot/Window/Margin/Root/Tabs/CodexTab/CodexTabs/EnemyCodex/Columns/DetailPanel/DetailText").Text = "Select an enemy.";
 		_deckPoolSummaryLabel.Text = "Pool";
@@ -936,6 +941,8 @@ public partial class SystemFeatureLabController : CanvasLayer
 		_refundTalentButton.Text = "\u9000\u70B9";
 		GetNode<Label>("PanelRoot/Window/Margin/Root/Tabs/CodexTab/CodexTabs/CardCodex/Columns/ListColumn/Title").Text = "\u5361\u724C\u56FE\u9274";
 		GetNode<Label>("PanelRoot/Window/Margin/Root/Tabs/CodexTab/CodexTabs/EnemyCodex/Columns/ListColumn/Title").Text = "\u654C\u4EBA\u56FE\u9274";
+		_codexTabs.SetTabTitle(0, "\u5361\u724C");
+		_codexTabs.SetTabTitle(1, "\u654C\u4EBA");
 		GetNode<RichTextLabel>("PanelRoot/Window/Margin/Root/Tabs/CodexTab/CodexTabs/CardCodex/Columns/DetailPanel/DetailText").Text = "\u9009\u62E9\u4E00\u5F20\u5361\u724C\u67E5\u770B\u8BE6\u60C5";
 		GetNode<RichTextLabel>("PanelRoot/Window/Margin/Root/Tabs/CodexTab/CodexTabs/EnemyCodex/Columns/DetailPanel/DetailText").Text = "\u9009\u62E9\u4E00\u4E2A\u654C\u4EBA\u67E5\u770B\u8BE6\u60C5";
 		_deckPoolSummaryLabel.Text = "\u53EF\u7528\u5361\u6C60";
@@ -1256,6 +1263,23 @@ public partial class SystemFeatureLabController : CanvasLayer
 			.OrderBy(entry => entry.CardId, StringComparer.Ordinal)
 			.ToArray()
 			?? Array.Empty<BattleCardTemplate>();
+		_resolvedEnemyCodexEntries = BuildResolvedEnemyCodexEntries();
+	}
+
+	private EnemyCodexEntry[] BuildResolvedEnemyCodexEntries()
+	{
+		return new[]
+		{
+			new EnemyCodexEntry("scene01_tutorial_enemy", "\u6559\u7A0B\u8352\u962A\u654C\u4EBA", "\u6559\u5B66\u6218\u4E2D\u7528\u4E8E\u6F14\u793A\u5B66\u4E60\u5956\u52B1\u7684\u57FA\u7840\u8FFD\u51FB\u578B\u654C\u4EBA\u3002", true, "\u521D\u59CB\u5373\u53EF\u67E5\u770B", "\u6559\u5B66\u8FFD\u51FB", 6, 1, 3, 2, 1, 40, "card_patrol_strike", "card_last_chase", "\u534A\u8840\u540E\u79FB\u52A8\u529B +1\uff0c\u5E76\u8FDB\u5165\u7279\u6B8A\u5B66\u4E60\u72B6\u6001"),
+			new EnemyCodexEntry("pirate_blocker", "\u63A0\u8239\u5BA2\u5835\u95E8\u8005", "\u6B63\u9762\u627F\u4F24\u7684\u8FD1\u6218\u538B\u8FEB\u578B\u654C\u4EBA\uff0c\u9002\u5408\u548C\u5176\u4ED6\u706B\u529B\u5355\u4F4D\u914D\u5408\u3002", true, "\u521D\u59CB\u5373\u53EF\u67E5\u770B", "\u8FD1\u6218", 7, 2, 3, 2, 1, 20, "\u65E0", "\u65E0", "\u7A33\u5B9A\u6B63\u9762\u63A8\u8FDB\uff0c\u4F18\u5148\u538B\u8FD1\u73A9\u5BB6"),
+			new EnemyCodexEntry("pirate_scout", "\u63A0\u8239\u5BA2\u4FA6\u5BDF\u5175", "\u9AD8\u673A\u52A8\u7ED5\u4FA7\u578B\u654C\u4EBA\uff0c\u4F1A\u4F18\u5148\u5BFB\u627E\u7A7A\u6321\u4ECE\u4FA7\u7FFC\u5207\u5165\u3002", true, "\u521D\u59CB\u5373\u53EF\u67E5\u770B", "\u9AD8\u673A\u52A8", 5, 1, 4, 2, 1, 22, "\u65E0", "\u65E0", "\u4F18\u5148\u9009\u62E9\u80FD\u5F62\u6210\u4FA7\u7FFC\u538B\u529B\u7684\u8D70\u4F4D"),
+			new EnemyCodexEntry("pirate_shocker", "\u63A0\u8239\u5BA2\u7535\u68CD\u624B", "\u9AD8\u538B\u8FD1\u6218\u8F93\u51FA\u5355\u4F4D\uff0c\u4F1A\u5728\u8D34\u8EAB\u540E\u7ED9\u51FA\u66F4\u75BC\u7684\u4E00\u51FB\u3002", true, "\u521D\u59CB\u5373\u53EF\u67E5\u770B", "\u8FD1\u6218", 6, 1, 3, 3, 1, 24, "\u65E0", "\u65E0", "\u4EE5\u66F4\u9AD8\u4F24\u5BB3\u7684\u8D34\u8EAB\u6253\u51FB\u4E3A\u4E3B"),
+			new EnemyCodexEntry("pirate_gunner", "\u63A0\u8239\u5BA2\u6742\u67AA\u624B", "\u76F4\u7EBF\u8FDC\u7A0B\u538B\u5236\u578B\u654C\u4EBA\uff0c\u64C5\u957F\u5728\u969C\u788D\u540E\u7EF4\u6301\u706B\u529B\u3002", true, "\u521D\u59CB\u5373\u53EF\u67E5\u770B", "\u8FDC\u7A0B", 5, 0, 2, 2, 3, 24, "\u65E0", "\u65E0", "\u7EF4\u6301\u5C04\u7A0B\u4F18\u52BF\uff0c\u5728\u80FD\u653B\u51FB\u65F6\u4F18\u5148\u8FDC\u7A0B\u538B\u4F4D"),
+			new EnemyCodexEntry("pirate_pipe_bomber", "\u7BA1\u9053\u7206\u7834\u5BA2", "\u4F1A\u4F18\u5148\u5904\u7406\u969C\u788D\u4E0E\u5730\u5F62\u7684\u7206\u7834\u578B\u654C\u4EBA\uff0c\u9002\u5408\u4F5C\u4E3A\u623F\u95F4\u7684\u73AF\u5883\u6838\u5FC3\u3002", true, "\u521D\u59CB\u5373\u53EF\u67E5\u770B", "\u73AF\u5883\u7206\u7834", 5, 0, 2, 2, 3, 26, "\u65E0", "\u65E0", "\u4F18\u5148\u653B\u51FB\u53EF\u7834\u574F\u969C\u788D\uff0c\u4E5F\u4F1A\u5BF9\u73A9\u5BB6\u4FDD\u6301\u8FDC\u7A0B\u538B\u529B"),
+			new EnemyCodexEntry("pirate_brute_elite", "\u63A0\u8239\u5BA2\u91CD\u538B\u8005", "\u7CBE\u82F1\u8FD1\u6218\u654C\u4EBA\uff0c\u4EE5\u9AD8\u62A4\u76FE\u3001\u9AD8\u4F24\u5BB3\u548C\u534A\u8840\u7279\u6B8A\u5B66\u4E60\u72B6\u6001\u4E3A\u6807\u5FD7\u3002", false, "\u5728\u7CBE\u82F1\u6218\u4E2D\u5B8C\u6210\u5B66\u4E60\u540E\u89E3\u9501", "\u7CBE\u82F1\u8FD1\u6218", 10, 3, 3, 4, 1, 50, "card_heavy_bash", "card_pressure_breach", "\u534A\u8840\u540E\u79FB\u52A8\u529B +1\uff0c\u5E76\u89E6\u53D1\u7CBE\u82F1\u5B66\u4E60\u7A97\u53E3"),
+			new EnemyCodexEntry("scrap_medic_elite", "\u5E9F\u6599\u533B\u62A4\u673A", "\u652F\u63F4\u578B\u7CBE\u82F1\uff0C\u4F1A\u4E3A\u53CB\u65B9\u63D0\u4F9B\u6CBB\u7597\u4E0E\u62A4\u76FE\uff0C\u5EF6\u957F\u6218\u7EBF\u3002", false, "\u89E6\u53D1\u5176\u652F\u63F4\u5B66\u4E60\u540E\u89E3\u9501", "\u652F\u63F4", 8, 2, 2, 1, 2, 48, "card_field_patch", "card_emergency_repair", "\u4F18\u5148\u6CBB\u7597\u6216\u4E3A\u53CB\u65B9\u4E0A\u76FE\uff0C\u7279\u6B8A\u5B66\u4E60\u4E0E\u6210\u529F\u652F\u63F4\u884C\u4E3A\u6302\u94A9"),
+			new EnemyCodexEntry("sewer_gatekeeper", "\u4E0B\u6C34\u9053\u95E8\u7981\u5B88\u536B", "\u5B88\u95E8\u578B\u654C\u4EBA\uff0c\u4F1A\u5229\u7528\u72ED\u7A84\u5730\u5F62\u5C01\u9501\u8DEF\u7EBF\u5E76\u903C\u8FEB\u73A9\u5BB6\u6B63\u9762\u4EA4\u6218\u3002", true, "\u521D\u59CB\u5373\u53EF\u67E5\u770B", "\u5B88\u95E8", 8, 3, 2, 3, 1, 30, "\u65E0", "\u65E0", "\u4F18\u5148\u9009\u62E9\u9760\u8FD1\u969C\u788D\u7684\u7AD9\u4F4D\uff0C\u5C01\u9501\u72ED\u7A84\u901A\u9053"),
+		};
 	}
 
 	private void SeedSessionForTesting()
@@ -1942,7 +1966,7 @@ public partial class SystemFeatureLabController : CanvasLayer
 		}
 
 		_enemyCodexList.Clear();
-		foreach (EnemyCodexEntry entry in _enemyCodexEntries)
+		foreach (EnemyCodexEntry entry in _resolvedEnemyCodexEntries)
 		{
 			bool unlocked = IsEnemyCodexUnlocked(entry, progression);
 			int index = _enemyCodexList.AddItem(unlocked ? entry.DisplayName : "■■■");
@@ -2157,35 +2181,28 @@ public partial class SystemFeatureLabController : CanvasLayer
 	{
 		GameAudio.Instance?.PlayUiConfirm();
 		{
-		if (_session == null || index < 0 || index >= _enemyCodexEntries.Length)
+		if (_session == null || index < 0 || index >= _resolvedEnemyCodexEntries.Length)
 		{
 			return;
 		}
 
-		EnemyCodexEntry selectedEntry = _enemyCodexEntries[index];
+		EnemyCodexEntry selectedEntry = _resolvedEnemyCodexEntries[index];
 		bool enemyUnlocked = IsEnemyCodexUnlocked(selectedEntry, _session.BuildProgressionSnapshotModel());
-		_enemyCodexDetail.Text = enemyUnlocked
-			? string.Join('\n', new[]
-			{
-				$"[b]{selectedEntry.DisplayName}[/b]",
-				selectedEntry.Description,
-				"\u72B6\u6001: \u5DF2\u89E3\u9501",
-			})
-			: string.Join('\n', new[]
-			{
-				"[b]\u672A\u89E3\u9501[/b]",
-				"[\u9ED1\u8272\u526A\u5F71]",
-				$"\u89E3\u9501\u65B9\u5F0F: {selectedEntry.UnlockHint}",
-			});
+		_enemyCodexDetail.Text = enemyUnlocked ? BuildEnemyCodexDetailText(selectedEntry) : string.Join('\n', new[]
+		{
+			"[b]\u672A\u89E3\u9501[/b]",
+			"[\u9ED1\u8272\u526A\u5F71]",
+			$"\u89E3\u9501\u65B9\u5F0F: {selectedEntry.UnlockHint}",
+		});
 		return;
 		}
 
-		if (_session == null || index < 0 || index >= _enemyCodexEntries.Length)
+		if (_session == null || index < 0 || index >= _resolvedEnemyCodexEntries.Length)
 		{
 			return;
 		}
 
-		EnemyCodexEntry entry = _enemyCodexEntries[index];
+		EnemyCodexEntry entry = _resolvedEnemyCodexEntries[index];
 		bool unlocked = IsEnemyCodexUnlocked(entry, _session.BuildProgressionSnapshotModel());
 		_enemyCodexDetail.Text = unlocked
 			? string.Join('\n', new[]
@@ -2247,6 +2264,24 @@ public partial class SystemFeatureLabController : CanvasLayer
 	{
 		return entry.UnlockedByDefault
 			|| entry.RequiredUnlockedCardIds.All(cardId => progression.UnlockedCardIds.Contains(cardId, StringComparer.Ordinal));
+	}
+
+	private string BuildEnemyCodexDetailText(EnemyCodexEntry entry)
+	{
+		return string.Join('\n', new[]
+		{
+			$"[b]{entry.DisplayName}[/b]",
+			entry.Description,
+			string.Empty,
+			$"\u72B6\u6001: \u5DF2\u89E3\u9501",
+			$"AI \u7C7B\u578B: {entry.AiTypeLabel}",
+			$"\u751F\u547D {entry.MaxHp} / \u62A4\u76FE {entry.StartingShield}",
+			$"\u79FB\u52A8 {entry.MovePointsPerTurn} / \u653B\u51FB {entry.AttackDamage} / \u5C04\u7A0B {entry.AttackRange}",
+			$"\u51FB\u8D25\u7ECF\u9A8C: {entry.DefeatExperience}",
+			$"\u5E38\u6001\u5B66\u4E60: {entry.NormalLearnCardId}",
+			$"\u7279\u6B8A\u5B66\u4E60: {entry.SignatureLearnCardId}",
+			$"\u7279\u6B8A\u884C\u4E3A: {entry.SpecialActionSummary}",
+		});
 	}
 
 	private int GetSpentPoints()
@@ -2823,12 +2858,59 @@ public partial class SystemFeatureLabController : CanvasLayer
 	private sealed class EnemyCodexEntry
 	{
 		public EnemyCodexEntry(string id, string displayName, string description, bool unlockedByDefault, string unlockHint, params string[] requiredUnlockedCardIds)
+			: this(
+				id,
+				displayName,
+				description,
+				unlockedByDefault,
+				unlockHint,
+				"\u672A\u77E5",
+				0,
+				0,
+				0,
+				0,
+				0,
+				0,
+				"\u65E0",
+				"\u65E0",
+				"\u672A\u8BB0\u5F55",
+				requiredUnlockedCardIds)
+		{
+		}
+
+		public EnemyCodexEntry(
+			string id,
+			string displayName,
+			string description,
+			bool unlockedByDefault,
+			string unlockHint,
+			string aiTypeLabel,
+			int maxHp,
+			int startingShield,
+			int movePointsPerTurn,
+			int attackDamage,
+			int attackRange,
+			int defeatExperience,
+			string normalLearnCardId,
+			string signatureLearnCardId,
+			string specialActionSummary,
+			params string[] requiredUnlockedCardIds)
 		{
 			Id = id;
 			DisplayName = displayName;
 			Description = description;
 			UnlockedByDefault = unlockedByDefault;
 			UnlockHint = unlockHint;
+			AiTypeLabel = aiTypeLabel;
+			MaxHp = maxHp;
+			StartingShield = startingShield;
+			MovePointsPerTurn = movePointsPerTurn;
+			AttackDamage = attackDamage;
+			AttackRange = attackRange;
+			DefeatExperience = defeatExperience;
+			NormalLearnCardId = normalLearnCardId;
+			SignatureLearnCardId = signatureLearnCardId;
+			SpecialActionSummary = specialActionSummary;
 			RequiredUnlockedCardIds = requiredUnlockedCardIds ?? Array.Empty<string>();
 		}
 
@@ -2837,6 +2919,16 @@ public partial class SystemFeatureLabController : CanvasLayer
 		public string Description { get; }
 		public bool UnlockedByDefault { get; }
 		public string UnlockHint { get; }
+		public string AiTypeLabel { get; }
+		public int MaxHp { get; }
+		public int StartingShield { get; }
+		public int MovePointsPerTurn { get; }
+		public int AttackDamage { get; }
+		public int AttackRange { get; }
+		public int DefeatExperience { get; }
+		public string NormalLearnCardId { get; }
+		public string SignatureLearnCardId { get; }
+		public string SpecialActionSummary { get; }
 		public string[] RequiredUnlockedCardIds { get; }
 	}
 
