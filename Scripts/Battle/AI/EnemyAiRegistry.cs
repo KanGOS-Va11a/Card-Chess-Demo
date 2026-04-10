@@ -16,6 +16,10 @@ public sealed class EnemyAiRegistry
         Register(new ScoutFlankerEnemyAiStrategy());
         Register(new RangedLineEnemyAiStrategy());
         Register(new Scene01LearningEnemyAiStrategy());
+        Register(new EliteBruteEnemyAiStrategy());
+        Register(new SupportHealerEnemyAiStrategy());
+        Register(new ObstacleBomberEnemyAiStrategy());
+        Register(new GatekeeperEnemyAiStrategy());
     }
 
     public void Register(IEnemyAiStrategy strategy)

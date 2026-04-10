@@ -1,4 +1,5 @@
 using Godot;
+using CardChessDemo.Audio;
 
 namespace CardChessDemo.Map;
 
@@ -20,6 +21,7 @@ public static class GalDialogueOverlay
         if (panel != null)
         {
             panel.Visible = false;
+            GameAudio.Instance?.PlayUiCancel();
         }
     }
 
@@ -41,6 +43,7 @@ public static class GalDialogueOverlay
         speakerLabel.Text = string.IsNullOrWhiteSpace(speaker) ? "旁白" : speaker.Trim();
         contentLabel.Text = string.IsNullOrWhiteSpace(content) ? "..." : content.Trim();
         panel.Visible = true;
+        GameAudio.Instance?.PlayDialoguePopup();
     }
 
     private static Panel? ResolvePanel(Node context, bool createIfMissing)

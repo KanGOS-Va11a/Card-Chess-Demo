@@ -316,9 +316,9 @@ theme_override_font_sizes/font_size = 16
 text = "荒川 0/0"
 
 [node name="ArakawaButton" type="Button" parent="TopBar/ArakawaInfo"]
-custom_minimum_size = Vector2(34, 10)
+custom_minimum_size = Vector2(28, 28)
 theme_override_font_sizes/font_size = 16
-text = "Ark"
+text = ""
 
 [node name="RightControls" type="GridContainer" parent="."]
 anchor_left = 1.0
@@ -364,7 +364,7 @@ text = ""
 [node name="EndTurnButton" type="Button" parent="RightControls"]
 custom_minimum_size = Vector2(28, 28)
 theme_override_font_sizes/font_size = 16
-text = "End"
+text = ""
 
 [node name="BottomHand" type="Control" parent="."]
 anchor_top = 1.0
@@ -387,12 +387,12 @@ mouse_filter = 2
 visible = false
 offset_left = 98.0
 offset_top = 26.0
-offset_right = 222.0
+offset_right = 274.0
 offset_bottom = 138.0
 mouse_filter = 2
 z_index = 35
 
-[node name="WheelPanel" type="PanelContainer" parent="ArakawaWheel"]
+[node name="WheelPanel" type="Panel" parent="ArakawaWheel"]
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
@@ -401,34 +401,38 @@ grow_horizontal = 2
 grow_vertical = 2
 mouse_filter = 2
 
-[node name="BuildButton" type="Button" parent="ArakawaWheel"]
-offset_left = 8.0
+[node name="BuildButton" type="Button" parent="ArakawaWheel/WheelPanel"]
+custom_minimum_size = Vector2(28, 28)
+offset_left = 36.0
 offset_top = 10.0
-offset_right = 54.0
+offset_right = 64.0
 offset_bottom = 38.0
 theme_override_font_sizes/font_size = 16
 text = "造墙\n1"
 
-[node name="EnhanceButton" type="Button" parent="ArakawaWheel"]
-offset_left = 70.0
+[node name="EnhanceButton" type="Button" parent="ArakawaWheel/WheelPanel"]
+custom_minimum_size = Vector2(28, 28)
+offset_left = 74.0
 offset_top = 10.0
-offset_right = 116.0
+offset_right = 102.0
 offset_bottom = 38.0
 theme_override_font_sizes/font_size = 16
 text = "强化\n1"
 
-[node name="WeaponButton" type="Button" parent="ArakawaWheel"]
-offset_left = 132.0
+[node name="WeaponButton" type="Button" parent="ArakawaWheel/WheelPanel"]
+custom_minimum_size = Vector2(28, 28)
+offset_left = 112.0
 offset_top = 10.0
-offset_right = 178.0
+offset_right = 140.0
 offset_bottom = 38.0
 theme_override_font_sizes/font_size = 16
 text = "强武\n1"
 
-[node name="CancelButton" type="Button" parent="ArakawaWheel"]
-offset_left = 72.0
+[node name="CancelButton" type="Button" parent="ArakawaWheel/WheelPanel"]
+custom_minimum_size = Vector2(28, 28)
+offset_left = 74.0
 offset_top = 52.0
-offset_right = 116.0
-offset_bottom = 84.0
+offset_right = 102.0
+offset_bottom = 80.0
 theme_override_font_sizes/font_size = 16
 text = "X"

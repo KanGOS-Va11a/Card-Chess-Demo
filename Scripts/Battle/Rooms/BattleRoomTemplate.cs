@@ -493,10 +493,11 @@ public partial class BattleRoomTemplate : Node2D
 			"pirate_scout" => new EnemySpawnProfile("scout_flanker", 5, 1),
 			"pirate_shocker" => new EnemySpawnProfile("melee_basic", 6, 1),
 			"pirate_gunner" => new EnemySpawnProfile("ranged_line", 5, 0),
-			"pirate_pipe_bomber" => new EnemySpawnProfile("ranged_line", 5, 0),
-			"pirate_brute_elite" => new EnemySpawnProfile("melee_basic", 10, 3),
-			"scrap_medic_elite" => new EnemySpawnProfile("ranged_line", 8, 2),
+			"pirate_pipe_bomber" => new EnemySpawnProfile("obstacle_bomber", 5, 0),
+			"pirate_brute_elite" => new EnemySpawnProfile("elite_brute", 10, 3),
+			"scrap_medic_elite" => new EnemySpawnProfile("support_healer", 8, 2),
 			"boss_rust_captain" => new EnemySpawnProfile("melee_basic", 16, 4),
+			"sewer_gatekeeper" => new EnemySpawnProfile("gatekeeper_guard", 8, 3),
 			_ => new EnemySpawnProfile("melee_basic", 6, 2),
 		};
 	}

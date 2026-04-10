@@ -20,6 +20,7 @@ using CardChessDemo.Battle.State;
 using CardChessDemo.Battle.Turn;
 using CardChessDemo.Battle.UI;
 using CardChessDemo.Battle.Visual;
+using CardChessDemo.Audio;
 
 namespace CardChessDemo.Battle;
 
@@ -34,6 +35,22 @@ public partial class BattleSceneController : Node2D
 	private const string AlertCardId = "card_alert";
 	private const string RollCallCardId = "card_roll_call";
 	private const string LearningCardId = "card_learning";
+	private const string PunchCardId = "card_punch";
+	private const string GuardCardId = "card_guard";
+	private const string RollCardId = "card_roll";
+	private const string CalmCardId = "card_calm";
+	private const string ChargeUpCardId = "card_charge_up";
+	private const string BootCardId = "card_boot";
+	private const string AlertGuardCardId = "card_alert_guard";
+	private const string PlunderCardId = "card_plunder";
+	private const string StructuralBoostCardId = "card_structural_boost";
+	private const string TacticalShiftCardId = "card_tactical_shift";
+	private const string VaultCardId = "card_vault";
+	private const string OptimizeCardId = "card_optimize";
+	private const string ContemplateCardId = "card_contemplate";
+	private const string RepairCardId = "card_repair";
+	private const string FieldPatchPlusCardId = "card_field_patch_plus";
+	private const string MagneticHuntCardId = "card_magnetic_hunt";
 	private const string StanceCardId = "card_stance";
 	private const string HeavyBlowCardId = "card_heavy_blow";
 	private const string ConcussionShotCardId = "card_concussion_shot";
@@ -148,6 +165,7 @@ public partial class BattleSceneController : Node2D
 	private enum PendingDelayedCardEffectKind
 	{
 		AlertStrike = 0,
+		ContemplateEnergy = 1,
 	}
 
 	private sealed class PendingDelayedCardEffect
@@ -157,6 +175,8 @@ public partial class BattleSceneController : Node2D
 		public int TriggerTurnIndex { get; init; }
 		public int Radius { get; init; }
 		public int Damage { get; init; }
+		public int Energy { get; init; }
+		public int RequiredHp { get; init; }
 	}
 
 	private sealed class EnemyLearnRewardProfile
@@ -213,6 +233,7 @@ public partial class BattleSceneController : Node2D
 		AttachBattleBackgroundToRoom();
 		ConfigureBattleBackground(roomContainer);
 		ConfigureBattleFloorLayerVisibility();
+		GameAudio.Instance?.PlayBattleMusic();
 
 		RoomLayoutDefinition layout = CurrentRoom.BuildLayoutDefinition(EncounterEnemyDefinitionId, BattleEnemyLibrary);
 		BoardInitializer initializer = new(BoardState, Registry);
@@ -864,6 +885,7 @@ public partial class BattleSceneController : Node2D
 
 		if (TurnState.IsAttackTargeting)
 		{
+			GameAudio.Instance?.PlayUiCancel();
 			TurnState.CancelTargeting();
 			return;
 		}
@@ -873,6 +895,7 @@ public partial class BattleSceneController : Node2D
 			return;
 		}
 
+		GameAudio.Instance?.PlayUiConfirm();
 		TurnState.EnterAttackTargeting();
 	}
 
@@ -927,6 +950,7 @@ public partial class BattleSceneController : Node2D
 			return;
 		}
 
+		GameAudio.Instance?.PlayCardSelect();
 		TurnState.EnterCardTargeting(cardInstanceId);
 	}
 
@@ -1039,12 +1063,21 @@ public partial class BattleSceneController : Node2D
 
 		if (_arakawaAbilityMode != ArakawaAbilityMode.None)
 		{
+			GameAudio.Instance?.PlayUiCancel();
 			CancelArakawaAbilityMode();
 			_isArakawaWheelOpen = false;
 			return;
 		}
 
 		_isArakawaWheelOpen = !_isArakawaWheelOpen;
+		if (_isArakawaWheelOpen)
+		{
+			GameAudio.Instance?.PlayUiConfirm();
+		}
+		else
+		{
+			GameAudio.Instance?.PlayUiCancel();
+		}
 	}
 
 	private void OnArakawaAbilityRequested(string abilityId)
@@ -1075,6 +1108,7 @@ public partial class BattleSceneController : Node2D
 	private void OnArakawaCancelRequested()
 	{
 		_isArakawaWheelOpen = false;
+		GameAudio.Instance?.PlayUiCancel();
 		CancelArakawaAbilityMode();
 	}
 
@@ -1281,6 +1315,7 @@ public partial class BattleSceneController : Node2D
 		}
 
 		_hud?.PlayCardUseEffect(cardInstance);
+		GameAudio.Instance?.PlayCardUse();
 		_pieceViewManager.PlayAction(attackerId);
 
 		if (!TryResolveSpecialCardEffect(attackerId, cardInstance, targetObject, targetCell, out failureReason))
@@ -1626,6 +1661,28 @@ public partial class BattleSceneController : Node2D
 	private void OnActiveEnemyTurnChanged(string enemyObjectId)
 	{
 		_pieceViewManager?.SetActiveTurnObject(enemyObjectId);
+		if (string.IsNullOrWhiteSpace(enemyObjectId) || Registry == null || StateManager == null || TurnState == null)
+		{
+			return;
+		}
+
+		if (!Registry.TryGet(enemyObjectId, out BoardObject? enemyObject) || enemyObject == null)
+		{
+			return;
+		}
+
+		if (enemyObject.DefinitionId == "pirate_brute_elite"
+			&& StateManager.Get(enemyObjectId) is BattleObjectState bruteState
+			&& bruteState.MaxHp > 0
+			&& bruteState.CurrentHp * 2 <= bruteState.MaxHp)
+		{
+			ActivateEnemySignatureLearnState(enemyObjectId, TurnState.TurnIndex + 1);
+		}
+
+		if (enemyObject.DefinitionId == "scrap_medic_elite" && HasSupportHealerTarget(enemyObjectId))
+		{
+			ActivateEnemySignatureLearnState(enemyObjectId, TurnState.TurnIndex + 1);
+		}
 	}
 
 	private EnemyLearnRewardProfile? ResolveEnemyLearnRewardProfile(string definitionId)
@@ -1779,6 +1836,7 @@ public partial class BattleSceneController : Node2D
 		}
 
 		_battleFailureSequenceStarted = true;
+		GameAudio.Instance?.StopMusic(0.18f);
 		BattleObjectState? playerState = StateManager?.GetPrimaryPlayerState();
 		if (playerState != null)
 		{
@@ -2157,6 +2215,7 @@ public partial class BattleSceneController : Node2D
 		if (GD.Load<PackedScene>(BattleReturnTransitionOverlayScenePath) is PackedScene overlayScene
 			&& overlayScene.Instantiate() is CardChessDemo.Map.BattleReturnTransitionOverlay overlay)
 		{
+			GameAudio.Instance?.StopMusic(0.20f);
 			GetTree().Root.AddChild(overlay);
 			await overlay.PlayAsync();
 			overlay.QueueFree();
@@ -2992,6 +3051,56 @@ public partial class BattleSceneController : Node2D
 			return TryApplyLearningCard(attackerId, targetObject, out failureReason);
 		}
 
+		if (cardInstance.Definition.CardId == RollCardId)
+		{
+			return TryApplyRollCard(attackerId, targetCell, out failureReason);
+		}
+
+		if (cardInstance.Definition.CardId == AlertGuardCardId)
+		{
+			return TryApplyAlertGuardCard(attackerId, out failureReason);
+		}
+
+		if (cardInstance.Definition.CardId == PlunderCardId)
+		{
+			return TryApplyPlunderCard(attackerId, targetObject, out failureReason);
+		}
+
+		if (cardInstance.Definition.CardId == StructuralBoostCardId)
+		{
+			return TryApplyStructuralBoostCard(attackerId, out failureReason);
+		}
+
+		if (cardInstance.Definition.CardId == TacticalShiftCardId)
+		{
+			return TryApplyTacticalShiftCard(attackerId, targetCell, out failureReason);
+		}
+
+		if (cardInstance.Definition.CardId == OptimizeCardId)
+		{
+			return TryApplyOptimizeCard(attackerId, out failureReason);
+		}
+
+		if (cardInstance.Definition.CardId == ContemplateCardId)
+		{
+			return TryApplyContemplateCard(attackerId, out failureReason);
+		}
+
+		if (cardInstance.Definition.CardId == RepairCardId)
+		{
+			return TryApplyRepairCard(attackerId, out failureReason);
+		}
+
+		if (cardInstance.Definition.CardId == FieldPatchPlusCardId)
+		{
+			return TryApplyFieldPatchPlusCard(attackerId, targetObject, out failureReason);
+		}
+
+		if (cardInstance.Definition.CardId == MagneticHuntCardId)
+		{
+			return TryApplyMagneticHuntCard(attackerId, targetObject, out failureReason);
+		}
+
 		return true;
 	}
 
@@ -3022,6 +3131,368 @@ public partial class BattleSceneController : Node2D
 		_pendingLearnedCardIds.Add(learnedCardId);
 		AppendBattleActionLog($"{ResolveObjectDisplayName(attackerId)}->{ResolveObjectDisplayName(targetObject.ObjectId)} \u5B66\u4E60{(signatureAvailable ? "\u00B7\u7279\u6280" : "\u00B7\u57FA\u7840")}");
 		return true;
+	}
+
+	private bool TryApplyRollCard(string attackerId, Vector2I? targetCell, out string failureReason)
+	{
+		failureReason = string.Empty;
+		if (_actionService == null || targetCell == null)
+		{
+			failureReason = "Roll target cell is missing.";
+			return false;
+		}
+
+		if (!_actionService.TryMoveObject(attackerId, targetCell.Value, out failureReason, ignoreTerrainEffects: true))
+		{
+			return false;
+		}
+
+		AppendBattleActionLog($"{ResolveObjectDisplayName(attackerId)}->({targetCell.Value.X},{targetCell.Value.Y}) 翻滚");
+		return true;
+	}
+
+	private bool TryApplyAlertGuardCard(string attackerId, out string failureReason)
+	{
+		failureReason = string.Empty;
+		if (_actionService == null || Registry == null || !Registry.TryGet(attackerId, out BoardObject? attackerObject) || attackerObject == null)
+		{
+			failureReason = "Alert guard systems are not initialized.";
+			return false;
+		}
+
+		int enemyCount = Registry.AllObjects
+			.Count(boardObject => boardObject.ObjectType == BoardObjectType.Unit
+				&& boardObject.Faction == BoardObjectFaction.Enemy
+				&& Mathf.Abs(boardObject.Cell.X - attackerObject.Cell.X) + Mathf.Abs(boardObject.Cell.Y - attackerObject.Cell.Y) <= 2);
+		int shieldAmount = 2 + enemyCount * 2;
+		DamageApplicationResult result = _actionService.ApplyShieldGainToTarget(attackerId, shieldAmount, out string shieldFailureReason);
+		if (!string.IsNullOrWhiteSpace(shieldFailureReason))
+		{
+			failureReason = shieldFailureReason;
+			return false;
+		}
+
+		int appliedShield = SumImpactAmount(result, CombatImpactType.ShieldGain);
+		if (appliedShield > 0)
+		{
+			AppendBattleActionLog($"{ResolveObjectDisplayName(attackerId)}->{ResolveObjectDisplayName(attackerId)} 警惕+{appliedShield}");
+		}
+
+		return true;
+	}
+
+	private bool TryApplyPlunderCard(string attackerId, BoardObject? targetObject, out string failureReason)
+	{
+		failureReason = string.Empty;
+		if (_actionService == null || targetObject == null)
+		{
+			failureReason = "Plunder target is missing.";
+			return false;
+		}
+
+		Vector2 knockbackDirection = ResolveDirectionVector(attackerId, targetObject.ObjectId);
+		DamageApplicationResult result = _actionService.ApplyDamageToTarget(
+			targetObject.ObjectId,
+			5,
+			knockbackDirection,
+			out bool wasDestroyed,
+			out string damageFailureReason,
+			allowKillKnockback: true);
+		if (!string.IsNullOrWhiteSpace(damageFailureReason))
+		{
+			failureReason = damageFailureReason;
+			return false;
+		}
+
+		int damageAmount = SumImpactAmount(result, CombatImpactType.HealthDamage, CombatImpactType.ShieldDamage);
+		if (damageAmount > 0)
+		{
+			AppendBattleActionLog($"{ResolveObjectDisplayName(attackerId)}->{ResolveObjectDisplayName(targetObject.ObjectId)} 掠夺{damageAmount}");
+		}
+
+		if (!wasDestroyed || _playerDeck == null)
+		{
+			return true;
+		}
+
+		_playerDeck.DrawCards(1);
+		_playerDeck.GainEnergy(1);
+		AppendBattleActionLog($"{ResolveObjectDisplayName(attackerId)}->{ResolveObjectDisplayName(attackerId)} 击杀掠夺");
+		return true;
+	}
+
+	private bool TryApplyStructuralBoostCard(string attackerId, out string failureReason)
+	{
+		failureReason = string.Empty;
+		if (StateManager == null)
+		{
+			failureReason = "Structural boost systems are not initialized.";
+			return false;
+		}
+
+		StateManager.AddPlayerAttackDamageBonus(1);
+		AppendBattleActionLog($"{ResolveObjectDisplayName(attackerId)}->结构性补强");
+		return true;
+	}
+
+	private bool TryApplyTacticalShiftCard(string attackerId, Vector2I? targetCell, out string failureReason)
+	{
+		failureReason = string.Empty;
+		if (_actionService == null || Registry == null || targetCell == null)
+		{
+			failureReason = "Tactical shift target cell is missing.";
+			return false;
+		}
+
+		if (!_actionService.TryMoveObject(attackerId, targetCell.Value, out failureReason))
+		{
+			return false;
+		}
+
+		AppendBattleActionLog($"{ResolveObjectDisplayName(attackerId)}->({targetCell.Value.X},{targetCell.Value.Y}) 战略转移");
+		int adjacentObstacleCount = CountAdjacentObstacles(targetCell.Value);
+		if (adjacentObstacleCount <= 0)
+		{
+			return true;
+		}
+
+		DamageApplicationResult shieldResult = _actionService.ApplyShieldGainToTarget(attackerId, 3, out string shieldFailureReason);
+		if (!string.IsNullOrWhiteSpace(shieldFailureReason))
+		{
+			failureReason = shieldFailureReason;
+			return false;
+		}
+
+		int shieldAmount = SumImpactAmount(shieldResult, CombatImpactType.ShieldGain);
+		if (shieldAmount > 0)
+		{
+			AppendBattleActionLog($"{ResolveObjectDisplayName(attackerId)}->{ResolveObjectDisplayName(attackerId)} 护盾+{shieldAmount}");
+		}
+
+		return true;
+	}
+
+	private bool TryApplyOptimizeCard(string attackerId, out string failureReason)
+	{
+		failureReason = string.Empty;
+		if (_playerDeck == null || TurnState == null)
+		{
+			failureReason = "Optimize systems are not initialized.";
+			return false;
+		}
+
+		_playerDeck.ModifyEnergyRegenInterval(-1);
+		TurnState.ConfigureEnergyRechargeInterval(_playerDeck.EnergyRegenIntervalTurns);
+		AppendBattleActionLog($"{ResolveObjectDisplayName(attackerId)}->最优化");
+		return true;
+	}
+
+	private bool TryApplyContemplateCard(string attackerId, out string failureReason)
+	{
+		failureReason = string.Empty;
+		if (TurnState == null || StateManager?.GetPrimaryPlayerState() is not BattleObjectState playerState)
+		{
+			failureReason = "Contemplate systems are not initialized.";
+			return false;
+		}
+
+		_pendingDelayedCardEffects.Add(new PendingDelayedCardEffect
+		{
+			Kind = PendingDelayedCardEffectKind.ContemplateEnergy,
+			SourceObjectId = attackerId,
+			TriggerTurnIndex = TurnState.TurnIndex + 1,
+			Energy = 3,
+			RequiredHp = playerState.CurrentHp,
+		});
+		AppendBattleActionLog($"{ResolveObjectDisplayName(attackerId)}->沉思待发");
+		return true;
+	}
+
+	private bool TryApplyRepairCard(string attackerId, out string failureReason)
+	{
+		failureReason = string.Empty;
+		if (_actionService == null || Registry == null || !Registry.TryGet(attackerId, out BoardObject? attackerObject) || attackerObject == null)
+		{
+			failureReason = "Repair systems are not initialized.";
+			return false;
+		}
+
+		BoardObject[] targets = Registry.AllObjects
+			.Where(boardObject => boardObject.ObjectType == BoardObjectType.Obstacle)
+			.Where(boardObject => boardObject.Faction == BoardObjectFaction.World || boardObject.Faction == BoardObjectFaction.Player)
+			.Where(boardObject => GetManhattanDistance(attackerObject.Cell, boardObject.Cell) <= 2)
+			.ToArray();
+		if (targets.Length == 0)
+		{
+			failureReason = "No friendly obstacle is in repair range.";
+			return false;
+		}
+
+		bool applied = false;
+		foreach (BoardObject obstacle in targets)
+		{
+			DamageApplicationResult result = _actionService.ApplyHealingToTarget(obstacle.ObjectId, 3, out string healFailureReason);
+			if (!string.IsNullOrWhiteSpace(healFailureReason))
+			{
+				continue;
+			}
+
+			int healAmount = SumImpactAmount(result, CombatImpactType.HealthHeal);
+			if (healAmount > 0)
+			{
+				applied = true;
+				AppendBattleActionLog($"{ResolveObjectDisplayName(attackerId)}->{ResolveObjectDisplayName(obstacle.ObjectId)} 修复{healAmount}");
+			}
+		}
+
+		if (!applied)
+		{
+			failureReason = "No obstacle needed repair.";
+		}
+
+		return applied;
+	}
+
+	private bool TryApplyFieldPatchPlusCard(string attackerId, BoardObject? targetObject, out string failureReason)
+	{
+		failureReason = string.Empty;
+		if (_actionService == null || targetObject == null)
+		{
+			failureReason = "Emergency repair target is missing.";
+			return false;
+		}
+
+		DamageApplicationResult healingResult = _actionService.ApplyHealingToTarget(targetObject.ObjectId, 3, out string healFailureReason);
+		if (!string.IsNullOrWhiteSpace(healFailureReason))
+		{
+			failureReason = healFailureReason;
+			return false;
+		}
+
+		DamageApplicationResult shieldResult = _actionService.ApplyShieldGainToTarget(targetObject.ObjectId, 2, out string shieldFailureReason);
+		if (!string.IsNullOrWhiteSpace(shieldFailureReason))
+		{
+			failureReason = shieldFailureReason;
+			return false;
+		}
+
+		int healAmount = SumImpactAmount(healingResult, CombatImpactType.HealthHeal);
+		int shieldAmount = SumImpactAmount(shieldResult, CombatImpactType.ShieldGain);
+		List<string> segments = new();
+		if (healAmount > 0)
+		{
+			segments.Add($"治疗{healAmount}");
+		}
+
+		if (shieldAmount > 0)
+		{
+			segments.Add($"护盾+{shieldAmount}");
+		}
+
+		if (segments.Count > 0)
+		{
+			AppendBattleActionLog($"{ResolveObjectDisplayName(attackerId)}->{ResolveObjectDisplayName(targetObject.ObjectId)} {string.Join("/", segments)}");
+		}
+
+		return segments.Count > 0;
+	}
+
+	private bool TryApplyMagneticHuntCard(string attackerId, BoardObject? targetObject, out string failureReason)
+	{
+		failureReason = string.Empty;
+		if (_actionService == null || targetObject == null || Registry == null || QueryService == null || CurrentRoom == null)
+		{
+			failureReason = "Magnetic hunt systems are not initialized.";
+			return false;
+		}
+
+		Vector2I direction = ResolveDirectionCell(attackerId, targetObject.ObjectId);
+		DamageApplicationResult result = _actionService.ApplyDamageToTarget(
+			targetObject.ObjectId,
+			4,
+			new Vector2(direction.X, direction.Y),
+			out _,
+			out string damageFailureReason,
+			allowKillKnockback: false);
+		if (!string.IsNullOrWhiteSpace(damageFailureReason))
+		{
+			failureReason = damageFailureReason;
+			return false;
+		}
+
+		int damageAmount = SumImpactAmount(result, CombatImpactType.HealthDamage, CombatImpactType.ShieldDamage);
+		if (damageAmount > 0)
+		{
+			AppendBattleActionLog($"{ResolveObjectDisplayName(attackerId)}->{ResolveObjectDisplayName(targetObject.ObjectId)} 磁索捕猎{damageAmount}");
+		}
+
+		if (targetObject.IsDestroyed || !Registry.TryGet(attackerId, out BoardObject? attackerObject) || attackerObject == null)
+		{
+			return true;
+		}
+
+		Vector2I pullDirection = new(
+			Math.Sign(attackerObject.Cell.X - targetObject.Cell.X),
+			Math.Sign(attackerObject.Cell.Y - targetObject.Cell.Y));
+		if (!CurrentRoom.Topology.TryNormalizeCardinalDirection(pullDirection, out Vector2I normalizedPullDirection))
+		{
+			return true;
+		}
+
+		Vector2I originalCell = targetObject.Cell;
+		Vector2I currentCell = targetObject.Cell;
+		for (int step = 0; step < 2; step++)
+		{
+			Vector2I nextCell = currentCell + normalizedPullDirection;
+			if (!CurrentRoom.Topology.IsInsideBoard(nextCell))
+			{
+				break;
+			}
+
+			if (!QueryService.TryMoveObject(targetObject.ObjectId, nextCell, out _))
+			{
+				break;
+			}
+
+			currentCell = nextCell;
+		}
+
+		if (currentCell != originalCell)
+		{
+			StateManager?.SyncAllFromRegistry();
+			_pieceViewManager?.Sync(Registry, StateManager!, CurrentRoom);
+			_pieceViewManager?.PlayMove(targetObject.ObjectId);
+		}
+
+		return true;
+	}
+
+	private int CountAdjacentObstacles(Vector2I cell)
+	{
+		if (Registry == null)
+		{
+			return 0;
+		}
+
+		return BoardTopology.CardinalDirections
+			.Select(direction => cell + direction)
+			.Count(neighbor => Registry.AllObjects.Any(boardObject =>
+				boardObject.Cell == neighbor && boardObject.ObjectType == BoardObjectType.Obstacle));
+	}
+
+	private bool HasSupportHealerTarget(string enemyObjectId)
+	{
+		if (Registry == null || StateManager == null || !Registry.TryGet(enemyObjectId, out BoardObject? healerObject) || healerObject == null)
+		{
+			return false;
+		}
+
+		return Registry.AllObjects
+			.Where(boardObject => boardObject.ObjectId != enemyObjectId)
+			.Where(boardObject => boardObject.Faction == healerObject.Faction)
+			.Where(boardObject => boardObject.ObjectType == BoardObjectType.Unit || boardObject.ObjectType == BoardObjectType.Obstacle)
+			.Select(boardObject => StateManager.Get(boardObject.ObjectId))
+			.Any(state => state != null && (state.CurrentHp < state.MaxHp || state.CurrentShield < state.MaxShield));
 	}
 
 	private bool TryApplyStanceCard(string attackerId, out string failureReason)
@@ -3508,6 +3979,10 @@ public partial class BattleSceneController : Node2D
 				case PendingDelayedCardEffectKind.AlertStrike:
 					ResolveAlertStrike(effect);
 					break;
+
+				case PendingDelayedCardEffectKind.ContemplateEnergy:
+					ResolveContemplateEnergy(effect);
+					break;
 			}
 
 			_pendingDelayedCardEffects.RemoveAt(index);
@@ -3546,6 +4021,22 @@ public partial class BattleSceneController : Node2D
 				AppendBattleActionLog($"{ResolveObjectDisplayName(effect.SourceObjectId)}->{ResolveObjectDisplayName(enemy.ObjectId)} \u6212\u5907{damageAmount}");
 			}
 		}
+	}
+
+	private void ResolveContemplateEnergy(PendingDelayedCardEffect effect)
+	{
+		if (_playerDeck == null || StateManager?.GetPrimaryPlayerState() is not BattleObjectState playerState)
+		{
+			return;
+		}
+
+		if (playerState.CurrentHp < effect.RequiredHp)
+		{
+			return;
+		}
+
+		_playerDeck.GainEnergy(effect.Energy);
+		AppendBattleActionLog($"{ResolveObjectDisplayName(effect.SourceObjectId)}->{ResolveObjectDisplayName(effect.SourceObjectId)} 沉思回能{effect.Energy}");
 	}
 
 	private BoardObject? FindLowestHpEnemyInRange(string attackerId, int range)

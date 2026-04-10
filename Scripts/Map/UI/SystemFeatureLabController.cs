@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using Godot;
+using CardChessDemo.Audio;
 using CardChessDemo.Battle.Boundary;
 using CardChessDemo.Battle.Cards;
 using CardChessDemo.Battle.Equipment;
@@ -9,6 +10,8 @@ using CardChessDemo.Battle.Shared;
 using RuntimeEquipmentDefinition = CardChessDemo.Battle.Equipment.EquipmentDefinition;
 
 namespace CardChessDemo.Map;
+
+#pragma warning disable CS0162
 
 public partial class SystemFeatureLabController : CanvasLayer
 {
@@ -648,6 +651,11 @@ public partial class SystemFeatureLabController : CanvasLayer
 
 	private void OnTabsTabChanged(long tabIndex)
 	{
+		if (_panelRoot != null && _panelRoot.Visible)
+		{
+			GameAudio.Instance?.PlayUiConfirm();
+		}
+
 		if (tabIndex == TalentTabIndex && _panelRoot != null && _panelRoot.Visible)
 		{
 			ScheduleTalentViewReset();
@@ -2056,6 +2064,7 @@ public partial class SystemFeatureLabController : CanvasLayer
 
 	private void OnTalentPressed(string talentId)
 	{
+		GameAudio.Instance?.PlayUiConfirm();
 		_selectedTalentId = talentId;
 		RefreshTalentButtons();
 		RefreshTalentDetail();
@@ -2091,6 +2100,7 @@ public partial class SystemFeatureLabController : CanvasLayer
 
 	private void OnCardCodexSelected(long index)
 	{
+		GameAudio.Instance?.PlayUiConfirm();
 		{
 		if (_session == null || index < 0 || index >= _codexTemplates.Length)
 		{
@@ -2145,6 +2155,7 @@ public partial class SystemFeatureLabController : CanvasLayer
 
 	private void OnEnemyCodexSelected(long index)
 	{
+		GameAudio.Instance?.PlayUiConfirm();
 		{
 		if (_session == null || index < 0 || index >= _enemyCodexEntries.Length)
 		{
@@ -2310,6 +2321,7 @@ public partial class SystemFeatureLabController : CanvasLayer
 			return;
 		}
 
+		GameAudio.Instance?.PlayUiConfirm();
 		_selectedEquipmentSlotId = EquipmentSlotOrder[index];
 		RefreshEquipmentSection();
 	}
@@ -2321,6 +2333,7 @@ public partial class SystemFeatureLabController : CanvasLayer
 			return;
 		}
 
+		GameAudio.Instance?.PlayUiConfirm();
 		RefreshEquipmentDetail(_visibleEquipmentCandidates[index]);
 	}
 
@@ -2366,6 +2379,7 @@ public partial class SystemFeatureLabController : CanvasLayer
 			return;
 		}
 
+		GameAudio.Instance?.PlayUiConfirm();
 		_deckDetailText.Text = BuildDeckDetailText(_availableTemplates[index]);
 	}
 
@@ -2376,6 +2390,7 @@ public partial class SystemFeatureLabController : CanvasLayer
 			return;
 		}
 
+		GameAudio.Instance?.PlayUiConfirm();
 		BattleCardTemplate? template = _cardLibrary.FindTemplate(_workingDeck[(int)index]);
 		_deckDetailText.Text = template != null ? BuildDeckDetailText(template) : _workingDeck[(int)index];
 	}
@@ -2843,3 +2858,5 @@ public partial class SystemFeatureLabController : CanvasLayer
 		public string BonusSummary { get; }
 	}
 }
+
+#pragma warning restore CS0162

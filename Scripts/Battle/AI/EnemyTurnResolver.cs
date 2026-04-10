@@ -115,6 +115,14 @@ public sealed class EnemyTurnResolver
                     await _actionService.TrySpawnBoardObjectAsync(decision.SpawnDefinition);
                 }
                 break;
+
+            case EnemyAiDecisionType.Support:
+                await _actionService.TrySupportTargetAsync(
+                    enemyId,
+                    decision.TargetObjectId,
+                    decision.HealingAmount,
+                    decision.ShieldAmount);
+                break;
         }
     }
 

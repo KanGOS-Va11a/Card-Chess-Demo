@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
@@ -10,6 +10,7 @@ using CardChessDemo.Battle.Rooms;
 using CardChessDemo.Battle.Shared;
 using CardChessDemo.Battle.State;
 using CardChessDemo.Battle.Visual;
+using CardChessDemo.Audio;
 
 namespace CardChessDemo.Battle.Actions;
 
@@ -75,7 +76,7 @@ public sealed class BattleActionService
 
     public double LastImpactPresentationDurationSeconds => _lastImpactPresentationDurationSeconds;
 
-    public bool TryMoveObject(string objectId, Vector2I targetCell, out string failureReason)
+    public bool TryMoveObject(string objectId, Vector2I targetCell, out string failureReason, bool ignoreTerrainEffects = false)
     {
         failureReason = string.Empty;
         Vector2I previousCell = Vector2I.Zero;
@@ -90,18 +91,18 @@ public sealed class BattleActionService
             return false;
         }
 
-        if (_registry.TryGet(objectId, out BoardObject? movedObject) && movedObject != null)
+        if (!ignoreTerrainEffects && _registry.TryGet(objectId, out BoardObject? movedObject) && movedObject != null)
         {
             ApplyTerrainEffectsForMovement(movedObject, previousCell, targetCell);
         }
 
         SyncPresentation();
         _pieceViewManager.PlayMove(objectId);
-        PublishActionLog($"{ResolveObjectDisplayName(objectId)}->({targetCell.X},{targetCell.Y}) 绉诲姩");
+        PublishActionLog($"{ResolveObjectDisplayName(objectId)}->({targetCell.X},{targetCell.Y}) \u79FB\u52A8");
         return true;
     }
 
-    public async Task<bool> TryMoveObjectAsync(string objectId, Vector2I targetCell)
+    public async Task<bool> TryMoveObjectAsync(string objectId, Vector2I targetCell, bool ignoreTerrainEffects = false)
     {
         if (!_registry.TryGet(objectId, out BoardObject? movingObject) || movingObject == null)
         {
@@ -124,13 +125,68 @@ public sealed class BattleActionService
             await WaitSeconds(MovePresentationDurationSeconds);
         }
 
-        if (_registry.TryGet(objectId, out BoardObject? movedObject) && movedObject != null)
+        if (!ignoreTerrainEffects && _registry.TryGet(objectId, out BoardObject? movedObject) && movedObject != null)
         {
             ApplyTerrainEffectsForMovement(movedObject, previousCell, targetCell);
         }
 
-        PublishActionLog($"{ResolveObjectDisplayName(objectId)}->({targetCell.X},{targetCell.Y}) 绉诲姩");
+        PublishActionLog($"{ResolveObjectDisplayName(objectId)}->({targetCell.X},{targetCell.Y}) \u79FB\u52A8");
 
+        return true;
+    }
+
+    public async Task<bool> TrySupportTargetAsync(string sourceObjectId, string targetObjectId, int healingAmount, int shieldAmount)
+    {
+        if (!_registry.TryGet(sourceObjectId, out BoardObject? sourceObject) || sourceObject == null)
+        {
+            return false;
+        }
+
+        if (!_registry.TryGet(targetObjectId, out BoardObject? targetObject) || targetObject == null)
+        {
+            return false;
+        }
+
+        bool applied = false;
+        int healed = 0;
+        int shielded = 0;
+
+        if (healingAmount > 0)
+        {
+            DamageApplicationResult healingResult = ApplyHealingToTarget(targetObjectId, healingAmount, out _);
+            healed = healingResult.Impacts
+                .Where(impact => impact.ImpactType == CombatImpactType.HealthHeal)
+                .Sum(impact => impact.Amount);
+            applied |= healed > 0;
+        }
+
+        if (shieldAmount > 0)
+        {
+            DamageApplicationResult shieldResult = ApplyShieldGainToTarget(targetObjectId, shieldAmount, out _);
+            shielded = shieldResult.Impacts
+                .Where(impact => impact.ImpactType == CombatImpactType.ShieldGain)
+                .Sum(impact => impact.Amount);
+            applied |= shielded > 0;
+        }
+
+        if (!applied)
+        {
+            return false;
+        }
+
+        List<string> segments = new();
+        if (healed > 0)
+        {
+            segments.Add($"治疗{healed}");
+        }
+
+        if (shielded > 0)
+        {
+            segments.Add($"护盾+{shielded}");
+        }
+
+        PublishActionLog($"{ResolveObjectDisplayName(sourceObject.ObjectId)}->{ResolveObjectDisplayName(targetObject.ObjectId)} {string.Join("/", segments)}");
+        await WaitSeconds(Math.Max(UtilityPresentationDurationSeconds, GetEffectiveImpactPresentationDurationSeconds()));
         return true;
     }
 
@@ -165,9 +221,9 @@ public sealed class BattleActionService
 
         Vector2 attackDirection = new(target.Cell.X - attacker.Cell.X, target.Cell.Y - attacker.Cell.Y);
         PlayAttackPresentation(attacker, target, attackDirection);
-        DamageApplicationResult result = ApplyDamageToTarget(target, attackerState.AttackDamage, attackDirection, allowKillKnockback);
+        DamageApplicationResult result = ApplyDamageToTarget(target, attackerState.AttackDamage, attackDirection, allowKillKnockback, playTargetHitSound: false);
         wasDestroyed = target.IsDestroyed;
-        PublishActionLog($"{ResolveObjectDisplayName(attacker.ObjectId)}->{ResolveObjectDisplayName(target.ObjectId)} 鏀诲嚮{SumDamageImpactAmount(result)}");
+        PublishActionLog($"{ResolveObjectDisplayName(attacker.ObjectId)}->{ResolveObjectDisplayName(target.ObjectId)} \u653B\u51FB{SumDamageImpactAmount(result)}");
         SyncPresentation();
         return true;
     }
@@ -184,7 +240,7 @@ public sealed class BattleActionService
         return true;
     }
 
-    public DamageApplicationResult ApplyDamageToTarget(string targetId, int amount, Vector2? knockbackDirection, out bool wasDestroyed, out string failureReason, bool allowKillKnockback = false)
+    public DamageApplicationResult ApplyDamageToTarget(string targetId, int amount, Vector2? knockbackDirection, out bool wasDestroyed, out string failureReason, bool allowKillKnockback = false, bool playTargetHitSound = true)
     {
         failureReason = string.Empty;
         wasDestroyed = false;
@@ -195,7 +251,7 @@ public sealed class BattleActionService
             return new DamageApplicationResult();
         }
 
-        DamageApplicationResult result = ApplyDamageToTarget(target, amount, knockbackDirection ?? Vector2.Zero, allowKillKnockback);
+        DamageApplicationResult result = ApplyDamageToTarget(target, amount, knockbackDirection ?? Vector2.Zero, allowKillKnockback, playTargetHitSound);
         wasDestroyed = target.IsDestroyed;
         return result;
     }
@@ -517,17 +573,22 @@ public sealed class BattleActionService
         _pieceViewManager.Sync(_registry, _stateManager, _room);
     }
 
-    private DamageApplicationResult ApplyDamageToTarget(BoardObject target, int amount, Vector2 knockbackDirection, bool allowKillKnockback = false)
+    private DamageApplicationResult ApplyDamageToTarget(BoardObject target, int amount, Vector2 knockbackDirection, bool allowKillKnockback = false, bool playTargetHitSound = true)
     {
         bool isPlayerTarget = target.HasTag("player");
         DamageApplicationResult result = target.ApplyDamage(amount);
         _lastImpactPresentationDurationSeconds = CalculateImpactPresentationDurationSeconds(result);
+        int damageAmount = SumDamageImpactAmount(result);
 
         ShowImpacts(target, result);
 
         if (isPlayerTarget)
         {
             _session.SetPlayerCurrentHp(target.CurrentHp);
+            if (damageAmount > 0)
+            {
+                GameAudio.Instance?.TriggerDamageImpact();
+            }
         }
 
         if (target.IsDestroyed)
@@ -541,6 +602,7 @@ public sealed class BattleActionService
 
                 if (target.ObjectType == BoardObjectType.Unit)
                 {
+                    GameAudio.Instance?.PlayUnitDeath();
                     _ = _pieceViewManager.PlayKillSequenceAsync(
                         target.ObjectId,
                         allowKillKnockback ? knockbackDirection : Vector2.Zero,
@@ -554,6 +616,7 @@ public sealed class BattleActionService
                 }
                 else if (target.ObjectType == BoardObjectType.Obstacle)
                 {
+                    GameAudio.Instance?.PlayUnitDeath();
                     _ = _pieceViewManager.PlayObstacleBreakSequenceAsync(
                         target.ObjectId,
                         ObstacleBreakWhitenPresentationDurationSeconds,
@@ -568,6 +631,10 @@ public sealed class BattleActionService
         }
         else if (result.HasAnyImpact)
         {
+            if (playTargetHitSound && damageAmount > 0 && target.ObjectType == BoardObjectType.Unit && target.Faction == BoardObjectFaction.Enemy)
+            {
+                GameAudio.Instance?.PlayEnemyHit();
+            }
             _pieceViewManager.PlayHit(target.ObjectId);
         }
 
@@ -607,6 +674,7 @@ public sealed class BattleActionService
 
     private void PlayAttackPresentation(BoardObject attacker, BoardObject target, Vector2 direction)
     {
+        GameAudio.Instance?.PlayBasicAttack();
         _pieceViewManager.PlayAttackExchange(attacker.ObjectId, direction, target.ObjectId);
     }
 

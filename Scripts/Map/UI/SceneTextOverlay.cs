@@ -1,4 +1,5 @@
 using Godot;
+using CardChessDemo.Audio;
 
 namespace CardChessDemo.Map;
 
@@ -24,6 +25,7 @@ public static class SceneTextOverlay
 		{
 			panel.SetMeta(ActiveMetaKey, false);
 			panel.Visible = false;
+			GameAudio.Instance?.PlayUiCancel();
 		}
 	}
 
@@ -39,6 +41,7 @@ public static class SceneTextOverlay
 		label.Text = string.IsNullOrWhiteSpace(content) ? "..." : content.Trim();
 		panel.SetMeta(ActiveMetaKey, true);
 		panel.Visible = true;
+		GameAudio.Instance?.PlayDialoguePopup();
 		return true;
 	}
 

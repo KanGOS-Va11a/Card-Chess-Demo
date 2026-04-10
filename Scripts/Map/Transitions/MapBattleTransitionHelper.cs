@@ -1,6 +1,7 @@
 using Godot;
 using CardChessDemo.Battle.Boundary;
 using CardChessDemo.Battle.Shared;
+using CardChessDemo.Audio;
 using System.Threading.Tasks;
 
 namespace CardChessDemo.Map;
@@ -73,6 +74,7 @@ public static class MapBattleTransitionHelper
         }
 
         SceneTree tree = contextNode.GetTree();
+        GameAudio.Instance?.StopMusic(0.22f);
         MapBattleTransitionOverlay? overlay = await SpawnTransitionOverlayAsync(tree);
         if (overlay != null)
         {

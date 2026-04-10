@@ -1,6 +1,7 @@
 using Godot;
 using CardChessDemo.Battle.Boundary;
 using CardChessDemo.Battle.Shared;
+using CardChessDemo.Audio;
 
 namespace CardChessDemo.Map;
 
@@ -12,6 +13,7 @@ public partial class MapSceneController : Node2D
 
 	public override void _Ready()
 	{
+		GameAudio.Instance?.PlayMapMusic();
 		_globalSession = GetNodeOrNull<GlobalGameSession>("/root/GlobalGameSession");
 		if (_globalSession == null)
 		{

@@ -6,6 +6,7 @@ using Godot;
 using CardChessDemo.Battle.Cards;
 using CardChessDemo.Battle.State;
 using CardChessDemo.Battle.Turn;
+using CardChessDemo.Audio;
 
 namespace CardChessDemo.Battle.UI;
 
@@ -338,12 +339,11 @@ public partial class BattleHudController : CanvasLayer
 		{
 			return;
 		}
-
 		_turnLabel.Text = BuildTurnLabel();
 		_resourceLabel.Text = $"E{_currentEnergy}/{_maxEnergy} R{_energyRechargeProgress}/{_energyRechargeInterval}";
-		_arakawaEnergyLabel.Text = $"荒川 {_arakawaCurrentEnergy}/{_arakawaMaxEnergy}";
+		_arakawaEnergyLabel.Text = $"\u8352\u5DDD {_arakawaCurrentEnergy}/{_arakawaMaxEnergy}";
 		_arakawaButton.Disabled = !_canUseArakawa && !_isArakawaWheelOpen;
-		_arakawaButton.Text = string.IsNullOrWhiteSpace(_selectedArakawaAbilityId) ? "Ark" : "Ark*";
+		_arakawaButton.Text = string.Empty;
 		_arakawaWheel.Visible = _isArakawaWheelOpen;
 		_arakawaBuildButton.Disabled = !_canUseArakawa || _arakawaCurrentEnergy <= 0;
 		_arakawaEnhanceButton.Disabled = !_canUseArakawa || _arakawaCurrentEnergy <= 0;
@@ -351,25 +351,24 @@ public partial class BattleHudController : CanvasLayer
 		_actionLogPopup.Visible = _isActionLogOpen;
 		_actionLogDismissButton.Visible = _isActionLogOpen;
 		_actionLogButton.Text = string.Empty;
-		_actionLogButton.TooltipText = "战斗日志";
+		_actionLogButton.TooltipText = "\u6218\u6597\u65E5\u5FD7";
 		_pileButton.Text = string.Empty;
-		_pileButton.TooltipText = $"牌堆  抽:{_drawPileCards.Length} 弃:{_discardPileCards.Length} 消:{_exhaustPileCards.Length}";
+		_pileButton.TooltipText = $"\u724C\u5806  \u62BD:{_drawPileCards.Length} \u5F03:{_discardPileCards.Length} \u6D88:{_exhaustPileCards.Length}";
 		_attackButton.Visible = _turnState.CanEnterAttackTargeting || _turnState.IsAttackTargeting;
 		_attackButton.Text = string.Empty;
-		_attackButton.TooltipText = _turnState.IsAttackTargeting ? "取消攻击" : "攻击";
+		_attackButton.TooltipText = _turnState.IsAttackTargeting ? "\u53D6\u6D88\u653B\u51FB" : "\u653B\u51FB";
 		_attackButton.Disabled = !_turnState.CanEnterAttackTargeting && !_turnState.IsAttackTargeting;
 		_defendButton.Text = string.Empty;
-		_defendButton.TooltipText = "防御";
+		_defendButton.TooltipText = "\u9632\u5FA1";
 		_defendButton.Disabled = !_turnState.CanSelectCard;
 		_meditateButton.Text = string.Empty;
-		_meditateButton.TooltipText = "冥想";
+		_meditateButton.TooltipText = "\u51A5\u60F3";
 		_meditateButton.Disabled = !_turnState.CanSelectCard;
 		_retreatButton.Visible = _showRetreatButton;
 		_retreatButton.Text = string.Empty;
-		_retreatButton.TooltipText = "逃跑";
+		_retreatButton.TooltipText = "\u9003\u8DD1";
 		_retreatButton.Disabled = !_showRetreatButton || !_turnState.CanRetreat;
 		_endTurnButton.Disabled = !_turnState.IsPlayerTurn && !_turnState.IsAttackTargeting && !_turnState.IsCardTargeting;
-
 		UpdateSpriteButtonLayouts();
 		UpdateWindowCloseButtonLayouts();
 		RefreshPilePopup();
@@ -378,6 +377,7 @@ public partial class BattleHudController : CanvasLayer
 		RefreshHoveredCard();
 		RefreshActionLogPopup();
 	}
+
 
 	private void RefreshHoveredUnit()
 	{
@@ -432,33 +432,31 @@ public partial class BattleHudController : CanvasLayer
 		{
 			return;
 		}
-
 		List<string> lines = new();
-		lines.Add($"[b]本回合 T{_currentTurnActionLogTurnIndex}[/b]");
+		lines.Add($"[b]\u672C\u56DE\u5408 T{_currentTurnActionLogTurnIndex}[/b]");
 		if (_currentTurnActionLogEntries.Length > 0)
 		{
 			lines.AddRange(_currentTurnActionLogEntries);
 		}
 		else
 		{
-			lines.Add("暂无动作记录");
+			lines.Add("\u6682\u65E0\u52A8\u4F5C\u8BB0\u5F55");
 		}
-
 		lines.Add(string.Empty);
-		lines.Add($"[b]上一回合 T{_previousTurnActionLogTurnIndex}[/b]");
+		lines.Add($"[b]\u4E0A\u4E00\u56DE\u5408 T{_previousTurnActionLogTurnIndex}[/b]");
 		if (_previousTurnActionLogEntries.Length > 0)
 		{
 			lines.AddRange(_previousTurnActionLogEntries);
 		}
 		else
 		{
-			lines.Add("暂无动作记录");
+			lines.Add("\u6682\u65E0\u52A8\u4F5C\u8BB0\u5F55");
 		}
-
-		_actionLogTitle.Text = "战斗记录";
+		_actionLogTitle.Text = "\u6218\u6597\u8BB0\u5F55";
 		_actionLogBodyText.Text = string.Join('\n', lines);
 		_actionLogBodyText.ScrollToLine(Math.Max(0, _actionLogBodyText.GetLineCount() - 1));
 	}
+
 
 	private void RefreshPilePopup(bool forceRebuild = false)
 	{
@@ -466,7 +464,6 @@ public partial class BattleHudController : CanvasLayer
 		{
 			return;
 		}
-
 		string pileSignature = string.Join("|", _drawPileCards.Select(card => card.InstanceId))
 			+ "#"
 			+ string.Join("|", _discardPileCards.Select(card => card.InstanceId))
@@ -476,7 +473,6 @@ public partial class BattleHudController : CanvasLayer
 		{
 			return;
 		}
-
 		foreach (BattleCardView cardView in _pileCardViews)
 		{
 			if (IsInstanceValid(cardView))
@@ -484,18 +480,17 @@ public partial class BattleHudController : CanvasLayer
 				cardView.QueueFree();
 			}
 		}
-
 		_pileCardViews.Clear();
 		PopulatePileTab(_drawPileGrid, _drawPileScroll, _drawPileEmptyLabel, _drawPileCards, reverseOrder: true);
 		PopulatePileTab(_discardPileGrid, _discardPileScroll, _discardPileEmptyLabel, _discardPileCards, reverseOrder: true);
 		PopulatePileTab(_exhaustPileGrid, _exhaustPileScroll, _exhaustPileEmptyLabel, _exhaustPileCards, reverseOrder: true);
-
-		_pilePopupTitle.Text = "牌堆查看";
-		_pileTabs.SetTabTitle(0, $"抽牌堆 {_drawPileCards.Length}");
-		_pileTabs.SetTabTitle(1, $"弃牌堆 {_discardPileCards.Length}");
-		_pileTabs.SetTabTitle(2, $"消耗堆 {_exhaustPileCards.Length}");
+		_pilePopupTitle.Text = "\u724C\u5806\u67E5\u770B";
+		_pileTabs.SetTabTitle(0, $"\u62BD\u724C\u5806 {_drawPileCards.Length}");
+		_pileTabs.SetTabTitle(1, $"\u5F03\u724C\u5806 {_discardPileCards.Length}");
+		_pileTabs.SetTabTitle(2, $"\u6D88\u8017\u5806 {_exhaustPileCards.Length}");
 		_lastPileSignature = pileSignature;
 	}
+
 
 	private void PositionFloatingPanel(Control panel, Vector2 screenPosition)
 	{
@@ -803,10 +798,10 @@ public partial class BattleHudController : CanvasLayer
 		_retreatButton = GetNodeOrNull<Button>("RightControls/RetreatButton");
 		_endTurnButton = GetNodeOrNull<Button>("RightControls/EndTurnButton");
 		_arakawaWheel = GetNodeOrNull<Control>("ArakawaWheel");
-		_arakawaBuildButton = GetNodeOrNull<Button>("ArakawaWheel/BuildButton");
-		_arakawaEnhanceButton = GetNodeOrNull<Button>("ArakawaWheel/EnhanceButton");
-		_arakawaWeaponButton = GetNodeOrNull<Button>("ArakawaWheel/WeaponButton");
-		_arakawaCancelButton = GetNodeOrNull<Button>("ArakawaWheel/CancelButton");
+		_arakawaBuildButton = GetNodeOrNull<Button>("ArakawaWheel/WheelPanel/BuildButton");
+		_arakawaEnhanceButton = GetNodeOrNull<Button>("ArakawaWheel/WheelPanel/EnhanceButton");
+		_arakawaWeaponButton = GetNodeOrNull<Button>("ArakawaWheel/WheelPanel/WeaponButton");
+		_arakawaCancelButton = GetNodeOrNull<Button>("ArakawaWheel/WheelPanel/CancelButton");
 		_bottomHand = GetNodeOrNull<Control>("BottomHand");
 		_handArea = GetNodeOrNull<Control>("BottomHand/HandArea");
 		_cardFxRoot = GetNodeOrNull<Control>("CardFxRoot");
@@ -891,12 +886,20 @@ public partial class BattleHudController : CanvasLayer
 		ApplyBattleSpriteButton(_defendButton, "defend", "防御");
 		ApplyBattleSpriteButton(_retreatButton, "retreat", "逃跑");
 		ApplyBattleSpriteButton(_meditateButton, "meditate", "冥想");
-		ApplyCompactButtonStyle(_arakawaButton);
+		ApplyBattleSpriteButton(_arakawaButton, "arakawa", "荒川能力");
 		ApplyCompactButtonStyle(_arakawaBuildButton);
 		ApplyCompactButtonStyle(_arakawaEnhanceButton);
 		ApplyCompactButtonStyle(_arakawaWeaponButton);
 		ApplyCompactButtonStyle(_arakawaCancelButton);
-		ApplyCompactButtonStyle(_endTurnButton);
+		ApplyBattleSpriteButton(_endTurnButton, "end_turn", "结束回合");
+		_arakawaBuildButton.Text = "\u9020";
+		_arakawaEnhanceButton.Text = "\u5F3A";
+		_arakawaWeaponButton.Text = "\u6B66";
+		_arakawaCancelButton.Text = "X";
+		_arakawaBuildButton.TooltipText = "\u9020\u7269";
+		_arakawaEnhanceButton.TooltipText = "\u5F3A\u5316\u5361\u724C";
+		_arakawaWeaponButton.TooltipText = "\u5F3A\u5316\u6B66\u5668";
+		_arakawaCancelButton.TooltipText = "\u5173\u95ED";
 		ApplyWindowCloseButtonStyle(_actionLogCloseButton);
 		ApplyWindowCloseButtonStyle(_pilePopupCloseButton);
 		DisableButtonFocus(_actionLogDismissButton);
@@ -1182,6 +1185,8 @@ public partial class BattleHudController : CanvasLayer
 		LayoutSpriteButton(_defendButton);
 		LayoutSpriteButton(_retreatButton);
 		LayoutSpriteButton(_meditateButton);
+		LayoutSpriteButton(_arakawaButton);
+		LayoutSpriteButton(_endTurnButton);
 	}
 
 	private void UpdateWindowCloseButtonLayouts()
@@ -1271,6 +1276,8 @@ public partial class BattleHudController : CanvasLayer
 			"retreat" => "逃跑.png",
 			"log" => "日志.png",
 			"pile" => "牌堆.png",
+			"arakawa" => "arasaka_ability.png",
+			"end_turn" => "end_turn.png",
 			_ => null,
 		};
 
@@ -1412,6 +1419,7 @@ public partial class BattleHudController : CanvasLayer
 		_hoveredCard = card;
 		_hoveredCardInstanceId = card.InstanceId;
 		_hoveredCardScreenPosition = GetViewport().GetMousePosition();
+		GameAudio.Instance?.PlayCardSelect();
 		LayoutCardViews();
 		RefreshHoveredCard();
 	}
@@ -1432,36 +1440,42 @@ public partial class BattleHudController : CanvasLayer
 	private void OnAttackPressed()
 	{
 		CloseTransientPanels();
+		GameAudio.Instance?.PlayUiConfirm();
 		EmitSignal(SignalName.AttackRequested);
 	}
 
 	private void OnMeditatePressed()
 	{
 		CloseTransientPanels();
+		GameAudio.Instance?.PlayUiConfirm();
 		EmitSignal(SignalName.MeditateRequested);
 	}
 
 	private void OnDefendPressed()
 	{
 		CloseTransientPanels();
+		GameAudio.Instance?.PlayUiConfirm();
 		EmitSignal(SignalName.DefendRequested);
 	}
 
 	private void OnRetreatPressed()
 	{
 		CloseTransientPanels();
+		GameAudio.Instance?.PlayUiConfirm();
 		EmitSignal(SignalName.RetreatRequested);
 	}
 
 	private void OnEndTurnPressed()
 	{
 		CloseTransientPanels();
+		GameAudio.Instance?.PlayUiConfirm();
 		EmitSignal(SignalName.EndTurnRequested);
 	}
 
 	private void OnArakawaButtonPressed()
 	{
 		CloseTransientPanels();
+		GameAudio.Instance?.PlayUiConfirm();
 		EmitSignal(SignalName.ArakawaWheelRequested);
 	}
 
@@ -1469,30 +1483,36 @@ public partial class BattleHudController : CanvasLayer
 	{
 		if (_isActionLogOpen)
 		{
+			GameAudio.Instance?.PlayUiCancel();
 			CloseActionLogPopup();
 			return;
 		}
 
+		GameAudio.Instance?.PlayUiConfirm();
 		OpenActionLogPopup();
 	}
 
 	private void OnArakawaBuildPressed()
 	{
+		GameAudio.Instance?.PlayUiConfirm();
 		EmitSignal(SignalName.ArakawaAbilityRequested, "build_wall");
 	}
 
 	private void OnArakawaEnhancePressed()
 	{
+		GameAudio.Instance?.PlayUiConfirm();
 		EmitSignal(SignalName.ArakawaAbilityRequested, "enhance_card");
 	}
 
 	private void OnArakawaWeaponPressed()
 	{
+		GameAudio.Instance?.PlayUiConfirm();
 		EmitSignal(SignalName.ArakawaAbilityRequested, "enhance_weapon");
 	}
 
 	private void OnArakawaCancelPressed()
 	{
+		GameAudio.Instance?.PlayUiCancel();
 		EmitSignal(SignalName.ArakawaCancelRequested);
 	}
 
@@ -1500,10 +1520,12 @@ public partial class BattleHudController : CanvasLayer
 	{
 		if (_pilePopup.Visible)
 		{
+			GameAudio.Instance?.PlayUiCancel();
 			ClosePilePopup();
 			return;
 		}
 
+		GameAudio.Instance?.PlayUiConfirm();
 		OpenPilePopup();
 	}
 
@@ -1567,28 +1589,25 @@ public partial class BattleHudController : CanvasLayer
 	{
 		if (_turnState == null)
 		{
-			return "Turn ?";
+			return "T?";
 		}
-
 		string phaseLabel = _turnState.Phase switch
 		{
-			TurnPhase.PlayerMove => "Move",
-			TurnPhase.PlayerAction => "Act",
-			TurnPhase.TurnPost => "Post",
-			TurnPhase.EnemyTurn => "Enemy",
+			TurnPhase.PlayerMove => "\u79FB\u52A8",
+			TurnPhase.PlayerAction => "\u884C\u52A8",
+			TurnPhase.TurnPost => "\u7ED3\u7B97",
+			TurnPhase.EnemyTurn => "\u654C\u65B9",
 			_ => _turnState.Phase.ToString(),
 		};
-
 		if (_turnState.IsCardTargeting)
 		{
-			return $"T{_turnState.TurnIndex} {phaseLabel} Card";
+			return $"T{_turnState.TurnIndex} {phaseLabel} \u5361\u724C";
 		}
-
 		if (_turnState.IsAttackTargeting)
 		{
-			return $"T{_turnState.TurnIndex} {phaseLabel} Atk";
+			return $"T{_turnState.TurnIndex} {phaseLabel} \u653B\u51FB";
 		}
-
 		return $"T{_turnState.TurnIndex} {phaseLabel}";
 	}
+
 }
