@@ -42,29 +42,29 @@ public partial class BattleSceneController : Node2D
 	private const int DrawnRevolverBasicAttackCharges = 6;
 	private const string BattleBackgroundTexturePath = "res://Assets/Background/94180512_p2_master1200.jpg";
 	private const string BattleReturnTransitionOverlayScenePath = "res://Scene/Transitions/BattleReturnTransitionOverlay.tscn";
-	private static readonly ArakawaAbilityDefinition BuildWallAbility = new("build_wall", "閫犲", 1);
-	private static readonly ArakawaAbilityDefinition EnhanceCardAbility = new("enhance_card", "寮哄寲", 1);
-	private static readonly ArakawaAbilityDefinition EnhanceWeaponAbility = new("enhance_weapon", "Weapon", 1);
+	private static readonly ArakawaAbilityDefinition BuildWallAbility = new("build_wall", "\u9020\u7269", 1);
+	private static readonly ArakawaAbilityDefinition EnhanceCardAbility = new("enhance_card", "\u5F3A\u5316\u5361\u724C", 1);
+	private static readonly ArakawaAbilityDefinition EnhanceWeaponAbility = new("enhance_weapon", "\u5F3A\u5316\u6B66\u5668", 1);
 	private static readonly IReadOnlyDictionary<string, BattleCardEnhancementDefinition> PrototypeCardEnhancements =
 		new Dictionary<string, BattleCardEnhancementDefinition>(StringComparer.Ordinal)
 		{
-			["cross_slash"] = new BattleCardEnhancementDefinition("+", "浼ゅ+2", damageDelta: 2),
-			["quick_cut"] = new BattleCardEnhancementDefinition("+", "浼ゅ+1", damageDelta: 1),
-			["line_shot"] = new BattleCardEnhancementDefinition("+", "浼ゅ+2", damageDelta: 2),
-			["heavy_shot"] = new BattleCardEnhancementDefinition("+", "浼ゅ+2", damageDelta: 2),
-			["battle_read"] = new BattleCardEnhancementDefinition("+", "鎶界墝+1", drawCountDelta: 1),
-			["meditate"] = new BattleCardEnhancementDefinition("+", "鎶界墝+1", drawCountDelta: 1),
-			["surge"] = new BattleCardEnhancementDefinition("+", "鑳介噺+1", energyGainDelta: 1),
-			["draw_spark"] = new BattleCardEnhancementDefinition("+", "鎶界墝+1", drawCountDelta: 1),
-			["quick_plan"] = new BattleCardEnhancementDefinition("+", "鎶界墝+1", drawCountDelta: 1),
-			["burning_edge"] = new BattleCardEnhancementDefinition("+", "浼ゅ+2", damageDelta: 2),
-			["hook_shot"] = new BattleCardEnhancementDefinition("+", "浼ゅ+2", damageDelta: 2),
-			["deep_focus"] = new BattleCardEnhancementDefinition("+", "鎶界墝+1", drawCountDelta: 1),
-			["spark_charge"] = new BattleCardEnhancementDefinition("+", "鑳介噺+1", energyGainDelta: 1),
-			["burst_drive"] = new BattleCardEnhancementDefinition("+", "鑳介噺+1", energyGainDelta: 1),
-			["guard_up"] = new BattleCardEnhancementDefinition("+", "鎶ょ浘+2", shieldGainDelta: 2),
-			["brace"] = new BattleCardEnhancementDefinition("+", "鎶ょ浘+3", shieldGainDelta: 3),
-			["quick_guard"] = new BattleCardEnhancementDefinition("+", "鎶ょ浘+2", shieldGainDelta: 2),
+			["cross_slash"] = new BattleCardEnhancementDefinition("+", "婵犵數濮烽弫鍛婃叏閻戣棄鏋侀柛娑橈攻閸欏繘鏌ｉ幋锝嗩棄闁哄绶氶弻娑樷槈濮楀牊鏁鹃梺鍛婄懃缁绘﹢寮婚敐澶婄闁挎繂妫Λ鍕⒑閸濆嫷鍎庣紒鑸靛哺瀵鎮㈤崗灏栨嫽闁诲酣娼ф竟濠偽ｉ鍓х＜闁诡垎鍐ｆ寖缂備緡鍣崹鎶藉箲閵忕姭妲堥柕蹇曞Х椤撳搫鈹戦悙鍙夘棞缂佺粯甯″畷婵嬪箻椤旇В鎷洪柡澶屽仦婢瑰棝藝閿斿浜滈柟瀛樼箖椤ャ垹鈹戦敍鍕毈鐎规洜鍠栭、娑橆潩妲屾牕鏅梻鍌欑閹诧繝銆冮崼銉ョ；闁绘梻鍘х粈澶愭煙缂併垹鏋熼柍閿嬪灴瀵爼鎮欓弶鎴濡炪倧璁ｇ粻鎾诲箖濡も偓椤繈顢曢姀鐘点偖闁诲孩顔栭崰鏍€﹂悜钘夋瀬闁瑰墽绮崑鎰版煠绾板崬澧柍褜鍓涢崑銈咁潖濞差亝顥堟繛鎴ｉ哺鑲栭梻浣侯焾濮橈箑鈻嶉弴鐘电焿闁圭儤顨嗛崵鍐煃閸濆嫬鏆熼柨娑欑矒濮婅櫣绱掑Ο鍝勑曢梺鍛婃尰閻熲晛鐣峰┑瀣ч柛銉㈡櫇閿涙繈鎮楅獮鍨姎闁归攱鍨块悡顒勵敆閸屾浜炬繛鍫濈仢閺嬫稒銇勯鐘插幋鐎殿噮鍋婇獮妯肩磼濡桨姹楅梻浣藉亹閳峰牓宕滃▎鎾崇劦妞ゆ帒鍊告禒杈ㄦ叏婵犲啯銇濇俊顐㈠暙閳藉娼忛妸鎰╁€濆铏圭矙閸噮鍔夋繝鐢靛仜閿曘倝鎮惧畡鎵虫斀閻庯綆浜為鎺戭渻閵堝棙顥嗙悮娆撴煙?2", damageDelta: 2),
+			["quick_cut"] = new BattleCardEnhancementDefinition("+", "婵犵數濮烽弫鍛婃叏閻戣棄鏋侀柛娑橈攻閸欏繘鏌ｉ幋锝嗩棄闁哄绶氶弻娑樷槈濮楀牊鏁鹃梺鍛婄懃缁绘﹢寮婚敐澶婄闁挎繂妫Λ鍕⒑閸濆嫷鍎庣紒鑸靛哺瀵鎮㈤崗灏栨嫽闁诲酣娼ф竟濠偽ｉ鍓х＜闁诡垎鍐ｆ寖缂備緡鍣崹鎶藉箲閵忕姭妲堥柕蹇曞Х椤撳搫鈹戦悙鍙夘棞缂佺粯甯″畷婵嬪箻椤旇В鎷洪柡澶屽仦婢瑰棝藝閿斿浜滈柟瀛樼箖椤ャ垹鈹戦敍鍕毈鐎规洜鍠栭、娑橆潩妲屾牕鏅梻鍌欑閹诧繝銆冮崼銉ョ；闁绘梻鍘х粈澶愭煙缂併垹鏋熼柍閿嬪灴瀵爼鎮欓弶鎴濡炪倧璁ｇ粻鎾诲箖濡も偓椤繈顢曢姀鐘点偖闁诲孩顔栭崰鏍€﹂悜钘夋瀬闁瑰墽绮崑鎰版煠绾板崬澧柍褜鍓涢崑銈咁潖濞差亝顥堟繛鎴ｉ哺鑲栭梻浣侯焾濮橈箑鈻嶉弴鐘电焿闁圭儤顨嗛崵鍐煃閸濆嫬鏆熼柨娑欑矒濮婅櫣绱掑Ο鍝勑曢梺鍛婃尰閻熲晛鐣峰┑瀣ч柛銉㈡櫇閿涙繈鎮楅獮鍨姎闁归攱鍨块悡顒勵敆閸屾浜炬繛鍫濈仢閺嬫稒銇勯鐘插幋鐎殿噮鍋婇獮妯肩磼濡桨姹楅梻浣藉亹閳峰牓宕滃▎鎾崇劦妞ゆ帒鍊告禒杈ㄦ叏婵犲啯銇濇俊顐㈠暙閳藉娼忛妸鎰╁€濆铏圭矙閸噮鍔夋繝鐢靛仜閿曘倝鎮惧畡鎵虫斀閻庯綆浜為鎺戭渻閵堝棙顥嗙悮娆撴煙?1", damageDelta: 1),
+			["line_shot"] = new BattleCardEnhancementDefinition("+", "婵犵數濮烽弫鍛婃叏閻戣棄鏋侀柛娑橈攻閸欏繘鏌ｉ幋锝嗩棄闁哄绶氶弻娑樷槈濮楀牊鏁鹃梺鍛婄懃缁绘﹢寮婚敐澶婄闁挎繂妫Λ鍕⒑閸濆嫷鍎庣紒鑸靛哺瀵鎮㈤崗灏栨嫽闁诲酣娼ф竟濠偽ｉ鍓х＜闁诡垎鍐ｆ寖缂備緡鍣崹鎶藉箲閵忕姭妲堥柕蹇曞Х椤撳搫鈹戦悙鍙夘棞缂佺粯甯″畷婵嬪箻椤旇В鎷洪柡澶屽仦婢瑰棝藝閿斿浜滈柟瀛樼箖椤ャ垹鈹戦敍鍕毈鐎规洜鍠栭、娑橆潩妲屾牕鏅梻鍌欑閹诧繝銆冮崼銉ョ；闁绘梻鍘х粈澶愭煙缂併垹鏋熼柍閿嬪灴瀵爼鎮欓弶鎴濡炪倧璁ｇ粻鎾诲箖濡も偓椤繈顢曢姀鐘点偖闁诲孩顔栭崰鏍€﹂悜钘夋瀬闁瑰墽绮崑鎰版煠绾板崬澧柍褜鍓涢崑銈咁潖濞差亝顥堟繛鎴ｉ哺鑲栭梻浣侯焾濮橈箑鈻嶉弴鐘电焿闁圭儤顨嗛崵鍐煃閸濆嫬鏆熼柨娑欑矒濮婅櫣绱掑Ο鍝勑曢梺鍛婃尰閻熲晛鐣峰┑瀣ч柛銉㈡櫇閿涙繈鎮楅獮鍨姎闁归攱鍨块悡顒勵敆閸屾浜炬繛鍫濈仢閺嬫稒銇勯鐘插幋鐎殿噮鍋婇獮妯肩磼濡桨姹楅梻浣藉亹閳峰牓宕滃▎鎾崇劦妞ゆ帒鍊告禒杈ㄦ叏婵犲啯銇濇俊顐㈠暙閳藉娼忛妸鎰╁€濆铏圭矙閸噮鍔夋繝鐢靛仜閿曘倝鎮惧畡鎵虫斀閻庯綆浜為鎺戭渻閵堝棙顥嗙悮娆撴煙?2", damageDelta: 2),
+			["heavy_shot"] = new BattleCardEnhancementDefinition("+", "婵犵數濮烽弫鍛婃叏閻戣棄鏋侀柛娑橈攻閸欏繘鏌ｉ幋锝嗩棄闁哄绶氶弻娑樷槈濮楀牊鏁鹃梺鍛婄懃缁绘﹢寮婚敐澶婄闁挎繂妫Λ鍕⒑閸濆嫷鍎庣紒鑸靛哺瀵鎮㈤崗灏栨嫽闁诲酣娼ф竟濠偽ｉ鍓х＜闁诡垎鍐ｆ寖缂備緡鍣崹鎶藉箲閵忕姭妲堥柕蹇曞Х椤撳搫鈹戦悙鍙夘棞缂佺粯甯″畷婵嬪箻椤旇В鎷洪柡澶屽仦婢瑰棝藝閿斿浜滈柟瀛樼箖椤ャ垹鈹戦敍鍕毈鐎规洜鍠栭、娑橆潩妲屾牕鏅梻鍌欑閹诧繝銆冮崼銉ョ；闁绘梻鍘х粈澶愭煙缂併垹鏋熼柍閿嬪灴瀵爼鎮欓弶鎴濡炪倧璁ｇ粻鎾诲箖濡も偓椤繈顢曢姀鐘点偖闁诲孩顔栭崰鏍€﹂悜钘夋瀬闁瑰墽绮崑鎰版煠绾板崬澧柍褜鍓涢崑銈咁潖濞差亝顥堟繛鎴ｉ哺鑲栭梻浣侯焾濮橈箑鈻嶉弴鐘电焿闁圭儤顨嗛崵鍐煃閸濆嫬鏆熼柨娑欑矒濮婅櫣绱掑Ο鍝勑曢梺鍛婃尰閻熲晛鐣峰┑瀣ч柛銉㈡櫇閿涙繈鎮楅獮鍨姎闁归攱鍨块悡顒勵敆閸屾浜炬繛鍫濈仢閺嬫稒銇勯鐘插幋鐎殿噮鍋婇獮妯肩磼濡桨姹楅梻浣藉亹閳峰牓宕滃▎鎾崇劦妞ゆ帒鍊告禒杈ㄦ叏婵犲啯銇濇俊顐㈠暙閳藉娼忛妸鎰╁€濆铏圭矙閸噮鍔夋繝鐢靛仜閿曘倝鎮惧畡鎵虫斀閻庯綆浜為鎺戭渻閵堝棙顥嗙悮娆撴煙?2", damageDelta: 2),
+			["battle_read"] = new BattleCardEnhancementDefinition("+", "闂傚倸鍊搁崐鎼佸磹閹间礁纾归柟闂寸绾惧綊鏌熼梻瀵割槮缁炬儳缍婇弻鐔兼⒒鐎靛壊妲紒鐐劤缂嶅﹪寮婚悢鍏尖拻閻庨潧澹婂Σ顔剧磼閻愵剙鍔ょ紓宥咃躬瀵鏁愭径濠勵吅闂佹寧绻傞幉娑㈠箻缂佹鍘遍梺闈涚墕閹冲酣顢旈銏＄厸閻忕偛澧藉ú瀛樸亜閵忊剝绀嬮柡浣瑰姍瀹曞崬鈻庡Ο鎭嶆氨绱撻崒姘偓鐑芥嚄閼稿灚鍙忛梺鍨儑缁犻箖鏌嶈閸撶喖寮婚垾宕囨殕闁逞屽墴瀹曚即寮介鐘茬ウ闂佺硶鍓濋崙鐟拔ｆィ鍐┾拺闁革富鍘藉▍鏇炩攽椤旂偓鏆╅柟骞垮灩閳藉濮€閻樿尙鐛╂俊鐐€栭悧妤呭春閸愵喖鍑犻柛娑卞帣閺冨牊鍋愰梻鍫熺◥濞岊亪姊虹紒姗嗘畷婵炲弶绻嗛妵鎰媴閸撳弶瀵岄梺闈涚墕濡宕告繝鍥ㄧ厱閻庯綆鍋呯亸顓㈡煃鐟欏嫬鐏撮柛銊╃畺閹瑩鎸婃径澶婂灊闂傚倷绀侀幖顐︽儗婢跺瞼绀婂ù锝夆偓娑氱畾闂佸壊鍋呭ú鏍倷婵犲嫭鍠愰悘鐐插⒔閻濆爼鏌￠崶銉ョ仾闁抽攱鍨垮濠氬醇閻旇　濮囬梺鐟板悑閸旀瑩骞冨Δ鈧～婵嬵敃閵忕姷銈梻浣虹帛娓氭宕抽敐鍛殾闁割偅娲﹂弫鍡涙煃瑜滈崜娑氬垝閸儱閱囨繝銏＄箓缂嶅﹪寮幇鏉块唶婵犻潧鐗勯崑锝夋⒒娴ｇ儤鍤€闁宦板妿缂傛挻銈ｉ崘銊у摋?1", drawCountDelta: 1),
+			["meditate"] = new BattleCardEnhancementDefinition("+", "闂傚倸鍊搁崐鎼佸磹閹间礁纾归柟闂寸绾惧綊鏌熼梻瀵割槮缁炬儳缍婇弻鐔兼⒒鐎靛壊妲紒鐐劤缂嶅﹪寮婚悢鍏尖拻閻庨潧澹婂Σ顔剧磼閻愵剙鍔ょ紓宥咃躬瀵鏁愭径濠勵吅闂佹寧绻傞幉娑㈠箻缂佹鍘遍梺闈涚墕閹冲酣顢旈銏＄厸閻忕偛澧藉ú瀛樸亜閵忊剝绀嬮柡浣瑰姍瀹曞崬鈻庡Ο鎭嶆氨绱撻崒姘偓鐑芥嚄閼稿灚鍙忛梺鍨儑缁犻箖鏌嶈閸撶喖寮婚垾宕囨殕闁逞屽墴瀹曚即寮介鐘茬ウ闂佺硶鍓濋崙鐟拔ｆィ鍐┾拺闁革富鍘藉▍鏇炩攽椤旂偓鏆╅柟骞垮灩閳藉濮€閻樿尙鐛╂俊鐐€栭悧妤呭春閸愵喖鍑犻柛娑卞帣閺冨牊鍋愰梻鍫熺◥濞岊亪姊虹紒姗嗘畷婵炲弶绻嗛妵鎰媴閸撳弶瀵岄梺闈涚墕濡宕告繝鍥ㄧ厱閻庯綆鍋呯亸顓㈡煃鐟欏嫬鐏撮柛銊╃畺閹瑩鎸婃径澶婂灊闂傚倷绀侀幖顐︽儗婢跺瞼绀婂ù锝夆偓娑氱畾闂佸壊鍋呭ú鏍倷婵犲嫭鍠愰悘鐐插⒔閻濆爼鏌￠崶銉ョ仾闁抽攱鍨垮濠氬醇閻旇　濮囬梺鐟板悑閸旀瑩骞冨Δ鈧～婵嬵敃閵忕姷銈梻浣虹帛娓氭宕抽敐鍛殾闁割偅娲﹂弫鍡涙煃瑜滈崜娑氬垝閸儱閱囨繝銏＄箓缂嶅﹪寮幇鏉块唶婵犻潧鐗勯崑锝夋⒒娴ｇ儤鍤€闁宦板妿缂傛挻銈ｉ崘銊у摋?1", drawCountDelta: 1),
+			["surge"] = new BattleCardEnhancementDefinition("+", "闂傚倸鍊搁崐鎼佸磹閹间礁纾归柟闂寸绾惧綊鏌熼梻瀵割槮缁炬儳缍婇弻鐔兼⒒鐎靛壊妲紒鐐劤缂嶅﹪寮婚悢鍏尖拻閻庨潧澹婂Σ顔剧磼閻愵剙鍔ょ紓宥咃躬瀵鏁愭径濠勵吅闂佹寧绻傞幉娑㈠箻缂佹鍘遍梺闈涚墕閹冲酣顢旈銏＄厸閻忕偛澧藉ú瀛樸亜閵忊剝绀嬮柡浣瑰姍瀹曞崬鈻庡Ο鎭嶆岸姊婚崒娆掑厡妞ゎ厼鐗忛幃顕€顢曢敃鈧粈澶愬箹濞ｎ剙濡肩紒鐘靛枛閺岀喖姊荤€靛壊妲┑鈽嗗亝閿曘垽骞冭ぐ鎺戠畳闁圭儤鍨甸‖澶娾攽閻愯尙澧︾紒鐘崇墪椤繐煤椤忓拋妫冨┑鐐村灦濮樸劑鎮块崟顖涒拺缂佸灏呴弨缁樼箾閼碱剙鏋庨柣锝呭槻椤粓鍩€椤掑嫬鏄ラ柍褜鍓氶妵鍕箳閸℃ぞ澹曟俊鐐€ゆ禍婊堝疮鐎涙ü绻嗛柛顐ｆ礀楠炪垺淇婇妶鍌氫壕濡炪値鍋勫ú顓烆潖濞差亜绠归柣鎰絻椤牏绱撻崒姘毙㈤柨鏇ㄤ邯閻涱噣宕橀妸搴ｅ枛閹筹繝濡堕崶鈺傤潓闂傚倷鑳堕…鍫ュ嫉椤掑嫨鈧啴宕卞☉妯活棟闂侀€炲苯澧存慨濠勭帛閹峰懘鎼归悷鎵偧闂備礁鎲″鐟懊洪弽顓ф晪闁挎繂顦柋鍥煛閸ワ絽浜炬繝銏ｅ煐閸旀牠宕愰悜鑺ョ厽闁瑰鍎愰悞浠嬫煕濡吋鏆慨濠冩そ瀹曘劍绻濋崟銊︻潔闂備焦瀵уú蹇涘磿闂堟稓鏆﹂柟鐗堟緲缁犳稒銇勯幘璺烘瀻鐎?1", energyGainDelta: 1),
+			["draw_spark"] = new BattleCardEnhancementDefinition("+", "闂傚倸鍊搁崐鎼佸磹閹间礁纾归柟闂寸绾惧綊鏌熼梻瀵割槮缁炬儳缍婇弻鐔兼⒒鐎靛壊妲紒鐐劤缂嶅﹪寮婚悢鍏尖拻閻庨潧澹婂Σ顔剧磼閻愵剙鍔ょ紓宥咃躬瀵鏁愭径濠勵吅闂佹寧绻傞幉娑㈠箻缂佹鍘遍梺闈涚墕閹冲酣顢旈銏＄厸閻忕偛澧藉ú瀛樸亜閵忊剝绀嬮柡浣瑰姍瀹曞崬鈻庡Ο鎭嶆氨绱撻崒姘偓鐑芥嚄閼稿灚鍙忛梺鍨儑缁犻箖鏌嶈閸撶喖寮婚垾宕囨殕闁逞屽墴瀹曚即寮介鐘茬ウ闂佺硶鍓濋崙鐟拔ｆィ鍐┾拺闁革富鍘藉▍鏇炩攽椤旂偓鏆╅柟骞垮灩閳藉濮€閻樿尙鐛╂俊鐐€栭悧妤呭春閸愵喖鍑犻柛娑卞帣閺冨牊鍋愰梻鍫熺◥濞岊亪姊虹紒姗嗘畷婵炲弶绻嗛妵鎰媴閸撳弶瀵岄梺闈涚墕濡宕告繝鍥ㄧ厱閻庯綆鍋呯亸顓㈡煃鐟欏嫬鐏撮柛銊╃畺閹瑩鎸婃径澶婂灊闂傚倷绀侀幖顐︽儗婢跺瞼绀婂ù锝夆偓娑氱畾闂佸壊鍋呭ú鏍倷婵犲嫭鍠愰悘鐐插⒔閻濆爼鏌￠崶銉ョ仾闁抽攱鍨垮濠氬醇閻旇　濮囬梺鐟板悑閸旀瑩骞冨Δ鈧～婵嬵敃閵忕姷銈梻浣虹帛娓氭宕抽敐鍛殾闁割偅娲﹂弫鍡涙煃瑜滈崜娑氬垝閸儱閱囨繝銏＄箓缂嶅﹪寮幇鏉块唶婵犻潧鐗勯崑锝夋⒒娴ｇ儤鍤€闁宦板妿缂傛挻銈ｉ崘銊у摋?1", drawCountDelta: 1),
+			["quick_plan"] = new BattleCardEnhancementDefinition("+", "闂傚倸鍊搁崐鎼佸磹閹间礁纾归柟闂寸绾惧綊鏌熼梻瀵割槮缁炬儳缍婇弻鐔兼⒒鐎靛壊妲紒鐐劤缂嶅﹪寮婚悢鍏尖拻閻庨潧澹婂Σ顔剧磼閻愵剙鍔ょ紓宥咃躬瀵鏁愭径濠勵吅闂佹寧绻傞幉娑㈠箻缂佹鍘遍梺闈涚墕閹冲酣顢旈銏＄厸閻忕偛澧藉ú瀛樸亜閵忊剝绀嬮柡浣瑰姍瀹曞崬鈻庡Ο鎭嶆氨绱撻崒姘偓鐑芥嚄閼稿灚鍙忛梺鍨儑缁犻箖鏌嶈閸撶喖寮婚垾宕囨殕闁逞屽墴瀹曚即寮介鐘茬ウ闂佺硶鍓濋崙鐟拔ｆィ鍐┾拺闁革富鍘藉▍鏇炩攽椤旂偓鏆╅柟骞垮灩閳藉濮€閻樿尙鐛╂俊鐐€栭悧妤呭春閸愵喖鍑犻柛娑卞帣閺冨牊鍋愰梻鍫熺◥濞岊亪姊虹紒姗嗘畷婵炲弶绻嗛妵鎰媴閸撳弶瀵岄梺闈涚墕濡宕告繝鍥ㄧ厱閻庯綆鍋呯亸顓㈡煃鐟欏嫬鐏撮柛銊╃畺閹瑩鎸婃径澶婂灊闂傚倷绀侀幖顐︽儗婢跺瞼绀婂ù锝夆偓娑氱畾闂佸壊鍋呭ú鏍倷婵犲嫭鍠愰悘鐐插⒔閻濆爼鏌￠崶銉ョ仾闁抽攱鍨垮濠氬醇閻旇　濮囬梺鐟板悑閸旀瑩骞冨Δ鈧～婵嬵敃閵忕姷銈梻浣虹帛娓氭宕抽敐鍛殾闁割偅娲﹂弫鍡涙煃瑜滈崜娑氬垝閸儱閱囨繝銏＄箓缂嶅﹪寮幇鏉块唶婵犻潧鐗勯崑锝夋⒒娴ｇ儤鍤€闁宦板妿缂傛挻銈ｉ崘銊у摋?1", drawCountDelta: 1),
+			["burning_edge"] = new BattleCardEnhancementDefinition("+", "婵犵數濮烽弫鍛婃叏閻戣棄鏋侀柛娑橈攻閸欏繘鏌ｉ幋锝嗩棄闁哄绶氶弻娑樷槈濮楀牊鏁鹃梺鍛婄懃缁绘﹢寮婚敐澶婄闁挎繂妫Λ鍕⒑閸濆嫷鍎庣紒鑸靛哺瀵鎮㈤崗灏栨嫽闁诲酣娼ф竟濠偽ｉ鍓х＜闁诡垎鍐ｆ寖缂備緡鍣崹鎶藉箲閵忕姭妲堥柕蹇曞Х椤撳搫鈹戦悙鍙夘棞缂佺粯甯″畷婵嬪箻椤旇В鎷洪柡澶屽仦婢瑰棝藝閿斿浜滈柟瀛樼箖椤ャ垹鈹戦敍鍕毈鐎规洜鍠栭、娑橆潩妲屾牕鏅梻鍌欑閹诧繝銆冮崼銉ョ；闁绘梻鍘х粈澶愭煙缂併垹鏋熼柍閿嬪灴瀵爼鎮欓弶鎴濡炪倧璁ｇ粻鎾诲箖濡も偓椤繈顢曢姀鐘点偖闁诲孩顔栭崰鏍€﹂悜钘夋瀬闁瑰墽绮崑鎰版煠绾板崬澧柍褜鍓涢崑銈咁潖濞差亝顥堟繛鎴ｉ哺鑲栭梻浣侯焾濮橈箑鈻嶉弴鐘电焿闁圭儤顨嗛崵鍐煃閸濆嫬鏆熼柨娑欑矒濮婅櫣绱掑Ο鍝勑曢梺鍛婃尰閻熲晛鐣峰┑瀣ч柛銉㈡櫇閿涙繈鎮楅獮鍨姎闁归攱鍨块悡顒勵敆閸屾浜炬繛鍫濈仢閺嬫稒銇勯鐘插幋鐎殿噮鍋婇獮妯肩磼濡桨姹楅梻浣藉亹閳峰牓宕滃▎鎾崇劦妞ゆ帒鍊告禒杈ㄦ叏婵犲啯銇濇俊顐㈠暙閳藉娼忛妸鎰╁€濆铏圭矙閸噮鍔夋繝鐢靛仜閿曘倝鎮惧畡鎵虫斀閻庯綆浜為鎺戭渻閵堝棙顥嗙悮娆撴煙?2", damageDelta: 2),
+			["hook_shot"] = new BattleCardEnhancementDefinition("+", "婵犵數濮烽弫鍛婃叏閻戣棄鏋侀柛娑橈攻閸欏繘鏌ｉ幋锝嗩棄闁哄绶氶弻娑樷槈濮楀牊鏁鹃梺鍛婄懃缁绘﹢寮婚敐澶婄闁挎繂妫Λ鍕⒑閸濆嫷鍎庣紒鑸靛哺瀵鎮㈤崗灏栨嫽闁诲酣娼ф竟濠偽ｉ鍓х＜闁诡垎鍐ｆ寖缂備緡鍣崹鎶藉箲閵忕姭妲堥柕蹇曞Х椤撳搫鈹戦悙鍙夘棞缂佺粯甯″畷婵嬪箻椤旇В鎷洪柡澶屽仦婢瑰棝藝閿斿浜滈柟瀛樼箖椤ャ垹鈹戦敍鍕毈鐎规洜鍠栭、娑橆潩妲屾牕鏅梻鍌欑閹诧繝銆冮崼銉ョ；闁绘梻鍘х粈澶愭煙缂併垹鏋熼柍閿嬪灴瀵爼鎮欓弶鎴濡炪倧璁ｇ粻鎾诲箖濡も偓椤繈顢曢姀鐘点偖闁诲孩顔栭崰鏍€﹂悜钘夋瀬闁瑰墽绮崑鎰版煠绾板崬澧柍褜鍓涢崑銈咁潖濞差亝顥堟繛鎴ｉ哺鑲栭梻浣侯焾濮橈箑鈻嶉弴鐘电焿闁圭儤顨嗛崵鍐煃閸濆嫬鏆熼柨娑欑矒濮婅櫣绱掑Ο鍝勑曢梺鍛婃尰閻熲晛鐣峰┑瀣ч柛銉㈡櫇閿涙繈鎮楅獮鍨姎闁归攱鍨块悡顒勵敆閸屾浜炬繛鍫濈仢閺嬫稒銇勯鐘插幋鐎殿噮鍋婇獮妯肩磼濡桨姹楅梻浣藉亹閳峰牓宕滃▎鎾崇劦妞ゆ帒鍊告禒杈ㄦ叏婵犲啯銇濇俊顐㈠暙閳藉娼忛妸鎰╁€濆铏圭矙閸噮鍔夋繝鐢靛仜閿曘倝鎮惧畡鎵虫斀閻庯綆浜為鎺戭渻閵堝棙顥嗙悮娆撴煙?2", damageDelta: 2),
+			["deep_focus"] = new BattleCardEnhancementDefinition("+", "闂傚倸鍊搁崐鎼佸磹閹间礁纾归柟闂寸绾惧綊鏌熼梻瀵割槮缁炬儳缍婇弻鐔兼⒒鐎靛壊妲紒鐐劤缂嶅﹪寮婚悢鍏尖拻閻庨潧澹婂Σ顔剧磼閻愵剙鍔ょ紓宥咃躬瀵鏁愭径濠勵吅闂佹寧绻傞幉娑㈠箻缂佹鍘遍梺闈涚墕閹冲酣顢旈銏＄厸閻忕偛澧藉ú瀛樸亜閵忊剝绀嬮柡浣瑰姍瀹曞崬鈻庡Ο鎭嶆氨绱撻崒姘偓鐑芥嚄閼稿灚鍙忛梺鍨儑缁犻箖鏌嶈閸撶喖寮婚垾宕囨殕闁逞屽墴瀹曚即寮介鐘茬ウ闂佺硶鍓濋崙鐟拔ｆィ鍐┾拺闁革富鍘藉▍鏇炩攽椤旂偓鏆╅柟骞垮灩閳藉濮€閻樿尙鐛╂俊鐐€栭悧妤呭春閸愵喖鍑犻柛娑卞帣閺冨牊鍋愰梻鍫熺◥濞岊亪姊虹紒姗嗘畷婵炲弶绻嗛妵鎰媴閸撳弶瀵岄梺闈涚墕濡宕告繝鍥ㄧ厱閻庯綆鍋呯亸顓㈡煃鐟欏嫬鐏撮柛銊╃畺閹瑩鎸婃径澶婂灊闂傚倷绀侀幖顐︽儗婢跺瞼绀婂ù锝夆偓娑氱畾闂佸壊鍋呭ú鏍倷婵犲嫭鍠愰悘鐐插⒔閻濆爼鏌￠崶銉ョ仾闁抽攱鍨垮濠氬醇閻旇　濮囬梺鐟板悑閸旀瑩骞冨Δ鈧～婵嬵敃閵忕姷銈梻浣虹帛娓氭宕抽敐鍛殾闁割偅娲﹂弫鍡涙煃瑜滈崜娑氬垝閸儱閱囨繝銏＄箓缂嶅﹪寮幇鏉块唶婵犻潧鐗勯崑锝夋⒒娴ｇ儤鍤€闁宦板妿缂傛挻銈ｉ崘銊у摋?1", drawCountDelta: 1),
+			["spark_charge"] = new BattleCardEnhancementDefinition("+", "闂傚倸鍊搁崐鎼佸磹閹间礁纾归柟闂寸绾惧綊鏌熼梻瀵割槮缁炬儳缍婇弻鐔兼⒒鐎靛壊妲紒鐐劤缂嶅﹪寮婚悢鍏尖拻閻庨潧澹婂Σ顔剧磼閻愵剙鍔ょ紓宥咃躬瀵鏁愭径濠勵吅闂佹寧绻傞幉娑㈠箻缂佹鍘遍梺闈涚墕閹冲酣顢旈銏＄厸閻忕偛澧藉ú瀛樸亜閵忊剝绀嬮柡浣瑰姍瀹曞崬鈻庡Ο鎭嶆岸姊婚崒娆掑厡妞ゎ厼鐗忛幃顕€顢曢敃鈧粈澶愬箹濞ｎ剙濡肩紒鐘靛枛閺岀喖姊荤€靛壊妲┑鈽嗗亝閿曘垽骞冭ぐ鎺戠畳闁圭儤鍨甸‖澶娾攽閻愯尙澧︾紒鐘崇墪椤繐煤椤忓拋妫冨┑鐐村灦濮樸劑鎮块崟顖涒拺缂佸灏呴弨缁樼箾閼碱剙鏋庨柣锝呭槻椤粓鍩€椤掑嫬鏄ラ柍褜鍓氶妵鍕箳閸℃ぞ澹曟俊鐐€ゆ禍婊堝疮鐎涙ü绻嗛柛顐ｆ礀楠炪垺淇婇妶鍌氫壕濡炪値鍋勫ú顓烆潖濞差亜绠归柣鎰絻椤牏绱撻崒姘毙㈤柨鏇ㄤ邯閻涱噣宕橀妸搴ｅ枛閹筹繝濡堕崶鈺傤潓闂傚倷鑳堕…鍫ュ嫉椤掑嫨鈧啴宕卞☉妯活棟闂侀€炲苯澧存慨濠勭帛閹峰懘鎼归悷鎵偧闂備礁鎲″鐟懊洪弽顓ф晪闁挎繂顦柋鍥煛閸ワ絽浜炬繝銏ｅ煐閸旀牠宕愰悜鑺ョ厽闁瑰鍎愰悞浠嬫煕濡吋鏆慨濠冩そ瀹曘劍绻濋崟銊︻潔闂備焦瀵уú蹇涘磿闂堟稓鏆﹂柟鐗堟緲缁犳稒銇勯幘璺烘瀻鐎?1", energyGainDelta: 1),
+			["burst_drive"] = new BattleCardEnhancementDefinition("+", "闂傚倸鍊搁崐鎼佸磹閹间礁纾归柟闂寸绾惧綊鏌熼梻瀵割槮缁炬儳缍婇弻鐔兼⒒鐎靛壊妲紒鐐劤缂嶅﹪寮婚悢鍏尖拻閻庨潧澹婂Σ顔剧磼閻愵剙鍔ょ紓宥咃躬瀵鏁愭径濠勵吅闂佹寧绻傞幉娑㈠箻缂佹鍘遍梺闈涚墕閹冲酣顢旈銏＄厸閻忕偛澧藉ú瀛樸亜閵忊剝绀嬮柡浣瑰姍瀹曞崬鈻庡Ο鎭嶆岸姊婚崒娆掑厡妞ゎ厼鐗忛幃顕€顢曢敃鈧粈澶愬箹濞ｎ剙濡肩紒鐘靛枛閺岀喖姊荤€靛壊妲┑鈽嗗亝閿曘垽骞冭ぐ鎺戠畳闁圭儤鍨甸‖澶娾攽閻愯尙澧︾紒鐘崇墪椤繐煤椤忓拋妫冨┑鐐村灦濮樸劑鎮块崟顖涒拺缂佸灏呴弨缁樼箾閼碱剙鏋庨柣锝呭槻椤粓鍩€椤掑嫬鏄ラ柍褜鍓氶妵鍕箳閸℃ぞ澹曟俊鐐€ゆ禍婊堝疮鐎涙ü绻嗛柛顐ｆ礀楠炪垺淇婇妶鍌氫壕濡炪値鍋勫ú顓烆潖濞差亜绠归柣鎰絻椤牏绱撻崒姘毙㈤柨鏇ㄤ邯閻涱噣宕橀妸搴ｅ枛閹筹繝濡堕崶鈺傤潓闂傚倷鑳堕…鍫ュ嫉椤掑嫨鈧啴宕卞☉妯活棟闂侀€炲苯澧存慨濠勭帛閹峰懘鎼归悷鎵偧闂備礁鎲″鐟懊洪弽顓ф晪闁挎繂顦柋鍥煛閸ワ絽浜炬繝銏ｅ煐閸旀牠宕愰悜鑺ョ厽闁瑰鍎愰悞浠嬫煕濡吋鏆慨濠冩そ瀹曘劍绻濋崟銊︻潔闂備焦瀵уú蹇涘磿闂堟稓鏆﹂柟鐗堟緲缁犳稒銇勯幘璺烘瀻鐎?1", energyGainDelta: 1),
+			["guard_up"] = new BattleCardEnhancementDefinition("+", "闂傚倸鍊搁崐鎼佸磹閹间礁纾归柟闂寸绾惧綊鏌熼梻瀵割槮缁炬儳缍婇弻鐔兼⒒鐎靛壊妲紒鐐劤缂嶅﹪寮婚悢鍏尖拻閻庨潧澹婂Σ顔剧磼閻愵剙鍔ょ紓宥咃躬瀵鏁愭径濠勵吅闂佹寧绻傞幉娑㈠箻缂佹鍘遍梺闈涚墕閹冲酣顢旈銏＄厸閻忕偛澧藉ú瀛樸亜閵忊剝绀嬮柡浣瑰姍瀹曞崬鈻庡▎鎴濇灎闂傚倸鍊风欢姘跺焵椤掑倸浠滈柤娲诲灦瀹曘垽骞栨担鍦幗闂佺娅ｉ崑娑€呴鍕厵妤犵偛鐏濋悘鈺呮煃鐟欏嫬鐏╅柍褜鍓ㄧ紞鍡樼閻愭牳鍥级濞嗙偓瀵岄梺闈涚墕濡瑧浜搁棃娑掓斀妞ゆ牭绲介獮鏍础闁秵鐓曟俊銈呭暙娴滃綊鏌￠埀顒佺鐎ｎ偆鍘介梺褰掑亰閸撴盯骞楅悩鐢电＝鐎广儱妫楅悘鎾煛鐏炲墽鈽夋い顐ｇ箞椤㈡寰勬繝鍌氼棈濠碉紕鍋戦崐銈夊储閻撳篃娲Χ婢跺﹦鍘洪柟鍏肩暘閸斿瞼绮婚敐鍡欑瘈闁割煈鍋勬慨鍫熴亜閵夘垳绡€婵﹥妞介幊锟犲Χ閸涱喚鈧箖姊洪懡銈呮瀭闁稿孩濞婇崺鈧い鎺嶇閸ゎ剙霉濠婂懎浠辨鐐村灴婵偓闁靛牆鎳庨懓鍨攽閻愭潙鐏﹂柣鐔濆洤鍌ㄦい蹇撶墛閳锋垿鏌涢幘鏉戠祷濞存粍绻勭槐鎺旀嫚閹绘巻鍋撻崸妤€鏄ラ柍褜鍓氶妵鍕箳閸℃ぞ澹曢梻浣侯攰椤曟粎妲愰弴鐘插灊閻庯綆浜堕崥瀣煕閳╁啫濮囧ù婊勭箞濮婃椽宕ㄦ繝鍌氼潊闂佸搫鍊风欢姘剁嵁?2", shieldGainDelta: 2),
+			["brace"] = new BattleCardEnhancementDefinition("+", "闂傚倸鍊搁崐鎼佸磹閹间礁纾归柟闂寸绾惧綊鏌熼梻瀵割槮缁炬儳缍婇弻鐔兼⒒鐎靛壊妲紒鐐劤缂嶅﹪寮婚悢鍏尖拻閻庨潧澹婂Σ顔剧磼閻愵剙鍔ょ紓宥咃躬瀵鏁愭径濠勵吅闂佹寧绻傞幉娑㈠箻缂佹鍘遍梺闈涚墕閹冲酣顢旈銏＄厸閻忕偛澧藉ú瀛樸亜閵忊剝绀嬮柡浣瑰姍瀹曞崬鈻庡▎鎴濇灎闂傚倸鍊风欢姘跺焵椤掑倸浠滈柤娲诲灦瀹曘垽骞栨担鍦幗闂佺娅ｉ崑娑€呴鍕厵妤犵偛鐏濋悘鈺呮煃鐟欏嫬鐏╅柍褜鍓ㄧ紞鍡樼閻愭牳鍥级濞嗙偓瀵岄梺闈涚墕濡瑧浜搁棃娑掓斀妞ゆ牭绲介獮鏍础闁秵鐓曟俊銈呭暙娴滃綊鏌￠埀顒佺鐎ｎ偆鍘介梺褰掑亰閸撴盯骞楅悩鐢电＝鐎广儱妫楅悘鎾煛鐏炲墽鈽夋い顐ｇ箞椤㈡寰勬繝鍌氼棈濠碉紕鍋戦崐銈夊储閻撳篃娲Χ婢跺﹦鍘洪柟鍏肩暘閸斿瞼绮婚敐鍡欑瘈闁割煈鍋勬慨鍫熴亜閵夘垳绡€婵﹥妞介幊锟犲Χ閸涱喚鈧箖姊洪懡銈呮瀭闁稿孩濞婇崺鈧い鎺嶇閸ゎ剙霉濠婂懎浠辨鐐村灴婵偓闁靛牆鎳庨懓鍨攽閻愭潙鐏﹂柣鐔濆洤鍌ㄦい蹇撶墛閳锋垿鏌涢幘鏉戠祷濞存粍绻勭槐鎺旀嫚閹绘巻鍋撻崸妤€鏄ラ柍褜鍓氶妵鍕箳閸℃ぞ澹曢梻浣侯攰椤曟粎妲愰弴鐘插灊閻庯綆浜堕崥瀣煕閳╁啫濮囧ù婊勭箞濮婃椽宕ㄦ繝鍌氼潊闂佸搫鍊风欢姘剁嵁?3", shieldGainDelta: 3),
+			["quick_guard"] = new BattleCardEnhancementDefinition("+", "闂傚倸鍊搁崐鎼佸磹閹间礁纾归柟闂寸绾惧綊鏌熼梻瀵割槮缁炬儳缍婇弻鐔兼⒒鐎靛壊妲紒鐐劤缂嶅﹪寮婚悢鍏尖拻閻庨潧澹婂Σ顔剧磼閻愵剙鍔ょ紓宥咃躬瀵鏁愭径濠勵吅闂佹寧绻傞幉娑㈠箻缂佹鍘遍梺闈涚墕閹冲酣顢旈銏＄厸閻忕偛澧藉ú瀛樸亜閵忊剝绀嬮柡浣瑰姍瀹曞崬鈻庡▎鎴濇灎闂傚倸鍊风欢姘跺焵椤掑倸浠滈柤娲诲灦瀹曘垽骞栨担鍦幗闂佺娅ｉ崑娑€呴鍕厵妤犵偛鐏濋悘鈺呮煃鐟欏嫬鐏╅柍褜鍓ㄧ紞鍡樼閻愭牳鍥级濞嗙偓瀵岄梺闈涚墕濡瑧浜搁棃娑掓斀妞ゆ牭绲介獮鏍础闁秵鐓曟俊銈呭暙娴滃綊鏌￠埀顒佺鐎ｎ偆鍘介梺褰掑亰閸撴盯骞楅悩鐢电＝鐎广儱妫楅悘鎾煛鐏炲墽鈽夋い顐ｇ箞椤㈡寰勬繝鍌氼棈濠碉紕鍋戦崐銈夊储閻撳篃娲Χ婢跺﹦鍘洪柟鍏肩暘閸斿瞼绮婚敐鍡欑瘈闁割煈鍋勬慨鍫熴亜閵夘垳绡€婵﹥妞介幊锟犲Χ閸涱喚鈧箖姊洪懡銈呮瀭闁稿孩濞婇崺鈧い鎺嶇閸ゎ剙霉濠婂懎浠辨鐐村灴婵偓闁靛牆鎳庨懓鍨攽閻愭潙鐏﹂柣鐔濆洤鍌ㄦい蹇撶墛閳锋垿鏌涢幘鏉戠祷濞存粍绻勭槐鎺旀嫚閹绘巻鍋撻崸妤€鏄ラ柍褜鍓氶妵鍕箳閸℃ぞ澹曢梻浣侯攰椤曟粎妲愰弴鐘插灊閻庯綆浜堕崥瀣煕閳╁啫濮囧ù婊勭箞濮婃椽宕ㄦ繝鍌氼潊闂佸搫鍊风欢姘剁嵁?2", shieldGainDelta: 2),
 		};
 	[Export] public PackedScene? ForcedBattleRoomScene { get; set; }
 	[Export] public PackedScene[] BattleRoomScenes { get; set; } = Array.Empty<PackedScene>();
@@ -951,7 +951,7 @@ public partial class BattleSceneController : Node2D
 		_playerDeck.DrawToHandSize();
 		if (StateManager?.GetPrimaryPlayerState() is BattleObjectState playerState)
 		{
-			AppendBattleActionLog($"{playerState.DisplayName}->{playerState.DisplayName} 鍐ユ兂");
+			AppendBattleActionLog($"{playerState.DisplayName}->{playerState.DisplayName} \u8C03\u606F");
 		}
 		TurnState.MarkActed();
 		ResolveTurnPostPhase();
@@ -988,8 +988,8 @@ public partial class BattleSceneController : Node2D
 		await _actionService.ApplyDefenseActionAsync(playerState.ObjectId, BuildPlayerDefenseActionDefinition(), TurnState.TurnIndex);
 		int defenseShieldGain = GlobalSession?.GetResolvedPlayerDefenseShieldGain() ?? 0;
 		AppendBattleActionLog(defenseShieldGain > 0
-			? $"{playerState.DisplayName}->{playerState.DisplayName} 鎶ょ浘{defenseShieldGain}"
-			: $"{playerState.DisplayName}->{playerState.DisplayName} 闃插尽");
+			? $"{playerState.DisplayName}->{playerState.DisplayName} \u9632\u5FA1+{defenseShieldGain}"
+			: $"{playerState.DisplayName}->{playerState.DisplayName} \u9632\u5FA1");
 		TurnState.MarkActed();
 		ResolveTurnPostPhase();
 	}
@@ -1023,7 +1023,7 @@ public partial class BattleSceneController : Node2D
 		_retreatStartHp = -1;
 		if (StateManager?.GetPrimaryPlayerState() is BattleObjectState playerState)
 		{
-			AppendBattleActionLog($"{playerState.DisplayName}->{playerState.DisplayName} 绔嬪嵆鑴辩鎴樻枟");
+			AppendBattleActionLog($"{playerState.DisplayName}->{playerState.DisplayName} \u9003\u8DD1");
 		}
 		CommitBattleResult(BattleOutcome.Retreat);
 	}
@@ -1329,7 +1329,7 @@ public partial class BattleSceneController : Node2D
 						: targetObject.Cell;
 					TriggerBattleCameraFocusForCells(attackerCell, targetObject.Cell);
 				}
-				AppendBattleActionLog($"{ResolveObjectDisplayName(attackerId)}->{ResolveObjectDisplayName(targetObject.ObjectId)} 攻击{damageAmount}");
+				AppendBattleActionLog($"{ResolveObjectDisplayName(attackerId)}->{ResolveObjectDisplayName(targetObject.ObjectId)} \u653B\u51FB{damageAmount}");
 			}
 		}
 
@@ -1357,7 +1357,7 @@ public partial class BattleSceneController : Node2D
 			int shieldGain = SumImpactAmount(shieldResult, CombatImpactType.ShieldGain);
 			if (shieldGain > 0)
 			{
-				AppendBattleActionLog($"{ResolveObjectDisplayName(attackerId)}->{ResolveObjectDisplayName(attackerId)} 鎶ょ浘{shieldGain}");
+				AppendBattleActionLog($"{ResolveObjectDisplayName(attackerId)}->{ResolveObjectDisplayName(attackerId)} \u62A4\u76FE+{shieldGain}");
 			}
 		}
 
@@ -1381,7 +1381,7 @@ public partial class BattleSceneController : Node2D
 			int healAmount = SumImpactAmount(healingResult, CombatImpactType.HealthHeal);
 			if (healAmount > 0)
 			{
-				AppendBattleActionLog($"{ResolveObjectDisplayName(attackerId)}->{ResolveObjectDisplayName(healingTargetId)} 娌荤枟{healAmount}");
+				AppendBattleActionLog($"{ResolveObjectDisplayName(attackerId)}->{ResolveObjectDisplayName(healingTargetId)} \u6CBB\u7597{healAmount}");
 			}
 		}
 
@@ -1619,7 +1619,7 @@ public partial class BattleSceneController : Node2D
 		int damageAmount = SumImpactAmount(result, CombatImpactType.HealthDamage, CombatImpactType.ShieldDamage);
 		if (damageAmount > 0)
 		{
-			AppendBattleActionLog($"{playerState.DisplayName}->{ResolveObjectDisplayName(attackerId)} 架势反击{damageAmount}");
+			AppendBattleActionLog($"{playerState.DisplayName}->{ResolveObjectDisplayName(attackerId)} \u53CD\u51FB{damageAmount}");
 		}
 	}
 
@@ -1984,8 +1984,8 @@ public partial class BattleSceneController : Node2D
 			{
 				definitions.Insert(1, new BattleCardDefinition(
 					DrawRevolverCardId,
-					"拔枪",
-					"本场战斗临时换为左轮：普通攻击射程改为 2，伤害改为 4，可攻击 6 次",
+					"\u62D4\u67AA",
+					"\u672C\u573A\u6218\u6597\u4E34\u65F6\u5207\u6362\u4E3A\u5DE6\u8F6E\uff1A\u666E\u901A\u653B\u51FB\u5C04\u7A0B\u6539\u4E3A 2\uff0c\u4F24\u5BB3\u6539\u4E3A 4\uff0c\u53EF\u653B\u51FB 6 \u6B21",
 					2,
 					BattleCardCategory.Skill,
 					BattleCardTargetingMode.None));
@@ -1995,8 +1995,8 @@ public partial class BattleSceneController : Node2D
 			{
 				definitions.Insert(2, new BattleCardDefinition(
 					ArcLeakCardId,
-					"电弧泄露",
-					"对 3 格内目标格及其相邻 4 格施加电弧地形",
+					"\u7535\u5F27\u6CC4\u9732",
+					"\u5BF9 3 \u683C\u5185\u76EE\u6807\u683C\u53CA\u5176\u76F8\u90BB\u683C\u751F\u6210\u7535\u5F27\u5730\u5F62",
 					1,
 					BattleCardCategory.Skill,
 					BattleCardTargetingMode.Cell,
@@ -2007,8 +2007,8 @@ public partial class BattleSceneController : Node2D
 			{
 				definitions.Insert(3, new BattleCardDefinition(
 					RamCardId,
-					"冲撞",
-					"直线 2 格内冲到目标面前，造成 3 伤害；若目标背后受阻，再追加 4 点撞击伤害",
+					"\u51B2\u649E",
+					"\u76F4\u7EBF 2 \u683C\u5185\u51B2\u5230\u76EE\u6807\u9762\u524D\uff0c\u9020\u6210 3 \u4F24\u5BB3\uff1B\u82E5\u76EE\u6807\u88AB\u963B\u6321\uff0C\u518D\u8FFD\u52A0 4 \u70B9\u649E\u51FB\u4F24\u5BB3",
 					1,
 					BattleCardCategory.Attack,
 					BattleCardTargetingMode.StraightLineEnemy,
@@ -2019,8 +2019,8 @@ public partial class BattleSceneController : Node2D
 			{
 				definitions.Add(new BattleCardDefinition(
 					AimCardId,
-					"瞄准",
-					"对直线 4 格目标进行瞄准，并生成 1 张狙击",
+					"\u7784\u51C6",
+					"\u5C04\u7A0B 4\uff1b\u6807\u8BB0\u76EE\u6807\uff0C\u4E0B\u4E00\u6B21\u5C04\u51FB\u989D\u5916 +1 \u4F24\u5BB3",
 					0,
 					BattleCardCategory.Skill,
 					BattleCardTargetingMode.StraightLineEnemy,
@@ -2031,8 +2031,8 @@ public partial class BattleSceneController : Node2D
 			{
 				definitions.Add(new BattleCardDefinition(
 					SnipeCardId,
-					"狙击",
-					"对直线 4 格首个敌人造成 7 伤害",
+					"\u72D9\u51FB",
+					"\u5C04\u7A0B 4\uff1B\u5BF9\u5355\u4F53\u654C\u4EBA\u9020\u6210 7 \u4F24\u5BB3",
 					1,
 					BattleCardCategory.Attack,
 					BattleCardTargetingMode.StraightLineEnemy,
@@ -2045,8 +2045,8 @@ public partial class BattleSceneController : Node2D
 			{
 				definitions.Add(new BattleCardDefinition(
 					AlertCardId,
-					"戒备",
-					"下回合开始时，对范围 2 格内全部敌人造成 6 伤害",
+					"\u6212\u5907",
+					"\u4E0B\u56DE\u5408\u5F00\u59CB\u65F6\uff0C\u5BF9\u8303\u56F4 2 \u683C\u5185\u5168\u90E8\u654C\u4EBA\u9020\u6210 6 \u4F24\u5BB3",
 					1,
 					BattleCardCategory.Skill,
 					BattleCardTargetingMode.None));
@@ -2056,8 +2056,8 @@ public partial class BattleSceneController : Node2D
 			{
 				definitions.Add(new BattleCardDefinition(
 					RollCallCardId,
-					"点名",
-					"对距离 2 格内生命最低的敌人造成 3 伤害；若击杀则再重复一次",
+					"\u70B9\u540D",
+					"\u5BF9\u5DF2\u6807\u8BB0\u76EE\u6807\u9020\u6210 3 \u4F24\u5BB3\uff1B\u51FB\u6740\u540E\u518D\u5BF9\u5C04\u7A0B 2 \u5185\u53E6\u4E00\u540D\u6700\u4F4E\u8840\u91CF\u654C\u4EBA\u9020\u6210 3 \u4F24\u5BB3",
 					1,
 					BattleCardCategory.Attack,
 					BattleCardTargetingMode.None));
@@ -2188,7 +2188,7 @@ public partial class BattleSceneController : Node2D
 		VBoxContainer content = new();
 		Label titleLabel = new()
 		{
-			Text = "战斗结算",
+			Text = BuildBattleResultTitleText(result),
 			HorizontalAlignment = HorizontalAlignment.Center,
 		};
 		RichTextLabel detailLabel = new()
@@ -2201,7 +2201,7 @@ public partial class BattleSceneController : Node2D
 		};
 		Label continueLabel = new()
 		{
-			Text = "按 E / Enter 继续",
+			Text = "\u6309 E / Enter \u7EE7\u7EED",
 			HorizontalAlignment = HorizontalAlignment.Right,
 		};
 
@@ -2232,15 +2232,15 @@ public partial class BattleSceneController : Node2D
 	{
 		if (result.DidPlayerRetreat)
 		{
-			return "撤离结算";
+			return "\u64A4\u79BB\u7ED3\u7B97";
 		}
 
 		if (result.DidPlayerFail)
 		{
-			return "战败结算";
+			return "\u6218\u8D25\u7ED3\u7B97";
 		}
 
-		return "战斗结算";
+		return "\u6218\u6597\u7ED3\u7B97";
 	}
 
 	private static string BuildBattleResultSummaryText(BattleResult result)
@@ -2249,34 +2249,60 @@ public partial class BattleSceneController : Node2D
 		ProgressionDelta progressionDelta = result.GetProgressionDeltaModel();
 		if (progressionDelta.ExperienceDelta > 0)
 		{
-			lines.Add($"经验 +{progressionDelta.ExperienceDelta}");
+			lines.Add($"\u7ECF\u9A8C +{progressionDelta.ExperienceDelta}");
 		}
 
+		Dictionary<string, int> defeatedEnemyCounts = new(StringComparer.Ordinal);
 		foreach (Godot.Collections.Dictionary rewardEntryRaw in result.RewardEntries)
 		{
 			BattleRewardEntry rewardEntry = BattleRewardEntry.FromDictionary(rewardEntryRaw);
 			if (rewardEntry.RewardType == "learned_card")
 			{
-				lines.Add($"卡牌解锁: {rewardEntry.RewardId}");
+				lines.Add($"\u5361\u724C\u89E3\u9501\uFF1A{rewardEntry.RewardId}");
 				continue;
 			}
 
 			if (rewardEntry.RewardType == "enemy_defeat_exp")
 			{
-				lines.Add($"击败敌人 {rewardEntry.RewardId}: 经验 +{rewardEntry.Amount}");
+				if (!string.IsNullOrWhiteSpace(rewardEntry.RewardId))
+				{
+					defeatedEnemyCounts[rewardEntry.RewardId] = defeatedEnemyCounts.TryGetValue(rewardEntry.RewardId, out int count)
+						? count + 1
+						: 1;
+				}
 				continue;
 			}
 
 			if (rewardEntry.RewardType == "encounter_clear_bonus")
 			{
-				lines.Add($"全灭奖励: 经验 +{rewardEntry.Amount}");
+				lines.Add($"\u5168\u706D\u5956\u52B1\uFF1A\u7ECF\u9A8C +{rewardEntry.Amount}");
 				continue;
 			}
 
 			lines.Add($"{rewardEntry.RewardType}: {rewardEntry.RewardId} x{rewardEntry.Amount}");
 		}
 
-		return lines.Count == 0 ? "无奖励" : string.Join("\n", lines);
+		foreach ((string enemyDefinitionId, int count) in defeatedEnemyCounts.OrderBy(entry => ResolveBattleResultEnemyDisplayName(entry.Key), StringComparer.Ordinal))
+		{
+			string enemyDisplayName = ResolveBattleResultEnemyDisplayName(enemyDefinitionId);
+			lines.Add(count > 1
+				? $"\u51FB\u8D25 {enemyDisplayName} x{count}"
+				: $"\u51FB\u8D25 {enemyDisplayName}");
+		}
+
+		return lines.Count == 0 ? "\u65E0\u5956\u52B1" : string.Join("\n", lines);
+	}
+
+	private static string ResolveBattleResultEnemyDisplayName(string enemyDefinitionId)
+	{
+		if (string.IsNullOrWhiteSpace(enemyDefinitionId))
+		{
+			return "\u654C\u4EBA";
+		}
+
+		BattleEnemyLibrary? enemyLibrary = GD.Load<BattleEnemyLibrary>("res://Resources/Battle/Enemies/DefaultBattleEnemyLibrary.tres");
+		string displayName = enemyLibrary?.FindEntry(enemyDefinitionId)?.DisplayName ?? string.Empty;
+		return string.IsNullOrWhiteSpace(displayName) ? enemyDefinitionId : displayName;
 	}
 	private void ConfigureCameraForBattle()
 	{
@@ -2499,7 +2525,6 @@ public partial class BattleSceneController : Node2D
 		Vector2 previousZoom = _battleCamera.Zoom;
 		Vector2 clampedFocus = ClampBattleCameraPosition(focusPosition);
 		float zoomMultiplier = Mathf.Clamp(Mathf.Round(CameraFocusZoomMultiplier), 1.0f, 4.0f);
-		// 像素表现要求整数缩放，运行时强制取整，避免非整数倍率导致像素畸变。
 		Vector2 focusZoom = new(previousZoom.X * zoomMultiplier, previousZoom.Y * zoomMultiplier);
 
 		_battleCamera.Position = clampedFocus;
@@ -2752,7 +2777,7 @@ public partial class BattleSceneController : Node2D
 		}
 		TriggerBattleCameraFocusForCell(targetCell);
 
-		AppendBattleActionLog($"鑽掑窛->({targetCell.X},{targetCell.Y}) 閫犲");
+		AppendBattleActionLog($"\u8352\u5DDD->({targetCell.X},{targetCell.Y}) \u9020\u7269");
 
 		CancelArakawaAbilityMode();
 	}
@@ -2769,10 +2794,12 @@ public partial class BattleSceneController : Node2D
 			return;
 		}
 
-		if (cardInstance.IsEnhanced || !PrototypeCardEnhancements.TryGetValue(cardInstance.BaseDefinition.CardId, out BattleCardEnhancementDefinition? enhancement))
+		if (cardInstance.IsEnhanced)
 		{
 			return;
 		}
+
+		BattleCardEnhancementDefinition enhancement = ResolveArakawaEnhancementDefinition(cardInstance.BaseDefinition);
 
 		if (!GlobalSession.TrySpendArakawaEnergy(EnhanceCardAbility.EnergyCost))
 		{
@@ -2786,8 +2813,100 @@ public partial class BattleSceneController : Node2D
 		}
 
 		_hud.PlayCardEnhancementEffect(cardInstanceId);
-		AppendBattleActionLog($"鑽掑窛->{cardInstance.Definition.DisplayName} 寮哄寲");
+		AppendBattleActionLog($"\u8352\u5DDD->{cardInstance.Definition.DisplayName} \u5F3A\u5316");
 		CancelArakawaAbilityMode();
+	}
+
+	private static BattleCardEnhancementDefinition ResolveArakawaEnhancementDefinition(BattleCardDefinition definition)
+	{
+		if (PrototypeCardEnhancements.TryGetValue(definition.CardId, out BattleCardEnhancementDefinition? configuredEnhancement))
+		{
+			return NormalizeEnhancementDefinition(configuredEnhancement);
+		}
+
+		int damageDelta = definition.Damage > 0 ? 2 : 0;
+		int healingDelta = definition.HealingAmount > 0 ? 2 : 0;
+		int drawDelta = definition.DrawCount > 0 ? 1 : 0;
+		int energyDelta = definition.EnergyGain > 0 ? 1 : 0;
+		int shieldDelta = definition.ShieldGain > 0 ? 2 : 0;
+		int rangeDelta = definition.RequiresTarget && definition.Range > 0 ? 1 : 0;
+		int costDelta = damageDelta == 0 && healingDelta == 0 && drawDelta == 0 && energyDelta == 0 && shieldDelta == 0 && rangeDelta == 0
+			? -1
+			: 0;
+
+		BattleCardEnhancementDefinition fallback = new(
+			"+",
+			string.Empty,
+			costDelta: costDelta,
+			rangeDelta: rangeDelta,
+			damageDelta: damageDelta,
+			healingDelta: healingDelta,
+			drawCountDelta: drawDelta,
+			energyGainDelta: energyDelta,
+			shieldGainDelta: shieldDelta);
+		return NormalizeEnhancementDefinition(fallback);
+	}
+
+	private static BattleCardEnhancementDefinition NormalizeEnhancementDefinition(BattleCardEnhancementDefinition enhancement)
+	{
+		return new BattleCardEnhancementDefinition(
+			enhancement.DisplaySuffix,
+			BuildReadableEnhancementDescription(enhancement),
+			enhancement.CostDelta,
+			enhancement.RangeDelta,
+			enhancement.DamageDelta,
+			enhancement.HealingDelta,
+			enhancement.DrawCountDelta,
+			enhancement.EnergyGainDelta,
+			enhancement.ShieldGainDelta,
+			enhancement.IsQuickOverride,
+			enhancement.ExhaustsOnPlayOverride);
+	}
+
+	private static string BuildReadableEnhancementDescription(BattleCardEnhancementDefinition enhancement)
+	{
+		List<string> parts = new();
+		if (enhancement.DamageDelta != 0)
+		{
+			parts.Add($"\u4F24\u5BB3 {(enhancement.DamageDelta > 0 ? "+" : string.Empty)}{enhancement.DamageDelta}");
+		}
+
+		if (enhancement.HealingDelta != 0)
+		{
+			parts.Add($"\u6CBB\u7597 {(enhancement.HealingDelta > 0 ? "+" : string.Empty)}{enhancement.HealingDelta}");
+		}
+
+		if (enhancement.DrawCountDelta != 0)
+		{
+			parts.Add($"\u62BD\u724C {(enhancement.DrawCountDelta > 0 ? "+" : string.Empty)}{enhancement.DrawCountDelta}");
+		}
+
+		if (enhancement.EnergyGainDelta != 0)
+		{
+			parts.Add($"\u56DE\u80FD {(enhancement.EnergyGainDelta > 0 ? "+" : string.Empty)}{enhancement.EnergyGainDelta}");
+		}
+
+		if (enhancement.ShieldGainDelta != 0)
+		{
+			parts.Add($"\u62A4\u76FE {(enhancement.ShieldGainDelta > 0 ? "+" : string.Empty)}{enhancement.ShieldGainDelta}");
+		}
+
+		if (enhancement.RangeDelta != 0)
+		{
+			parts.Add($"\u5C04\u7A0B {(enhancement.RangeDelta > 0 ? "+" : string.Empty)}{enhancement.RangeDelta}");
+		}
+
+		if (enhancement.CostDelta != 0)
+		{
+			parts.Add($"\u8D39\u7528 {(enhancement.CostDelta > 0 ? "+" : string.Empty)}{enhancement.CostDelta}");
+		}
+
+		if (parts.Count == 0)
+		{
+			return "\u5F3A\u5316";
+		}
+
+		return string.Join(" / ", parts);
 	}
 
 	private void TryExecuteArakawaEnhanceWeapon()
@@ -2810,7 +2929,7 @@ public partial class BattleSceneController : Node2D
 
 		StateManager.AddPlayerAttackDamageBonus(1);
 		_pieceViewManager.PlayTintPulse(playerState.ObjectId, new Color(0.30f, 0.76f, 1.0f, 1.0f));
-		AppendBattleActionLog($"Arakawa->{playerState.DisplayName} Weapon+1");
+		AppendBattleActionLog($"\u8352\u5DDD->{playerState.DisplayName} \u6B66\u5668\u5F3A\u5316");
 		CancelArakawaAbilityMode();
 	}
 
@@ -2901,7 +3020,7 @@ public partial class BattleSceneController : Node2D
 		}
 
 		_pendingLearnedCardIds.Add(learnedCardId);
-		AppendBattleActionLog($"{ResolveObjectDisplayName(attackerId)}->{ResolveObjectDisplayName(targetObject.ObjectId)} 学习{(signatureAvailable ? "·特技" : "·基础")}");
+		AppendBattleActionLog($"{ResolveObjectDisplayName(attackerId)}->{ResolveObjectDisplayName(targetObject.ObjectId)} \u5B66\u4E60{(signatureAvailable ? "\u00B7\u7279\u6280" : "\u00B7\u57FA\u7840")}");
 		return true;
 	}
 
@@ -2917,7 +3036,7 @@ public partial class BattleSceneController : Node2D
 		_playerCounterStanceActive = true;
 		_playerCounterStanceExpiresOnTurnIndex = TurnState.TurnIndex + 1;
 		_playerCounterStanceDamage = 6;
-		AppendBattleActionLog($"{ResolveObjectDisplayName(attackerId)}->架势待发");
+		AppendBattleActionLog($"{ResolveObjectDisplayName(attackerId)}->\u67B6\u52BF\u5F85\u53D1");
 		return true;
 	}
 
@@ -2956,7 +3075,7 @@ public partial class BattleSceneController : Node2D
 				TriggerBattleCameraFocusForCells(attackerCell, targetObject.Cell);
 			}
 
-			AppendBattleActionLog($"{ResolveObjectDisplayName(attackerId)}->{ResolveObjectDisplayName(targetObject.ObjectId)} 重击{damageAmount}");
+			AppendBattleActionLog($"{ResolveObjectDisplayName(attackerId)}->{ResolveObjectDisplayName(targetObject.ObjectId)} \u91CD\u51FB{damageAmount}");
 		}
 
 		return true;
@@ -2988,7 +3107,7 @@ public partial class BattleSceneController : Node2D
 		int damageAmount = SumImpactAmount(result, CombatImpactType.HealthDamage, CombatImpactType.ShieldDamage);
 		if (damageAmount > 0)
 		{
-			AppendBattleActionLog($"{ResolveObjectDisplayName(attackerId)}->{ResolveObjectDisplayName(targetObject.ObjectId)} 震荡射击{damageAmount}");
+			AppendBattleActionLog($"{ResolveObjectDisplayName(attackerId)}->{ResolveObjectDisplayName(targetObject.ObjectId)} \u9707\u8361{damageAmount}");
 		}
 
 		if (targetObject.IsDestroyed)
@@ -3031,7 +3150,7 @@ public partial class BattleSceneController : Node2D
 		int collisionDamage = SumImpactAmount(targetCollisionResult, CombatImpactType.HealthDamage, CombatImpactType.ShieldDamage);
 		if (collisionDamage > 0)
 		{
-			AppendBattleActionLog($"{ResolveObjectDisplayName(targetObject.ObjectId)}->撞击{collisionDamage}");
+			AppendBattleActionLog($"{ResolveObjectDisplayName(targetObject.ObjectId)}->\u649E\u51FB{collisionDamage}");
 		}
 
 		if (collisionObject != null)
@@ -3052,7 +3171,7 @@ public partial class BattleSceneController : Node2D
 			int blockerDamage = SumImpactAmount(blockerResult, CombatImpactType.HealthDamage, CombatImpactType.ShieldDamage);
 			if (blockerDamage > 0)
 			{
-				AppendBattleActionLog($"{ResolveObjectDisplayName(collisionObject.ObjectId)}->被震撞{blockerDamage}");
+				AppendBattleActionLog($"{ResolveObjectDisplayName(collisionObject.ObjectId)}->\u649E\u51FB{blockerDamage}");
 			}
 		}
 
@@ -3095,7 +3214,7 @@ public partial class BattleSceneController : Node2D
 			int damageAmount = SumImpactAmount(result, CombatImpactType.HealthDamage, CombatImpactType.ShieldDamage);
 			if (damageAmount > 0)
 			{
-				AppendBattleActionLog($"{ResolveObjectDisplayName(attackerId)}->{ResolveObjectDisplayName(obstacle.ObjectId)} 风化{damageAmount}");
+				AppendBattleActionLog($"{ResolveObjectDisplayName(attackerId)}->{ResolveObjectDisplayName(obstacle.ObjectId)} \u98CE\u5316{damageAmount}");
 			}
 		}
 
@@ -3122,7 +3241,7 @@ public partial class BattleSceneController : Node2D
 
 		EquipmentDefinition? weaponDefinition = GlobalSession.FindEquipmentDefinition(DrawnRevolverWeaponItemId);
 		string weaponName = string.IsNullOrWhiteSpace(weaponDefinition?.DisplayName) ? "Revolver" : weaponDefinition.DisplayName;
-		AppendBattleActionLog($"{ResolveObjectDisplayName(attackerId)}->{weaponName} 剩余{DrawnRevolverBasicAttackCharges}击");
+		AppendBattleActionLog($"{ResolveObjectDisplayName(attackerId)}->{weaponName} \u88C5\u586B{DrawnRevolverBasicAttackCharges}\u51FB");
 		return true;
 	}
 
@@ -3140,7 +3259,7 @@ public partial class BattleSceneController : Node2D
 			return false;
 		}
 
-		AppendBattleActionLog($"{ResolveObjectDisplayName(attackerId)}->({targetCell.Value.X},{targetCell.Value.Y}) 电弧泄露");
+		AppendBattleActionLog($"{ResolveObjectDisplayName(attackerId)}->({targetCell.Value.X},{targetCell.Value.Y}) \u7535\u5F27\u6CC4\u9732");
 		return true;
 	}
 
@@ -3155,9 +3274,9 @@ public partial class BattleSceneController : Node2D
 
 		BattleCardDefinition snipeDefinition = BuildAvailableCardCatalog()
 			.FirstOrDefault(definition => string.Equals(definition.CardId, SnipeCardId, StringComparison.Ordinal))
-			?? new BattleCardDefinition(SnipeCardId, "狙击", "对直线 4 格首个敌人造成 7 伤害", 1, BattleCardCategory.Attack, BattleCardTargetingMode.StraightLineEnemy, range: 4, damage: 7, exhaustsOnPlay: true);
+			?? new BattleCardDefinition(SnipeCardId, "Snipe", "Range 4. Deal 7 damage to a single enemy.", 1, BattleCardCategory.Attack, BattleCardTargetingMode.StraightLineEnemy, range: 4, damage: 7, exhaustsOnPlay: true);
 		_playerDeck.AddTemporaryCardToHand(snipeDefinition);
-		AppendBattleActionLog($"{ResolveObjectDisplayName(attackerId)}->狙击就绪");
+		AppendBattleActionLog($"{ResolveObjectDisplayName(attackerId)}->\u72D9\u51FB\u5F85\u53D1");
 		return true;
 	}
 
@@ -3178,7 +3297,7 @@ public partial class BattleSceneController : Node2D
 			Radius = 2,
 			Damage = 6,
 		});
-		AppendBattleActionLog($"{ResolveObjectDisplayName(attackerId)}->戒备待发");
+		AppendBattleActionLog($"{ResolveObjectDisplayName(attackerId)}->\u6212\u5907\u5F85\u53D1");
 		return true;
 	}
 
@@ -3273,7 +3392,7 @@ public partial class BattleSceneController : Node2D
 		int ramDamage = SumImpactAmount(ramResult, CombatImpactType.HealthDamage, CombatImpactType.ShieldDamage);
 		if (ramDamage > 0)
 		{
-			AppendBattleActionLog($"{ResolveObjectDisplayName(attackerId)}->{ResolveObjectDisplayName(targetObject.ObjectId)} 冲撞{ramDamage}");
+			AppendBattleActionLog($"{ResolveObjectDisplayName(attackerId)}->{ResolveObjectDisplayName(targetObject.ObjectId)} \u51B2\u649E{ramDamage}");
 		}
 
 		List<Vector2I> knockbackPath = new() { targetObject.Cell };
@@ -3337,7 +3456,7 @@ public partial class BattleSceneController : Node2D
 		int targetCollisionDamage = SumImpactAmount(targetCollisionResult, CombatImpactType.HealthDamage, CombatImpactType.ShieldDamage);
 		if (targetCollisionDamage > 0)
 		{
-			AppendBattleActionLog($"{ResolveObjectDisplayName(targetObject.ObjectId)}->撞击{targetCollisionDamage}");
+			AppendBattleActionLog($"{ResolveObjectDisplayName(targetObject.ObjectId)}->\u649E\u51FB{targetCollisionDamage}");
 		}
 
 		if (collisionObject == null)
@@ -3361,7 +3480,7 @@ public partial class BattleSceneController : Node2D
 		int blockerCollisionDamage = SumImpactAmount(blockerCollisionResult, CombatImpactType.HealthDamage, CombatImpactType.ShieldDamage);
 		if (blockerCollisionDamage > 0)
 		{
-			AppendBattleActionLog($"{ResolveObjectDisplayName(collisionObject.ObjectId)}->被撞{blockerCollisionDamage}");
+			AppendBattleActionLog($"{ResolveObjectDisplayName(collisionObject.ObjectId)}->\u88AB\u649E{blockerCollisionDamage}");
 		}
 
 		return true;
@@ -3424,7 +3543,7 @@ public partial class BattleSceneController : Node2D
 			int damageAmount = SumImpactAmount(result, CombatImpactType.HealthDamage, CombatImpactType.ShieldDamage);
 			if (damageAmount > 0)
 			{
-				AppendBattleActionLog($"{ResolveObjectDisplayName(effect.SourceObjectId)}->{ResolveObjectDisplayName(enemy.ObjectId)} 戒备{damageAmount}");
+				AppendBattleActionLog($"{ResolveObjectDisplayName(effect.SourceObjectId)}->{ResolveObjectDisplayName(enemy.ObjectId)} \u6212\u5907{damageAmount}");
 			}
 		}
 	}
@@ -3471,7 +3590,7 @@ public partial class BattleSceneController : Node2D
 		int damageAmount = SumImpactAmount(result, CombatImpactType.HealthDamage, CombatImpactType.ShieldDamage);
 		if (damageAmount > 0)
 		{
-			AppendBattleActionLog($"{ResolveObjectDisplayName(attackerId)}->{ResolveObjectDisplayName(targetId)} 点名{damageAmount}");
+			AppendBattleActionLog($"{ResolveObjectDisplayName(attackerId)}->{ResolveObjectDisplayName(targetId)} \u70B9\u540D{damageAmount}");
 		}
 
 		killed = wasDestroyed;
@@ -3496,11 +3615,11 @@ public partial class BattleSceneController : Node2D
 
 		if (expired)
 		{
-			AppendBattleActionLog($"{ResolveObjectDisplayName(attackerId)}->{weaponName} 寮逛粨鑰楀敖");
+			AppendBattleActionLog($"{ResolveObjectDisplayName(attackerId)}->{weaponName} \u5F39\u4ED3\u8017\u5C3D");
 			return;
 		}
 
-		AppendBattleActionLog($"{ResolveObjectDisplayName(attackerId)}->{weaponName} 剩余{remainingCharges}击");
+		AppendBattleActionLog($"{ResolveObjectDisplayName(attackerId)}->{weaponName} \u5269\u4F59{remainingCharges}\u51FB");
 	}
 
 	private List<Vector2I> BuildCardTargetCells(string sourceObjectId, BattleCardDefinition cardDefinition)
@@ -3777,8 +3896,8 @@ public partial class BattleSceneController : Node2D
 		{
 			new BattleCardDefinition(
 				"debug_finisher",
-				"处决",
-				"近邻 99 伤害",
+				"\u5904\u51B3",
+				"\u9020\u6210 99 \u4F24\u5BB3",
 				1,
 				BattleCardCategory.Attack,
 				BattleCardTargetingMode.EnemyUnit,
@@ -3787,31 +3906,31 @@ public partial class BattleSceneController : Node2D
 				exhaustsOnPlay: true),
 			new BattleCardDefinition(
 				DrawRevolverCardId,
-				"拔枪",
-				"本场战斗临时换为左轮：普通攻击射程改为 2，伤害改为 4，可攻击 6 次",
+				"\u62D4\u67AA",
+				"\u672C\u573A\u6218\u6597\u4E34\u65F6\u5207\u6362\u4E3A\u5DE6\u8F6E\uff1A\u666E\u901A\u653B\u51FB\u5C04\u7A0B\u6539\u4E3A 2\uff0C\u4F24\u5BB3\u6539\u4E3A 4\uff0C\u53EF\u653B\u51FB 6 \u6B21",
 				2,
 				BattleCardCategory.Skill,
 				BattleCardTargetingMode.None),
 			new BattleCardDefinition(
 				ArcLeakCardId,
-				"电弧泄露",
-				"对 3 格内目标格及其相邻 4 格施加电弧地形",
+				"\u7535\u5F27\u6CC4\u9732",
+				"\u5BF9 3 \u683C\u5185\u76EE\u6807\u683C\u53CA\u5176\u76F8\u90BB\u683C\u751F\u6210\u7535\u5F27\u5730\u5F62",
 				1,
 				BattleCardCategory.Skill,
 				BattleCardTargetingMode.Cell,
 				range: 3),
 			new BattleCardDefinition(
 				RamCardId,
-				"冲撞",
-				"直线 2 格内冲到目标面前，造成 3 伤害；若目标背后受阻，再追加 4 点撞击伤害",
+				"\u51B2\u649E",
+				"\u76F4\u7EBF 2 \u683C\u5185\u51B2\u5230\u76EE\u6807\u9762\u524D\uff0c\u9020\u6210 3 \u4F24\u5BB3\uff1B\u82E5\u76EE\u6807\u88AB\u963B\u6321\uff0C\u518D\u8FFD\u52A0 4 \u70B9\u649E\u51FB\u4F24\u5BB3",
 				1,
 				BattleCardCategory.Attack,
 				BattleCardTargetingMode.StraightLineEnemy,
 				range: 2),
 			new BattleCardDefinition(
 				"cross_slash",
-				"交斩",
-				"近邻 3 伤害",
+				"\u4EA4\u65A9",
+				"\u9020\u6210 3 \u4F24\u5BB3",
 				1,
 				BattleCardCategory.Attack,
 				BattleCardTargetingMode.EnemyUnit,
@@ -3819,8 +3938,8 @@ public partial class BattleSceneController : Node2D
 				damage: 3),
 			new BattleCardDefinition(
 				"quick_cut",
-				"疾斩",
-				"近邻 2 伤害",
+				"\u75BE\u65A9",
+				"\u9020\u6210 2 \u4F24\u5BB3\uff0c\u5FEB\u901F",
 				0,
 				BattleCardCategory.Attack,
 				BattleCardTargetingMode.EnemyUnit,
@@ -3829,8 +3948,8 @@ public partial class BattleSceneController : Node2D
 				isQuick: true),
 			new BattleCardDefinition(
 				"line_shot",
-				"贯射",
-				"直线首敌 2 伤害",
+				"\u8D2F\u5C04",
+				"\u5BF9\u76F4\u7EBF\u654C\u4EBA\u9020\u6210 2 \u4F24\u5BB3",
 				1,
 				BattleCardCategory.Attack,
 				BattleCardTargetingMode.StraightLineEnemy,
@@ -3838,8 +3957,8 @@ public partial class BattleSceneController : Node2D
 				damage: 2),
 			new BattleCardDefinition(
 				"heavy_shot",
-				"重铳",
-				"直线首敌 5 伤害",
+				"\u91CD\u94F3",
+				"\u5BF9\u76F4\u7EBF\u654C\u4EBA\u9020\u6210 5 \u4F24\u5BB3\uff0C\u6D88\u8017",
 				2,
 				BattleCardCategory.Attack,
 				BattleCardTargetingMode.StraightLineEnemy,
@@ -3848,16 +3967,16 @@ public partial class BattleSceneController : Node2D
 				exhaustsOnPlay: true),
 			new BattleCardDefinition(
 				"battle_read",
-				"整备",
-				"抽 2 张",
+				"\u6574\u5907",
+				"\u62BD 2 \u5F20\u724C",
 				1,
 				BattleCardCategory.Skill,
 				BattleCardTargetingMode.None,
 				drawCount: 2),
 			new BattleCardDefinition(
 				"meditate",
-				"调息",
-				"抽 1 张并回 1 能量",
+				"\u8C03\u606F",
+				"\u62BD 1 \u5F20\u724C\uff0c\u56DE 1 \u80FD\u91CF\uff0c\u5FEB\u901F",
 				0,
 				BattleCardCategory.Skill,
 				BattleCardTargetingMode.None,
@@ -3866,8 +3985,8 @@ public partial class BattleSceneController : Node2D
 				isQuick: true),
 			new BattleCardDefinition(
 				"surge",
-				"蓄能",
-				"回 2 能量",
+				"\u84C4\u80FD",
+				"\u56DE 2 \u80FD\u91CF",
 				1,
 				BattleCardCategory.Skill,
 				BattleCardTargetingMode.None,
@@ -3875,8 +3994,8 @@ public partial class BattleSceneController : Node2D
 				exhaustsOnPlay: true),
 			new BattleCardDefinition(
 				"draw_spark",
-				"灵感",
-				"抽 1 张并回 1 能量",
+				"\u7075\u611F",
+				"\u62BD 1 \u5F20\u724C\uff0C\u56DE 1 \u80FD\u91CF",
 				1,
 				BattleCardCategory.Skill,
 				BattleCardTargetingMode.None,
@@ -3884,8 +4003,8 @@ public partial class BattleSceneController : Node2D
 				energyGain: 1),
 			new BattleCardDefinition(
 				"quick_plan",
-				"快谋",
-				"抽 2 张",
+				"\u5FEB\u8C0B",
+				"\u62BD 2 \u5F20\u724C\uff0C\u5FEB\u901F",
 				0,
 				BattleCardCategory.Skill,
 				BattleCardTargetingMode.None,
@@ -3893,8 +4012,8 @@ public partial class BattleSceneController : Node2D
 				isQuick: true),
 			new BattleCardDefinition(
 				"burning_edge",
-				"燃刃",
-				"近邻 4 伤害",
+				"\u71C3\u5203",
+				"\u9020\u6210 4 \u4F24\u5BB3",
 				1,
 				BattleCardCategory.Attack,
 				BattleCardTargetingMode.EnemyUnit,
@@ -3903,8 +4022,8 @@ public partial class BattleSceneController : Node2D
 				exhaustsOnPlay: true),
 			new BattleCardDefinition(
 				"hook_shot",
-				"钩射",
-				"直线首敌 3 伤害",
+				"\u94A9\u5C04",
+				"\u5BF9\u76F4\u7EBF\u654C\u4EBA\u9020\u6210 3 \u4F24\u5BB3",
 				1,
 				BattleCardCategory.Attack,
 				BattleCardTargetingMode.StraightLineEnemy,
@@ -3912,16 +4031,16 @@ public partial class BattleSceneController : Node2D
 				damage: 3),
 			new BattleCardDefinition(
 				"deep_focus",
-				"沉念",
-				"抽 3 张",
+				"\u6C89\u5FF5",
+				"\u62BD 3 \u5F20\u724C",
 				2,
 				BattleCardCategory.Skill,
 				BattleCardTargetingMode.None,
 				drawCount: 3),
 			new BattleCardDefinition(
 				"spark_charge",
-				"火花",
-				"获得 1 能量并抽 1 张",
+				"\u706B\u82B1",
+				"\u56DE 1 \u80FD\u91CF\u5E76\u62BD 1 \u5F20\u724C",
 				0,
 				BattleCardCategory.Skill,
 				BattleCardTargetingMode.None,
@@ -3930,8 +4049,8 @@ public partial class BattleSceneController : Node2D
 				isQuick: true),
 			new BattleCardDefinition(
 				"burst_drive",
-				"爆驱",
-				"回 2 能量",
+				"\u7206\u9A71",
+				"\u56DE 2 \u80FD\u91CF",
 				0,
 				BattleCardCategory.Skill,
 				BattleCardTargetingMode.None,
@@ -3939,24 +4058,24 @@ public partial class BattleSceneController : Node2D
 				exhaustsOnPlay: true),
 			new BattleCardDefinition(
 				"guard_up",
-				"举盾",
-				"获得 3 护盾",
+				"\u4E3E\u76FE",
+				"\u83B7\u5F97 3 \u62A4\u76FE",
 				1,
 				BattleCardCategory.Skill,
 				BattleCardTargetingMode.None,
 				shieldGain: 3),
 			new BattleCardDefinition(
 				"brace",
-				"架势",
-				"获得 5 护盾",
+				"\u67B6\u52BF",
+				"\u83B7\u5F97 5 \u62A4\u76FE",
 				2,
 				BattleCardCategory.Skill,
 				BattleCardTargetingMode.None,
 				shieldGain: 5),
 			new BattleCardDefinition(
 				"quick_guard",
-				"瞬守",
-				"获得 2 护盾",
+				"\u77AC\u5B88",
+				"\u83B7\u5F97 2 \u62A4\u76FE\uff0c\u5FEB\u901F",
 				0,
 				BattleCardCategory.Skill,
 				BattleCardTargetingMode.None,
@@ -3964,8 +4083,8 @@ public partial class BattleSceneController : Node2D
 				isQuick: true),
 			new BattleCardDefinition(
 				"field_patch",
-				"现场包扎",
-				"2 格内友方恢复 3 生命",
+				"\u73B0\u573A\u5305\u624E",
+				"\u5BF9 2 \u683C\u5185\u53CB\u65B9\u6062\u590D 3 \u751F\u547D",
 				1,
 				BattleCardCategory.Skill,
 				BattleCardTargetingMode.FriendlyUnit,

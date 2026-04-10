@@ -387,6 +387,10 @@ texture = SubResource("CanvasTexture_q0cei")
 
 [node name="Chest" parent="." unique_id=419507687 instance=ExtResource("3_t6dyj")]
 position = Vector2(40, 40)
+ChestName = "货运箱"
+GrantedItemId = "equip_arc_pipe"
+ItemDescription = "获得了电弧金属管"
+EmptyDescription = "箱子是空的。"
 
 [node name="WallCollisionBuilder" type="Node" parent="." unique_id=1182377001]
 script = ExtResource("4_12pjf")

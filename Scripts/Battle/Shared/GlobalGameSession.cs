@@ -328,6 +328,16 @@ public partial class GlobalGameSession : Node
 		return Math.Max(0, target - PlayerExperience);
 	}
 
+	public int GetSoftLevelCap()
+	{
+		return RuntimeProgressionRuleSet.SoftLevelCap;
+	}
+
+	public bool IsAtOrPastSoftLevelCap()
+	{
+		return PlayerLevel >= RuntimeProgressionRuleSet.SoftLevelCap;
+	}
+
 	public void BeginBattle(BattleRequest? request = null)
 	{
 		BattleRequest resolvedRequest = request ?? BattleRequest.FromSession(this);
@@ -748,9 +758,12 @@ public partial class GlobalGameSession : Node
 
 	public void ApplyProgressionDelta(Boundary.ProgressionDelta delta)
 	{
+		int previousLevel = ProgressionState.PlayerLevel;
 		if (delta.ExperienceDelta != 0)
 		{
 			ProgressionState.PlayerExperience = Math.Max(0, ProgressionState.PlayerExperience + delta.ExperienceDelta);
+			ResolveLevelUpsFromExperience(previousLevel);
+			previousLevel = ProgressionState.PlayerLevel;
 		}
 
 		if (delta.MasteryPointDelta != 0)
@@ -786,6 +799,27 @@ public partial class GlobalGameSession : Node
 		SyncFieldsFromCompositeState();
 	}
 
+	private void ResolveLevelUpsFromExperience(int previousLevel)
+	{
+		int currentLevel = Math.Max(1, ProgressionState.PlayerLevel);
+		while (ProgressionState.PlayerExperience >= RuntimeProgressionRuleSet.GetAccumulatedExperienceForLevel(currentLevel + 1))
+		{
+			currentLevel++;
+		}
+
+		if (currentLevel <= ProgressionState.PlayerLevel)
+		{
+			return;
+		}
+
+		ProgressionState.PlayerLevel = currentLevel;
+		int masteryGain = RuntimeProgressionRuleSet.GetMasteryPointsAwardBetweenLevels(previousLevel, currentLevel);
+		if (masteryGain > 0)
+		{
+			ProgressionState.PlayerMasteryPoints = Math.Max(0, ProgressionState.PlayerMasteryPoints + masteryGain);
+		}
+	}
+
 	public void ApplyInventoryDelta(Godot.Collections.Dictionary delta)
 	{
 		ApplyInventoryDelta(Boundary.InventoryDelta.FromDictionary(delta));
@@ -807,6 +841,20 @@ public partial class GlobalGameSession : Node
 
 			InventoryItemCounts[itemId] = nextAmount;
 		}
+
+		if (delta.KeyItemUnlockIds.Length > 0)
+		{
+			foreach (string keyItemId in delta.KeyItemUnlockIds)
+			{
+				if (!string.IsNullOrWhiteSpace(keyItemId) && !InventoryState.KeyItemIds.Contains(keyItemId))
+				{
+					InventoryState.KeyItemIds.Add(keyItemId);
+				}
+			}
+		}
+
+		SyncFieldsFromCompositeState();
+		EmitSignal(SignalName.PlayerRuntimeChanged);
 	}
 
 	public void ApplyInventorySnapshot(Godot.Collections.Dictionary snapshot)

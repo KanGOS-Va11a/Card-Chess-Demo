@@ -8,27 +8,29 @@ public static class GalDialogueOverlay
     private const string SpeakerPath = "Margin/VBox/SpeakerLabel";
     private const string ContentPath = "Margin/VBox/ContentLabel";
 
+    public static bool IsVisible(Node context)
+    {
+        Panel? panel = ResolvePanel(context, createIfMissing: false);
+        return panel != null && panel.Visible;
+    }
+
+    public static void Hide(Node context)
+    {
+        Panel? panel = ResolvePanel(context, createIfMissing: false);
+        if (panel != null)
+        {
+            panel.Visible = false;
+        }
+    }
+
     public static void Show(Node context, string speaker, string content)
     {
-        if (context == null)
+        Panel? panel = ResolvePanel(context, createIfMissing: true);
+        if (panel == null)
         {
             return;
         }
 
-        Node currentScene = context.GetTree()?.CurrentScene;
-        if (currentScene == null)
-        {
-            return;
-        }
-
-        CanvasLayer ui = currentScene.FindChild("UI", true, false) as CanvasLayer;
-        if (ui == null)
-        {
-            ui = new CanvasLayer { Name = "UI" };
-            currentScene.AddChild(ui);
-        }
-
-        Panel panel = ui.GetNodeOrNull<Panel>(PanelName) ?? CreatePanel(ui);
         Label speakerLabel = panel.GetNodeOrNull<Label>(SpeakerPath);
         Label contentLabel = panel.GetNodeOrNull<Label>(ContentPath);
         if (speakerLabel == null || contentLabel == null)
@@ -39,6 +41,34 @@ public static class GalDialogueOverlay
         speakerLabel.Text = string.IsNullOrWhiteSpace(speaker) ? "旁白" : speaker.Trim();
         contentLabel.Text = string.IsNullOrWhiteSpace(content) ? "..." : content.Trim();
         panel.Visible = true;
+    }
+
+    private static Panel? ResolvePanel(Node context, bool createIfMissing)
+    {
+        if (context == null)
+        {
+            return null;
+        }
+
+        Node currentScene = context.GetTree()?.CurrentScene;
+        if (currentScene == null)
+        {
+            return null;
+        }
+
+        CanvasLayer ui = currentScene.FindChild("UI", true, false) as CanvasLayer;
+        if (ui == null)
+        {
+            if (!createIfMissing)
+            {
+                return null;
+            }
+
+            ui = new CanvasLayer { Name = "UI" };
+            currentScene.AddChild(ui);
+        }
+
+        return ui.GetNodeOrNull<Panel>(PanelName) ?? (createIfMissing ? CreatePanel(ui) : null);
     }
 
     private static Panel CreatePanel(CanvasLayer parent)
@@ -54,6 +84,7 @@ public static class GalDialogueOverlay
             OffsetBottom = -10.0f,
             SelfModulate = new Color(0.06f, 0.08f, 0.12f, 0.92f),
             MouseFilter = Control.MouseFilterEnum.Ignore,
+            Visible = false,
         };
 
         MarginContainer margin = new MarginContainer

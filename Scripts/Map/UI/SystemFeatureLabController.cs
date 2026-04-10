@@ -91,6 +91,8 @@ public partial class SystemFeatureLabController : CanvasLayer
 
 	private static readonly string[] EquipmentSlotOrder = EquipmentSlotIds.All;
 
+#if false
+
 		private readonly EquipmentDefinition[] _equipmentDefinitions =
 	{
 		new("equip_magnetic_scabbard", "磁锁刀鞘", "weapon", "近战用武器挂件，提供稳定的基础攻击加成。", "攻击 +1"),
@@ -141,6 +143,63 @@ public partial class SystemFeatureLabController : CanvasLayer
 	{
 		new("grunt_debug", "训练敌人", "基础近战测试敌人。", true, "初始开放"),
 		new("pirate_brute_elite", "搭船客重压者", "擅长贴身压迫与重击。", false, "在精英战中完成学习后解锁图鉴", "card_pressure_breach"),
+		new("alliance_hunter_elite", "联盟猎手标定员", "擅长标记与远程收割。", false, "在精英战中完成学习后解锁图鉴", "card_hunter_mark"),
+		new("boss_port_authority", "空港治安主机", "Boss 级压制型敌人。", false, "击败章节 Boss 并完成学习后解锁图鉴", "card_overclock_beam"),
+	};
+
+#endif
+
+	private readonly EquipmentDefinition[] _equipmentDefinitions =
+	{
+		new("equip_magnetic_scabbard", "磁锁刀鞘", "weapon", "近战过渡武器挂件，提供稳定的基础攻击加成。", "攻击 +1"),
+		new("equip_arc_pipe", "电弧金属管", "weapon", "荒川早期强化的临时武器，强调攻击与射程。", "攻击 +1 / 射程 +1"),
+		new("equip_old_coat", "旧大衣", "armor", "主角初始护具，提供基础生存空间。", "生命 +3 / 减伤 +5%"),
+		new("equip_phase_boots", "相位短靴", "armor", "偏机动取向的护具。", "移动 +1"),
+		new("equip_red_scarf", "红色方巾", "accessory", "主角身份符号，目前作为占位饰品。", "剧情饰品"),
+		new("equip_target_lens", "校准镜片", "accessory", "远程倾向配件，以生命代价换取更稳定的火力。", "射程 +1 / 生命 -2"),
+		new("equip_archive_probe", "档案探针", "accessory", "学习流辅助装备，目前作为占位饰品。", "学习辅助"),
+		new("equip_parallel_battery", "并联电池组", "armor", "高负载供能组件，目前作为占位装备。", "供能占位"),
+		new("equip_forbidden_patch", "禁区补丁", "accessory", "高风险实验型配件，目前作为占位饰品。", "风险占位"),
+		new("equip_insulated_cloak", "绝缘披肩", "armor", "后期抗异常护具，目前作为占位装备。", "绝缘占位"),
+	};
+
+	private readonly TalentNode[] _talents =
+	{
+		new("talent_melee_root", "破门本能", TalentTreeGroup.Card, "melee", 1, "近战分支起点，解锁冲撞。", new Vector2(96, 344), Array.Empty<string>(), new[] { "talent_melee_root" }, new[] { "melee" }, new[] { "card_ram" }),
+		new("talent_melee_counter", "死斗姿态", TalentTreeGroup.Card, "melee", 1, "贴身反击路线，解锁架势。", new Vector2(0, 252), new[] { "talent_melee_root" }, new[] { "talent_melee_counter" }, unlockedCardIds: new[] { "card_stance" }),
+		new("talent_melee_counter_plus", "贴身反击", TalentTreeGroup.Card, "melee", 1, "进一步强化近战反打收益。", new Vector2(0, 138), new[] { "talent_melee_counter" }, new[] { "talent_melee_counter_plus" }),
+		new("talent_melee_blow", "压舱重击", TalentTreeGroup.Card, "melee", 1, "破盾与单点击杀路线，解锁重击。", new Vector2(0, 454), new[] { "talent_melee_root" }, new[] { "talent_melee_blow" }, unlockedCardIds: new[] { "card_heavy_blow" }),
+		new("talent_melee_blow_plus", "盾裂处决", TalentTreeGroup.Card, "melee", 1, "继续强化对护盾目标的压制能力。", new Vector2(0, 568), new[] { "talent_melee_blow" }, new[] { "talent_melee_blow_plus" }),
+		new("talent_melee_core", "劫掠冲动", TalentTreeGroup.Card, "melee", 1, "近战专精节点，正式打开高阶近战牌资格。", new Vector2(174, 470), new[] { "talent_melee_counter", "talent_melee_blow" }, new[] { "talent_melee_core", "melee.specialized" }),
+
+		new("talent_ranged_root", "校准火线", TalentTreeGroup.Card, "ranged", 1, "远程分支起点，解锁快枪。", new Vector2(560, 112), Array.Empty<string>(), new[] { "talent_ranged_root" }, new[] { "ranged" }, new[] { "card_quick_shot" }),
+		new("talent_ranged_control", "弹道干预", TalentTreeGroup.Card, "ranged", 1, "击退与压线控制路线，解锁震荡射击。", new Vector2(744, 8), new[] { "talent_ranged_root" }, new[] { "talent_ranged_control" }, unlockedCardIds: new[] { "card_concussion_shot" }),
+		new("talent_ranged_control_plus", "制退射线", TalentTreeGroup.Card, "ranged", 1, "强化远程控制收益。", new Vector2(952, 0), new[] { "talent_ranged_control" }, new[] { "talent_ranged_control_plus" }),
+		new("talent_ranged_pressure", "压制协议", TalentTreeGroup.Card, "ranged", 1, "准备与压制路线，解锁戒备。", new Vector2(744, 206), new[] { "talent_ranged_root" }, new[] { "talent_ranged_pressure" }, unlockedCardIds: new[] { "card_alert" }),
+		new("talent_ranged_signature", "火线改写", TalentTreeGroup.Card, "ranged", 1, "远程招牌节点，解锁拔枪。", new Vector2(954, 246), new[] { "talent_ranged_pressure" }, new[] { "talent_ranged_signature" }, unlockedCardIds: new[] { "draw_revolver" }),
+		new("talent_ranged_core", "先手判读", TalentTreeGroup.Card, "ranged", 1, "远程专精节点，打开高阶远程牌资格。", new Vector2(652, 316), new[] { "talent_ranged_control", "talent_ranged_pressure" }, new[] { "talent_ranged_core", "ranged.specialized" }),
+
+		new("talent_flex_root", "荒川同调", TalentTreeGroup.Card, "flex", 1, "创造分支起点，解锁电弧泄露。", new Vector2(560, 492), Array.Empty<string>(), new[] { "talent_flex_root" }, new[] { "flex" }, new[] { "card_arc_leak" }),
+		new("talent_flex_field", "现场干预", TalentTreeGroup.Card, "flex", 1, "障碍与地形处理路线，解锁风化。", new Vector2(744, 618), new[] { "talent_flex_root" }, new[] { "talent_flex_field" }, unlockedCardIds: new[] { "card_weathering" }),
+		new("talent_flex_field_plus", "障碍拆解", TalentTreeGroup.Card, "flex", 1, "强化障碍处理与拆除收益。", new Vector2(952, 736), new[] { "talent_flex_field" }, new[] { "talent_flex_field_plus" }),
+		new("talent_flex_learning", "战斗记录协议", TalentTreeGroup.Card, "flex", 1, "学习机制入口，解锁学习。", new Vector2(744, 420), new[] { "talent_flex_root" }, new[] { "talent_flex_learning" }, unlockedCardIds: new[] { "card_learning" }),
+		new("talent_flex_learning_plus", "系统劫持者", TalentTreeGroup.Card, "flex", 1, "强化学习与异常控制收益。", new Vector2(954, 378), new[] { "talent_flex_learning" }, new[] { "talent_flex_learning_plus" }),
+		new("talent_flex_core", "异常演算", TalentTreeGroup.Card, "flex", 1, "创造专精节点，打开高阶创造牌资格。", new Vector2(966, 544), new[] { "talent_flex_field", "talent_flex_learning" }, new[] { "talent_flex_core", "flex.specialized" }),
+
+		new("talent_role_atk", "应激输出", TalentTreeGroup.Role, "role", 1, "基础输出能力，普通攻击 +1。", new Vector2(1440, 1120), Array.Empty<string>(), new[] { "talent_role_atk", "stat.attack_bonus.1" }),
+		new("talent_role_hp", "生还者框架", TalentTreeGroup.Role, "role", 1, "基础生存能力，最大生命 +4。", new Vector2(1660, 1120), Array.Empty<string>(), new[] { "talent_role_hp", "stat.max_hp_bonus.4" }),
+		new("talent_role_move", "趋前步伐", TalentTreeGroup.Role, "role", 1, "基础机动能力，移动力 +1。", new Vector2(1880, 1120), Array.Empty<string>(), new[] { "talent_role_move", "stat.move_bonus.1" }),
+		new("talent_role_defense", "防御校准", TalentTreeGroup.Role, "role", 1, "从生存路线延伸出的减伤节点。", new Vector2(1660, 946), new[] { "talent_role_hp" }, new[] { "talent_role_defense", "stat.defense_reduction_bonus.10" }),
+		new("talent_role_guard", "守势支架", TalentTreeGroup.Role, "role", 1, "继续强化防御动作的额外护盾。", new Vector2(1660, 772), new[] { "talent_role_defense" }, new[] { "talent_role_guard", "stat.defense_shield_bonus.2" }),
+		new("talent_role_deck", "构筑缓存", TalentTreeGroup.Role, "role", 1, "从机动路线延伸出的构筑承载节点。", new Vector2(1880, 946), new[] { "talent_role_move" }, new[] { "talent_role_deck" }, deckPointBudgetBonus: 2),
+		new("talent_role_copies", "牌组编纂", TalentTreeGroup.Role, "role", 1, "强化构筑承载，同名上限 +1。", new Vector2(1880, 772), new[] { "talent_role_deck" }, new[] { "talent_role_copies" }, deckMaxCopiesPerCardBonus: 1),
+		new("talent_role_core", "基础动作统合", TalentTreeGroup.Role, "role", 1, "把输出、防御与构筑支持收束为角色树核心。", new Vector2(1718, 560), new[] { "talent_role_atk", "talent_role_guard", "talent_role_copies" }, new[] { "talent_role_core" }),
+	};
+
+	private readonly EnemyCodexEntry[] _enemyCodexEntries =
+	{
+		new("grunt_debug", "训练敌人", "基础近战测试敌人。", true, "初始开放"),
+		new("pirate_brute_elite", "掠船客重压者", "擅长贴身压迫与重击。", false, "在精英战中完成学习后解锁图鉴", "card_pressure_breach"),
 		new("alliance_hunter_elite", "联盟猎手标定员", "擅长标记与远程收割。", false, "在精英战中完成学习后解锁图鉴", "card_hunter_mark"),
 		new("boss_port_authority", "空港治安主机", "Boss 级压制型敌人。", false, "击败章节 Boss 并完成学习后解锁图鉴", "card_overclock_beam"),
 	};
@@ -243,6 +302,8 @@ public partial class SystemFeatureLabController : CanvasLayer
 		_cardTreeLabel.MouseFilter = Control.MouseFilterEnum.Ignore;
 		_roleTreeLabel.MouseFilter = Control.MouseFilterEnum.Ignore;
 		_masteryLabel.MouseFilter = Control.MouseFilterEnum.Ignore;
+		_masteryLabel.ZIndex = 200;
+		_talentBody.MoveChild(_masteryLabel, _talentBody.GetChildCount() - 1);
 		_talentTreeScroll.GuiInput += OnTalentTreeGuiInput;
 		_talentTreeCanvas.GuiInput += OnTalentTreeGuiInput;
 		_talentDragSurface.GuiInput += OnTalentTreeGuiInput;
@@ -268,7 +329,7 @@ public partial class SystemFeatureLabController : CanvasLayer
 		ApplyReadableStatusHint();
 		if (_panelRoot != null && _panelRoot.Visible && _tabs != null && _tabs.CurrentTab == TalentTabIndex)
 		{
-			_masteryLabel.Text = $"Points {GetAvailablePoints()} | WASD Move";
+			_masteryLabel.Text = $"\u5269\u4F59\u4E13\u7CBE\u70B9 {GetAvailablePoints()} | WASD \u79FB\u52A8\u89C6\u56FE";
 			if (_pendingTalentViewResetFrames > 0)
 			{
 				_pendingTalentViewResetFrames -= 1;
@@ -343,6 +404,31 @@ public partial class SystemFeatureLabController : CanvasLayer
 
 	private void UpdateStatusHint()
 	{
+		{
+		Node? readablePlayerNode = PlayerPath.IsEmpty ? null : GetNodeOrNull(PlayerPath);
+		Area2D? readableInteractionArea = readablePlayerNode?.GetNodeOrNull<Area2D>("InteractionArea");
+		if (readableInteractionArea == null)
+		{
+			_statusLabel.Text = "\u672A\u627E\u5230\u73A9\u5BB6\u4EA4\u4E92\u8303\u56F4";
+			return;
+		}
+
+		foreach (Area2D area in readableInteractionArea.GetOverlappingAreas())
+		{
+			if (area.GetParent() is IInteractable interactable && area.GetParent() is Node ownerNode)
+			{
+				Player? readablePlayer = readablePlayerNode as Player ?? GetNodeOrNull<Player>(PlayerPath);
+				_statusLabel.Text = $"\u53EF\u4EA4\u4E92\u5BF9\u8C61: {ownerNode.Name} \u00B7 {interactable.GetInteractText(readablePlayer!)}";
+				return;
+			}
+		}
+
+		_statusLabel.Text = _panelRoot.Visible
+			? "\u7CFB\u7EDF\u9762\u677F\u5DF2\u6253\u5F00\uFF0C\u6309 C \u5173\u95ED"
+			: "\u9760\u8FD1\u654C\u4EBA\u540E\u6309 E \u8FDB\u5165\u6218\u6597";
+		return;
+		}
+
 		Node? playerNode = PlayerPath.IsEmpty ? null : GetNodeOrNull(PlayerPath);
 		Area2D? interactionArea = playerNode?.GetNodeOrNull<Area2D>("InteractionArea");
 		if (interactionArea == null)
@@ -822,6 +908,41 @@ public partial class SystemFeatureLabController : CanvasLayer
 
 	private void ApplyReadableUiTextOverrides()
 	{
+		_hintLabel.Text = "WASD \u79FB\u52A8  E \u4EA4\u4E92  C \u83DC\u5355";
+		GetNode<Label>("PanelRoot/Window/Margin/Root/TitleLabel").Text = "\u7CFB\u7EDF\u83DC\u5355 \u00B7 \u6309 C \u5173\u95ED";
+		GetNode<Label>("PanelRoot/Window/Margin/Root/Tabs/StatusTab/Columns/StatusColumn/Title").Text = "\u89D2\u8272\u72B6\u6001";
+		GetNode<Label>("PanelRoot/Window/Margin/Root/Tabs/StatusTab/Columns/EquipmentColumn/Title").Text = "\u88C5\u5907\u7BA1\u7406";
+		GetNode<Label>("PanelRoot/Window/Margin/Root/Tabs/StatusTab/Columns/EquipmentColumn/CandidateTitle").Text = "\u53EF\u88C5\u5907\u7269\u54C1";
+		_statusEquipButton.Text = "\u88C5\u5907";
+		_statusUnequipButton.Text = "\u5378\u4E0B";
+		GetNode<RichTextLabel>("PanelRoot/Window/Margin/Root/Tabs/StatusTab/Columns/EquipmentColumn/EquipmentDetailPanel/EquipmentDetailText").Text = "\u9009\u62E9\u88C5\u5907\u540E\u5728\u8FD9\u91CC\u67E5\u770B\u8BE6\u60C5";
+		GetNode<RichTextLabel>("PanelRoot/Window/Margin/Root/Tabs/InventoryTab/InventoryText").Text = "\u80CC\u5305\u5185\u5BB9";
+		_seedInventoryButton.Text = "\u586B\u5145\u6D4B\u8BD5\u7269\u8D44";
+		_clearInventoryButton.Text = "\u6E05\u7A7A\u6D4B\u8BD5\u7269\u8D44";
+		_masteryLabel.Text = "\u5269\u4F59\u4E13\u7CBE\u70B9";
+		_cardTreeLabel.Text = "\u5361\u724C\u6811";
+		_roleTreeLabel.Text = "\u89D2\u8272\u80FD\u529B\u6811";
+		_talentDetailTitleLabel.Text = "\u5929\u8D4B\u8BE6\u60C5";
+		GetNode<Label>("PanelRoot/Window/Margin/Root/Tabs/TalentTab/Body/DetailPanel/Margin/Content/ActionHint").Text = "\u70B9\u51FB\u8282\u70B9\u53EA\u4F1A\u9009\u4E2D\u3002\u70B9\u51FB\u7A7A\u767D\u5904\u53EF\u5173\u95ED\u3002";
+		_unlockTalentButton.Text = "\u89E3\u9501";
+		_refundTalentButton.Text = "\u9000\u70B9";
+		GetNode<Label>("PanelRoot/Window/Margin/Root/Tabs/CodexTab/CodexTabs/CardCodex/Columns/ListColumn/Title").Text = "\u5361\u724C\u56FE\u9274";
+		GetNode<Label>("PanelRoot/Window/Margin/Root/Tabs/CodexTab/CodexTabs/EnemyCodex/Columns/ListColumn/Title").Text = "\u654C\u4EBA\u56FE\u9274";
+		GetNode<RichTextLabel>("PanelRoot/Window/Margin/Root/Tabs/CodexTab/CodexTabs/CardCodex/Columns/DetailPanel/DetailText").Text = "\u9009\u62E9\u4E00\u5F20\u5361\u724C\u67E5\u770B\u8BE6\u60C5";
+		GetNode<RichTextLabel>("PanelRoot/Window/Margin/Root/Tabs/CodexTab/CodexTabs/EnemyCodex/Columns/DetailPanel/DetailText").Text = "\u9009\u62E9\u4E00\u4E2A\u654C\u4EBA\u67E5\u770B\u8BE6\u60C5";
+		_deckPoolSummaryLabel.Text = "\u53EF\u7528\u5361\u6C60";
+		_deckSummaryLabel.Text = "\u5F53\u524D\u6784\u7B51";
+		GetNode<Label>("PanelRoot/Window/Margin/Root/Tabs/DeckTab/Columns/AvailableColumn/AvailableTitle").Text = "\u53EF\u9009\u5361\u724C";
+		GetNode<Label>("PanelRoot/Window/Margin/Root/Tabs/DeckTab/Columns/DeckColumn/DeckTitle").Text = "\u5F53\u524D\u724C\u7EC4";
+		_deckAddButton.Text = "\u52A0\u5165 ->";
+		_deckRemoveButton.Text = "<- \u79FB\u9664";
+		_deckDetailText.Text = "\u9009\u62E9\u4E00\u5F20\u5361\u724C\u67E5\u770B\u8BE6\u60C5";
+		_deckValidationText.Text = "\u7B49\u5F85\u6821\u9A8C";
+		_deckStarterButton.Text = "\u9ED8\u8BA4\u724C\u7EC4";
+		_deckResetButton.Text = "\u6062\u590D\u4F1A\u8BDD";
+		_deckSaveButton.Text = "\u4FDD\u5B58\u6784\u7B51";
+		return;
+
 		_hintLabel.Text = "WASD 移动  E 交互  C 系统";
 		GetNode<Label>("PanelRoot/Window/Margin/Root/TitleLabel").Text = "系统菜单 · 按 C 关闭";
 		GetNode<Label>("PanelRoot/Window/Margin/Root/Tabs/StatusTab/Columns/StatusColumn/Title").Text = "角色状态";
@@ -859,6 +980,31 @@ public partial class SystemFeatureLabController : CanvasLayer
 
 	private void ApplyReadableStatusHint()
 	{
+		{
+		Node? readablePlayerNode = PlayerPath.IsEmpty ? null : GetNodeOrNull(PlayerPath);
+		Area2D? readableInteractionArea = readablePlayerNode?.GetNodeOrNull<Area2D>("InteractionArea");
+		if (readableInteractionArea == null)
+		{
+			_statusLabel.Text = "\u672A\u627E\u5230\u73A9\u5BB6\u4EA4\u4E92\u8303\u56F4";
+			return;
+		}
+
+		foreach (Area2D area in readableInteractionArea.GetOverlappingAreas())
+		{
+			if (area.GetParent() is IInteractable interactable && area.GetParent() is Node ownerNode)
+			{
+				Player? readablePlayer = readablePlayerNode as Player ?? GetNodeOrNull<Player>(PlayerPath);
+				_statusLabel.Text = $"\u53EF\u4EA4\u4E92\u5BF9\u8C61: {ownerNode.Name} \u00B7 {interactable.GetInteractText(readablePlayer!)}";
+				return;
+			}
+		}
+
+		_statusLabel.Text = _panelRoot.Visible
+			? "\u7CFB\u7EDF\u9762\u677F\u5DF2\u6253\u5F00\uFF0C\u6309 C \u5173\u95ED"
+			: "\u9760\u8FD1\u654C\u4EBA\u540E\u6309 E \u8FDB\u5165\u6218\u6597";
+		return;
+		}
+
 		Node? playerNode = PlayerPath.IsEmpty ? null : GetNodeOrNull(PlayerPath);
 		Area2D? interactionArea = playerNode?.GetNodeOrNull<Area2D>("InteractionArea");
 		if (interactionArea == null)
@@ -1160,6 +1306,18 @@ public partial class SystemFeatureLabController : CanvasLayer
 
 	private void RefreshAll()
 	{
+		{
+		RefreshStatusView();
+		RefreshBagView();
+		RefreshTalentSummary();
+		_masteryLabel.Text = $"\u5269\u4F59\u4E13\u7CBE\u70B9 {GetAvailablePoints()} | WASD \u79FB\u52A8\u89C6\u56FE";
+		RefreshTalentButtons();
+		RefreshTalentDetail();
+		RefreshCodexView();
+		RefreshDeckView();
+		return;
+		}
+
 		RefreshStatusView();
 		RefreshBagView();
 		RefreshTalentSummary();
@@ -1172,6 +1330,36 @@ public partial class SystemFeatureLabController : CanvasLayer
 
 	private void RefreshStatusView()
 	{
+		{
+		if (_session == null)
+		{
+			_statusOverviewText.Text = "\u672A\u627E\u5230 GlobalGameSession";
+			_statusEquipmentDetailText.Text = "\u65E0\u6CD5\u8BFB\u53D6\u88C5\u5907\u4FE1\u606F\u3002";
+			return;
+		}
+
+		List<string> readableStatusLines = new()
+		{
+			$"[b]{_session.PlayerDisplayName}[/b]",
+			$"\u7B49\u7EA7: Lv.{_session.PlayerLevel}",
+			$"\u7ECF\u9A8C: {_session.GetExperienceProgressWithinLevel()}/{_session.GetExperienceRequiredForNextLevel()}",
+			$"\u8DDD\u4E0B\u4E00\u7EA7: {_session.GetExperienceNeededToLevelUp()}",
+			$"\u4E13\u7CBE\u70B9: {_session.ProgressionState.PlayerMasteryPoints}",
+			string.Empty,
+			$"\u751F\u547D: {_session.PlayerCurrentHp}/{_session.GetResolvedPlayerMaxHp()}",
+			$"\u79FB\u52A8: {_session.GetResolvedPlayerMovePointsPerTurn()}",
+			$"\u653B\u51FB: {_session.GetResolvedPlayerAttackDamage()}",
+			$"\u653B\u51FB\u8303\u56F4: {_session.PlayerAttackRange}",
+			$"\u9632\u5FA1\u51CF\u4F24: {_session.GetResolvedPlayerDefenseDamageReductionPercent()}%",
+			$"\u9632\u5FA1\u62A4\u76FE: {_session.GetResolvedPlayerDefenseShieldGain()}",
+			$"\u6784\u7B51\u9884\u7B97\u52A0\u6210: {_session.ProgressionState.DeckPointBudgetBonus}",
+			$"\u540C\u540D\u4E0A\u9650\u52A0\u6210: {_session.ProgressionState.DeckMaxCopiesPerCardBonus}",
+		};
+		_statusOverviewText.Text = string.Join('\n', readableStatusLines);
+		RefreshEquipmentSection();
+		return;
+		}
+
 		if (_session == null)
 		{
 			_statusOverviewText.Text = "未找到 GlobalGameSession";
@@ -1202,6 +1390,43 @@ public partial class SystemFeatureLabController : CanvasLayer
 
 	private void RefreshBagView()
 	{
+		{
+		if (_session == null)
+		{
+			_inventoryText.Text = "\u672A\u627E\u5230 GlobalGameSession";
+			return;
+		}
+
+		List<string> readableBagLines = new()
+		{
+			"[b]\u80CC\u5305\u7269\u54C1[/b]",
+			string.Empty,
+		};
+
+		if (_session.InventoryState.ItemCounts.Count == 0)
+		{
+			readableBagLines.Add("- (\u7A7A)");
+		}
+		else
+		{
+			foreach (Variant key in _session.InventoryState.ItemCounts.Keys)
+			{
+				string itemId = key.AsString();
+				readableBagLines.Add($"- {GetInventoryItemDisplayName(itemId)} x{_session.InventoryState.ItemCounts[key].AsInt32()}");
+			}
+		}
+
+		readableBagLines.Add(string.Empty);
+		readableBagLines.Add("[b]\u989D\u5916\u89E3\u9501\u5361\u724C[/b]");
+		readableBagLines.AddRange(_session.ProgressionState.UnlockedCardIds.Length == 0
+			? new[] { "- (\u65E0)" }
+			: _session.ProgressionState.UnlockedCardIds
+				.OrderBy(value => value, StringComparer.Ordinal)
+				.Select(value => $"- {GetCardDisplayName(value)}"));
+		_inventoryText.Text = string.Join('\n', readableBagLines);
+		return;
+		}
+
 		if (_session == null)
 		{
 			_inventoryText.Text = "未找到 GlobalGameSession";
@@ -1236,6 +1461,66 @@ public partial class SystemFeatureLabController : CanvasLayer
 
 	private void RefreshEquipmentSection()
 	{
+		{
+		if (_session == null)
+		{
+			return;
+		}
+
+		_statusEquipmentSlotList.Clear();
+		foreach (string slotId in EquipmentSlotOrder)
+		{
+			string equippedItemId = _session.GetEquippedItemId(slotId);
+			string equippedName = GetEquipmentDisplayNameSafe(equippedItemId);
+			_statusEquipmentSlotList.AddItem($"{GetEquipmentSlotDisplayNameSafe(slotId)}: {equippedName}");
+		}
+
+		int readableSelectedSlotIndex = Array.IndexOf(EquipmentSlotOrder, _selectedEquipmentSlotId);
+		if (readableSelectedSlotIndex >= 0)
+		{
+			_statusEquipmentSlotList.Select(readableSelectedSlotIndex);
+		}
+
+		List<RuntimeEquipmentDefinition> readableCandidates = new();
+		foreach (Variant key in _session.InventoryState.ItemCounts.Keys)
+		{
+			string itemId = key.AsString();
+			RuntimeEquipmentDefinition? definition = FindEquipmentDefinition(itemId);
+			if (definition == null || !string.Equals(definition.SlotId, _selectedEquipmentSlotId, StringComparison.Ordinal))
+			{
+				continue;
+			}
+
+			readableCandidates.Add(definition);
+		}
+
+		_visibleEquipmentCandidates = readableCandidates
+			.OrderBy(definition => definition.DisplayName, StringComparer.Ordinal)
+			.ToArray();
+
+		_statusEquipmentCandidateList.Clear();
+		foreach (RuntimeEquipmentDefinition definition in _visibleEquipmentCandidates)
+		{
+			string suffix = string.Equals(_session.GetEquippedItemId(_selectedEquipmentSlotId), definition.ItemId, StringComparison.Ordinal)
+				? " [\u5DF2\u88C5\u5907]"
+				: string.Empty;
+			_statusEquipmentCandidateList.AddItem($"{definition.DisplayName}{suffix}");
+		}
+
+		_statusUnequipButton.Disabled = string.IsNullOrWhiteSpace(_session.GetEquippedItemId(_selectedEquipmentSlotId));
+		_statusEquipButton.Disabled = _visibleEquipmentCandidates.Length == 0;
+
+		if (_visibleEquipmentCandidates.Length == 0)
+		{
+			_statusEquipmentDetailText.Text = $"[b]{GetEquipmentSlotDisplayNameSafe(_selectedEquipmentSlotId)}[/b]\n\u5F53\u524D\u6CA1\u6709\u53EF\u88C5\u5907\u7269\u54C1\u3002";
+			return;
+		}
+
+		_statusEquipmentCandidateList.Select(0);
+		RefreshEquipmentDetail(_visibleEquipmentCandidates[0]);
+		return;
+		}
+
 		if (_session == null)
 		{
 			return;
@@ -1299,6 +1584,29 @@ public partial class SystemFeatureLabController : CanvasLayer
 
 	private void RefreshEquipmentDetail(RuntimeEquipmentDefinition definition)
 	{
+		{
+		if (_session == null)
+		{
+			return;
+		}
+
+		bool readableEquipped = string.Equals(_session.GetEquippedItemId(definition.SlotId), definition.ItemId, StringComparison.Ordinal);
+		int readableOwnedCount = _session.InventoryState.ItemCounts.TryGetValue(definition.ItemId, out Variant readableOwnedValue)
+			? readableOwnedValue.AsInt32()
+			: 0;
+		_statusEquipmentDetailText.Text = string.Join('\n', new[]
+		{
+			$"[b]{definition.DisplayName}[/b]",
+			$"\u90E8\u4F4D: {GetEquipmentSlotDisplayNameSafe(definition.SlotId)}",
+			$"\u62E5\u6709\u6570\u91CF: {readableOwnedCount}",
+			$"\u72B6\u6001: {(readableEquipped ? "\u5DF2\u88C5\u5907" : "\u672A\u88C5\u5907")}",
+			$"\u6548\u679C: {definition.BuildModifierSummary()}",
+			string.Empty,
+			definition.Description,
+		});
+		return;
+		}
+
 		if (_session == null)
 		{
 			return;
@@ -1332,6 +1640,44 @@ public partial class SystemFeatureLabController : CanvasLayer
 
 	private void RefreshInventoryView()
 	{
+		{
+		if (_session == null)
+		{
+			_inventoryText.Text = "\u672A\u627E\u5230 GlobalGameSession";
+			return;
+		}
+
+		List<string> readableInventoryLines = new()
+		{
+			"[b]\u80CC\u5305[/b]",
+			string.Empty,
+			"[b]\u7269\u54C1[/b]",
+		};
+
+		if (_session.InventoryState.ItemCounts.Count == 0)
+		{
+			readableInventoryLines.Add("- (\u7A7A)");
+		}
+		else
+		{
+			foreach (Variant key in _session.InventoryState.ItemCounts.Keys)
+			{
+				string itemId = key.AsString();
+				readableInventoryLines.Add($"- {GetInventoryItemDisplayName(itemId)} x{_session.InventoryState.ItemCounts[key].AsInt32()}");
+			}
+		}
+
+		readableInventoryLines.Add(string.Empty);
+		readableInventoryLines.Add("[b]\u989D\u5916\u89E3\u9501\u5361\u724C[/b]");
+		readableInventoryLines.AddRange(_session.ProgressionState.UnlockedCardIds.Length == 0
+			? new[] { "- (\u65E0)" }
+			: _session.ProgressionState.UnlockedCardIds
+				.OrderBy(value => value, StringComparer.Ordinal)
+				.Select(value => $"- {GetCardDisplayName(value)}"));
+		_inventoryText.Text = string.Join('\n', readableInventoryLines);
+		return;
+		}
+
 		if (_session == null)
 		{
 			_inventoryText.Text = "未找到 GlobalGameSession";
@@ -1367,6 +1713,16 @@ public partial class SystemFeatureLabController : CanvasLayer
 
 	private void RefreshTalentSummary()
 	{
+		{
+		if (_session == null)
+		{
+			return;
+		}
+
+		_masteryLabel.Text = $"\u5269\u4F59\u4E13\u7CBE\u70B9 {GetAvailablePoints()}";
+		return;
+		}
+
 		if (_session == null)
 		{
 			return;
@@ -1458,6 +1814,48 @@ public partial class SystemFeatureLabController : CanvasLayer
 
 	private void RefreshTalentDetail()
 	{
+		{
+		if (string.IsNullOrWhiteSpace(_selectedTalentId))
+		{
+			_talentDetailDim.Visible = false;
+			_talentDetailPanel.Visible = false;
+			return;
+		}
+
+		TalentNode? readableTalent = _talents.FirstOrDefault(item => string.Equals(item.Id, _selectedTalentId, StringComparison.Ordinal));
+		if (readableTalent == null)
+		{
+			_talentDetailDim.Visible = false;
+			_talentDetailPanel.Visible = false;
+			return;
+		}
+
+		bool readablePurchased = _purchasedTalentIds.Contains(readableTalent.Id);
+		bool readableCanPurchase = CanPurchase(readableTalent);
+		bool readableCanRefund = CanRefund(readableTalent);
+		_talentDetailDim.Visible = true;
+		_talentDetailPanel.Visible = true;
+		_talentDetailTitleLabel.Text = $"\u5929\u8D4B\u8BE6\u60C5 | {readableTalent.DisplayName}";
+		_talentDetail.Text = string.Join('\n', new[]
+		{
+			$"[b]{readableTalent.DisplayName}[/b]",
+			readableTalent.Description,
+			$"\u82B1\u8D39: {readableTalent.Cost}",
+			$"\u524D\u7F6E: {(readableTalent.PrerequisiteTalentIds.Length == 0 ? "\u65E0" : string.Join(", ", readableTalent.PrerequisiteTalentIds))}",
+			$"\u5206\u652F: {(readableTalent.GrantedBranchTags.Length == 0 ? "\u65E0" : string.Join(", ", readableTalent.GrantedBranchTags))}",
+			$"\u89E3\u9501\u5361\u724C: {(readableTalent.UnlockedCardIds.Length == 0 ? "\u65E0" : string.Join(", ", readableTalent.UnlockedCardIds.Select(GetCardDisplayName)))}",
+			$"\u6784\u7B51\u4FEE\u6B63: +{readableTalent.DeckPointBudgetBonus} / \u540C\u540D\u4E0A\u9650 +{readableTalent.DeckMaxCopiesPerCardBonus}",
+			string.Empty,
+			"\u70B9\u51FB\u8282\u70B9\u53EA\u4F1A\u9009\u4E2D\uFF0C\u4E0D\u4F1A\u76F4\u63A5\u89E3\u9501\u3002",
+			"\u8BF7\u4F7F\u7528\u53F3\u4FA7\u6309\u94AE\u786E\u8BA4\u89E3\u9501\u6216\u9000\u70B9\u3002",
+		});
+		_unlockTalentButton.Disabled = readablePurchased || !readableCanPurchase;
+		_unlockTalentButton.Text = readablePurchased ? "\u5DF2\u89E3\u9501" : readableCanPurchase ? $"\u89E3\u9501 ({readableTalent.Cost}\u70B9)" : "\u4E0D\u53EF\u89E3\u9501";
+		_refundTalentButton.Disabled = !readablePurchased || !readableCanRefund;
+		_refundTalentButton.Text = readableCanRefund ? "\u9000\u70B9" : "\u4E0D\u53EF\u9000\u70B9";
+		return;
+		}
+
 		TalentNode? talent = _talents.FirstOrDefault(item => string.Equals(item.Id, _selectedTalentId, StringComparison.Ordinal));
 		if (talent == null)
 		{
@@ -1559,6 +1957,43 @@ public partial class SystemFeatureLabController : CanvasLayer
 
 	private void RefreshDeckView()
 	{
+		{
+		if (_session == null || _constructionService == null || _cardLibrary == null)
+		{
+			return;
+		}
+
+		ProgressionSnapshot readableProgression = _session.BuildProgressionSnapshotModel();
+		_availableTemplates = _constructionService.GetAvailableCardPool(readableProgression).ToArray();
+		_availableList.Clear();
+		foreach (BattleCardTemplate template in _availableTemplates)
+		{
+			bool overlimit = !template.CanCarryNormally(readableProgression) && template.CanCarryOverlimit(readableProgression);
+			string suffix = template.IsLearnedCard ? " [\u5B66\u4E60]" : overlimit ? " [\u8D85\u9650]" : string.Empty;
+			_availableList.AddItem($"{template.DisplayName}{suffix}");
+		}
+
+		_deckList.Clear();
+		foreach (string cardId in _workingDeck)
+		{
+			BattleCardTemplate? template = _cardLibrary.FindTemplate(cardId);
+			_deckList.AddItem(template?.DisplayName ?? cardId);
+		}
+
+		DeckBuildSnapshot readableSnapshot = new()
+		{
+			BuildName = _session.DeckBuildState.BuildName,
+			CardIds = _workingDeck.ToArray(),
+			RelicIds = _session.DeckBuildState.RelicIds,
+		};
+		BattleDeckValidationResult readableValidation = _constructionService.ValidateDeck(readableSnapshot, readableProgression);
+		_deckPoolSummaryLabel.Text = $"\u53EF\u9009 { _availableTemplates.Length }";
+		_deckSummaryLabel.Text = $"\u5F53\u524D {readableValidation.TotalCardCount} \u5F20 / \u5F71\u54CD {readableValidation.TotalBuildPoints}";
+		_deckValidationText.Text = BuildReadableDeckValidationText(readableValidation);
+		_deckSaveButton.Disabled = !readableValidation.IsValid;
+		return;
+		}
+
 		if (_session == null || _constructionService == null || _cardLibrary == null)
 		{
 			return;
@@ -1596,6 +2031,8 @@ public partial class SystemFeatureLabController : CanvasLayer
 
 	private static string BuildDeckValidationText(BattleDeckValidationResult validation)
 	{
+		return BuildReadableDeckValidationText(validation);
+
 		List<string> lines = new()
 		{
 			$"最低卡数: {validation.TotalCardCount}/{validation.EffectiveMinDeckSize}",
@@ -1654,6 +2091,33 @@ public partial class SystemFeatureLabController : CanvasLayer
 
 	private void OnCardCodexSelected(long index)
 	{
+		{
+		if (_session == null || index < 0 || index >= _codexTemplates.Length)
+		{
+			return;
+		}
+
+		BattleCardTemplate selectedTemplate = _codexTemplates[index];
+		ProgressionSnapshot cardProgression = _session.BuildProgressionSnapshotModel();
+		bool cardUnlocked = selectedTemplate.IsOwned(cardProgression);
+		_cardCodexDetail.Text = cardUnlocked
+			? string.Join('\n', new[]
+			{
+				$"[b]{selectedTemplate.DisplayName}[/b]",
+				selectedTemplate.Description,
+				$"\u8D39\u7528 {selectedTemplate.Cost} / \u5F71\u54CD\u56E0\u5B50 {selectedTemplate.BuildPoints}",
+				$"Quick {selectedTemplate.IsQuick} / Exhaust {selectedTemplate.ExhaustsOnPlay}",
+				"\u72B6\u6001: \u5DF2\u89E3\u9501",
+			})
+			: string.Join('\n', new[]
+			{
+				"[b]\u672A\u89E3\u9501[/b]",
+				"[\u9ED1\u8272\u526A\u5F71]",
+				$"\u89E3\u9501\u65B9\u5F0F: {BuildReadableCardUnlockHint(selectedTemplate)}",
+			});
+		return;
+		}
+
 		if (_session == null || index < 0 || index >= _codexTemplates.Length)
 		{
 			return;
@@ -1681,6 +2145,30 @@ public partial class SystemFeatureLabController : CanvasLayer
 
 	private void OnEnemyCodexSelected(long index)
 	{
+		{
+		if (_session == null || index < 0 || index >= _enemyCodexEntries.Length)
+		{
+			return;
+		}
+
+		EnemyCodexEntry selectedEntry = _enemyCodexEntries[index];
+		bool enemyUnlocked = IsEnemyCodexUnlocked(selectedEntry, _session.BuildProgressionSnapshotModel());
+		_enemyCodexDetail.Text = enemyUnlocked
+			? string.Join('\n', new[]
+			{
+				$"[b]{selectedEntry.DisplayName}[/b]",
+				selectedEntry.Description,
+				"\u72B6\u6001: \u5DF2\u89E3\u9501",
+			})
+			: string.Join('\n', new[]
+			{
+				"[b]\u672A\u89E3\u9501[/b]",
+				"[\u9ED1\u8272\u526A\u5F71]",
+				$"\u89E3\u9501\u65B9\u5F0F: {selectedEntry.UnlockHint}",
+			});
+		return;
+		}
+
 		if (_session == null || index < 0 || index >= _enemyCodexEntries.Length)
 		{
 			return;
@@ -1725,6 +2213,8 @@ public partial class SystemFeatureLabController : CanvasLayer
 
 	private static string BuildCardUnlockHint(BattleCardTemplate template)
 	{
+		return BuildReadableCardUnlockHint(template);
+
 		if (template.IsLearnedCard)
 		{
 			return "通过学习敌方招牌技能解锁";
@@ -1892,6 +2382,8 @@ public partial class SystemFeatureLabController : CanvasLayer
 
 	private static string BuildDeckDetailText(BattleCardTemplate template)
 	{
+		return BuildReadableDeckDetailText(template);
+
 		return string.Join('\n', new[]
 		{
 			$"[b]{template.DisplayName}[/b]",
@@ -1937,6 +2429,30 @@ public partial class SystemFeatureLabController : CanvasLayer
 
 	private void OnDeckSavePressed()
 	{
+		{
+		if (_session == null || _constructionService == null)
+		{
+			return;
+		}
+
+		DeckBuildSnapshot saveSnapshot = new()
+		{
+			BuildName = _session.DeckBuildState.BuildName,
+			CardIds = _workingDeck.ToArray(),
+			RelicIds = _session.DeckBuildState.RelicIds,
+		};
+		BattleDeckValidationResult saveValidation = _constructionService.ValidateDeck(saveSnapshot, _session.BuildProgressionSnapshotModel());
+		if (!saveValidation.IsValid)
+		{
+			_deckValidationText.Text = BuildReadableDeckValidationText(saveValidation);
+			return;
+		}
+
+		_session.ApplyDeckBuildSnapshot(saveSnapshot.ToDictionary());
+		_deckValidationText.Text = BuildReadableDeckValidationText(saveValidation) + "\n\u5DF2\u4FDD\u5B58\u5230 GlobalGameSession";
+		return;
+		}
+
 		if (_session == null || _constructionService == null)
 		{
 			return;
@@ -2081,6 +2597,13 @@ public partial class SystemFeatureLabController : CanvasLayer
 	{
 		if (string.IsNullOrWhiteSpace(itemId))
 		{
+			return "\u672A\u88C5\u5907";
+		}
+
+		return FindEquipmentDefinition(itemId)?.DisplayName ?? itemId;
+
+		if (string.IsNullOrWhiteSpace(itemId))
+		{
 			return "未装备";
 		}
 
@@ -2089,6 +2612,23 @@ public partial class SystemFeatureLabController : CanvasLayer
 
 	private static string GetEquipmentSlotDisplayNameSafe(string slotId)
 	{
+		if (string.Equals(slotId, EquipmentSlotIds.Weapon, StringComparison.Ordinal))
+		{
+			return "\u6B66\u5668";
+		}
+
+		if (string.Equals(slotId, EquipmentSlotIds.Armor, StringComparison.Ordinal))
+		{
+			return "\u62A4\u7532";
+		}
+
+		if (string.Equals(slotId, EquipmentSlotIds.Accessory, StringComparison.Ordinal))
+		{
+			return "\u914D\u4EF6";
+		}
+
+		return slotId;
+
 		if (string.Equals(slotId, EquipmentSlotIds.Weapon, StringComparison.Ordinal))
 		{
 			return "武器";
@@ -2111,6 +2651,13 @@ public partial class SystemFeatureLabController : CanvasLayer
 	{
 		if (string.IsNullOrWhiteSpace(itemId))
 		{
+			return "\u672A\u88C5\u5907";
+		}
+
+		return FindEquipmentDefinition(itemId)?.DisplayName ?? itemId;
+
+		if (string.IsNullOrWhiteSpace(itemId))
+		{
 			return "未装备";
 		}
 
@@ -2118,6 +2665,8 @@ public partial class SystemFeatureLabController : CanvasLayer
 	}
 	private static string GetEquipmentSlotDisplayName(string slotId)
 	{
+		return GetEquipmentSlotDisplayNameSafe(slotId);
+
 		return slotId switch
 		{
 			EquipmentSlotIds.Weapon => "姝﹀櫒",
@@ -2125,6 +2674,95 @@ public partial class SystemFeatureLabController : CanvasLayer
 			EquipmentSlotIds.Accessory => "楗板搧",
 			_ => slotId,
 		};
+	}
+
+	private string GetInventoryItemDisplayName(string itemId)
+	{
+		if (string.IsNullOrWhiteSpace(itemId))
+		{
+			return string.Empty;
+		}
+
+		if (FindEquipmentDefinition(itemId) is RuntimeEquipmentDefinition definition)
+		{
+			return definition.DisplayName;
+		}
+
+		return itemId switch
+		{
+			"steel_scrap" => "\u94A2\u94C1\u788E\u7247",
+			"charged_core" => "\u5145\u80FD\u6838\u5FC3",
+			"medical_gel" => "\u533B\u7597\u51DD\u80F6",
+			"optical_part" => "\u5149\u5B66\u96F6\u4EF6",
+			_ => itemId,
+		};
+	}
+
+	private string GetCardDisplayName(string cardId)
+	{
+		if (string.IsNullOrWhiteSpace(cardId))
+		{
+			return string.Empty;
+		}
+
+		return _cardLibrary?.FindTemplate(cardId)?.DisplayName ?? cardId;
+	}
+
+	private static string BuildReadableDeckValidationText(BattleDeckValidationResult validation)
+	{
+		List<string> lines = new()
+		{
+			$"\u6700\u4F4E\u5361\u6570: {validation.TotalCardCount}/{validation.EffectiveMinDeckSize}",
+			$"\u5F71\u54CD\u56E0\u5B50: {validation.TotalBuildPoints}/{validation.EffectivePointBudget}",
+			$"\u540C\u540D\u4E0A\u9650: {validation.EffectiveMaxCopiesPerCard}",
+			$"\u8D85\u9650\u69FD\u4F4D: {validation.UsedOverlimitCarrySlots}/{validation.EffectiveOverlimitCarrySlots}",
+		};
+
+		if (validation.Errors.Count == 0)
+		{
+			lines.Add("\u72B6\u6001: \u901A\u8FC7");
+		}
+		else
+		{
+			lines.Add("\u72B6\u6001: \u672A\u901A\u8FC7");
+			lines.AddRange(validation.Errors.Select(error => $"- {error}"));
+		}
+
+		return string.Join('\n', lines);
+	}
+
+	private static string BuildReadableDeckDetailText(BattleCardTemplate template)
+	{
+		return string.Join('\n', new[]
+		{
+			$"[b]{template.DisplayName}[/b]",
+			template.Description,
+			$"\u8D39\u7528 {template.Cost} / \u5F71\u54CD\u56E0\u5B50 {template.BuildPoints}",
+			$"\u4F24\u5BB3 {template.Damage} / \u6CBB\u7597 {template.HealingAmount} / \u62BD\u724C {template.DrawCount} / \u56DE\u80FD {template.EnergyGain} / \u62A4\u76FE {template.ShieldGain}",
+			$"Quick {template.IsQuick} / Exhaust {template.ExhaustsOnPlay}",
+		});
+	}
+
+	private static string BuildReadableCardUnlockHint(BattleCardTemplate template)
+	{
+		if (template.IsLearnedCard)
+		{
+			return "\u901A\u8FC7\u5B66\u4E60\u654C\u65B9\u7279\u6B8A\u884C\u52A8\u89E3\u9501";
+		}
+
+		if (template.RequiredTalentIds.Length > 0 || template.RequiredBranchTags.Length > 0)
+		{
+			return "\u6EE1\u8DB3\u5929\u8D4B\u6811\u8981\u6C42\u5E76\u83B7\u5F97\u5361\u724C\u540E\u89E3\u9501";
+		}
+
+		if (template.RequiredPlayerLevel > 1)
+		{
+			return $"\u89D2\u8272\u8FBE\u5230 Lv.{template.RequiredPlayerLevel} \u5E76\u83B7\u5F97\u5361\u724C\u540E\u89E3\u9501";
+		}
+
+		return template.UnlockedByDefault
+			? "\u521D\u59CB\u5DF2\u89E3\u9501"
+			: "\u901A\u8FC7\u63A2\u7D22\u3001\u5546\u5E97\u6216\u5956\u52B1\u83B7\u5F97";
 	}
 
 	private enum TalentTreeGroup

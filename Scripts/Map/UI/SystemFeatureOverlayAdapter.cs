@@ -59,6 +59,12 @@ public partial class SystemFeatureOverlayAdapter : Node
 			return;
 		}
 
+		if (MapTextBlocker.IsBlockingTextVisible(this))
+		{
+			GetViewport().SetInputAsHandled();
+			return;
+		}
+
 		if (keyEvent.Keycode == Key.C)
 		{
 			SetMenuVisible(!_panelRoot.Visible);

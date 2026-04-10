@@ -66,8 +66,12 @@ public partial class Scene01TutorialController : Node
 	private float _panelVisibleTop;
 	private float _panelVisibleBottom;
 
+	public bool IsDialogBlockingInput => _isDialogActive;
+
 	public override void _Ready()
 	{
+		SetProcessInput(true);
+		SetProcessUnhandledInput(true);
 		_player = ResolvePlayerNode();
 		_enemy = ResolveEnemyNode();
 		_visionMaskController = VisionMaskControllerPath.IsEmpty ? null : GetNodeOrNull<PlayerVisionMaskController>(VisionMaskControllerPath);
@@ -326,7 +330,17 @@ public partial class Scene01TutorialController : Node
 		return Mathf.Max(1, EnemySightTiles) * tileSize;
 	}
 
+	public override void _Input(InputEvent @event)
+	{
+		HandleDialogAdvanceInput(@event);
+	}
+
 	public override void _UnhandledInput(InputEvent @event)
+	{
+		HandleDialogAdvanceInput(@event);
+	}
+
+	private void HandleDialogAdvanceInput(InputEvent @event)
 	{
 		if (!_isDialogActive)
 		{

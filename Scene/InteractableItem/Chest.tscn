@@ -1,6 +1,7 @@
 [gd_scene format=3 uid="uid://c1ojey6clae1h"]
 
 [ext_resource type="Script" uid="uid://dqnsnaq4nynjb" path="res://Scripts/Map/Interaction/Chest.cs" id="1_yhaw6"]
+[ext_resource type="Script" path="res://Scripts/Map/Interaction/ChestInstanceConfig.cs" id="3_cfg"]
 [ext_resource type="Texture2D" uid="uid://cr54xkxt1qpqp" path="res://ArtResource/resource/道具/箱子.png" id="2_chest_sheet"]
 
 [sub_resource type="AtlasTexture" id="AtlasTexture_chest_closed"]
@@ -62,6 +63,7 @@ size = Vector2(16, 16)
 
 [node name="Chest" type="Node2D" unique_id=419507687]
 z_index = 1
+script = ExtResource("3_cfg")
 
 [node name="Chest" type="StaticBody2D" parent="." unique_id=959279838]
 collision_layer = 2

@@ -1,11 +1,15 @@
 using Godot;
+using CardChessDemo.Battle.Boundary;
+using CardChessDemo.Battle.Shared;
 
 namespace CardChessDemo.Map;
 
 public partial class Chest : InteractableTemplate
 {
-	[Export] public string ChestName = "Sword Chest";
-	[Export] public string ItemDescription = "你发现了一把生锈的剑。";
+	[Export] public string ChestName = "宝箱";
+	[Export] public string GrantedItemId = string.Empty;
+	[Export] public string ItemDescription = "获得了物品。";
+	[Export] public string EmptyDescription = "箱子是空的。";
 
 	private const string ClosedAnimationName = "closed";
 	private const string OpenAnimationName = "open";
@@ -44,19 +48,38 @@ public partial class Chest : InteractableTemplate
 			return "打开中...";
 		}
 
-		return _isOpened ? "已打开" : string.IsNullOrWhiteSpace(PromptText) ? "打开宝箱" : PromptText;
+		if (_isOpened)
+		{
+			return "箱子是空的";
+		}
+
+		return string.IsNullOrWhiteSpace(PromptText) ? "打开宝箱" : PromptText;
 	}
 
 	public override bool CanInteract(Player player)
 	{
-		return !_isOpened && !_isOpening && base.CanInteract(player);
+		return !_isOpening && base.CanInteract(player);
 	}
 
 	protected override void OnInteract(Player player)
 	{
+		if (_isOpened)
+		{
+			if (!SceneTextOverlay.Show(this, EmptyDescription))
+			{
+				GalDialogueOverlay.Show(this, ChestName, EmptyDescription);
+			}
+			PlayInteractionPulse();
+			return;
+		}
+
 		_isOpening = true;
 		_isOpened = true;
-		GD.Print($"{ChestName}: {ItemDescription}");
+		GrantConfiguredItem();
+		if (!SceneTextOverlay.Show(this, ItemDescription))
+		{
+			GalDialogueOverlay.Show(this, ChestName, ItemDescription);
+		}
 		PlayInteractionPulse();
 
 		bool hasOpenAnimation = _animatedSprite != null
@@ -70,6 +93,25 @@ public partial class Chest : InteractableTemplate
 		{
 			_isOpening = false;
 		}
+	}
+
+	private void GrantConfiguredItem()
+	{
+		if (string.IsNullOrWhiteSpace(GrantedItemId))
+		{
+			return;
+		}
+
+		GlobalGameSession? session = GetNodeOrNull<GlobalGameSession>("/root/GlobalGameSession");
+		if (session == null)
+		{
+			GD.PushWarning($"Chest '{Name}' could not find /root/GlobalGameSession. Item grant skipped.");
+			return;
+		}
+
+		InventoryDelta delta = new();
+		delta.ItemDeltas[GrantedItemId.Trim()] = 1;
+		session.ApplyInventoryDelta(delta);
 	}
 
 	private void OnAnimatedChestFinished()

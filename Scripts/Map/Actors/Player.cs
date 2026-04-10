@@ -128,6 +128,27 @@ public partial class Player : CharacterBody2D
 			return;
 		}
 
+		if (SceneTextOverlay.IsVisible(this))
+		{
+			SceneTextOverlay.Hide(this);
+			GetViewport().SetInputAsHandled();
+			return;
+		}
+
+		if (GalDialogueOverlay.IsVisible(this))
+		{
+			GalDialogueOverlay.Hide(this);
+			GetViewport().SetInputAsHandled();
+			return;
+		}
+
+		Node? currentScene = GetTree().CurrentScene;
+		Control? tutorialPanel = currentScene?.GetNodeOrNull<Control>("TutorialUI/TutorialTipPanel");
+		if (tutorialPanel != null && tutorialPanel.Visible)
+		{
+			return;
+		}
+
 		if (!TryGetFacingTileTarget(out IInteractable? bestTarget, out Area2D? bestArea) || bestTarget == null || bestArea == null)
 		{
 			return;
@@ -137,6 +158,7 @@ public partial class Player : CharacterBody2D
 		_lastInteractedArea = bestArea;
 		_lastInteractTimeMs = nowMs;
 		bestTarget.Interact(this);
+		GetViewport().SetInputAsHandled();
 	}
 
 	private bool TryGetFacingTileTarget(out IInteractable? bestTarget, out Area2D? bestArea)
