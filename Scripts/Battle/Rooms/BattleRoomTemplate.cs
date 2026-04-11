@@ -121,6 +121,7 @@ public partial class BattleRoomTemplate : Node2D
 		List<BoardObjectSpawnDefinition> spawns = new();
 		List<Vector2I> playerSpawnCells = new();
 		List<Vector2I> enemySpawnCells = new();
+		HashSet<Vector2I> markerObstacleCells = new();
 		int playerCounter = 0;
 		int enemyCounter = 0;
 		int obstacleCounter = 0;
@@ -158,22 +159,61 @@ public partial class BattleRoomTemplate : Node2D
 				continue;
 			}
 
+			if (tileId == DestructibleObstacleMarkerTileId)
+			{
+				obstacleCounter++;
+				markerObstacleCells.Add(cell);
+				spawns.Add(CreateDestructibleObstacleSpawn(obstacleCounter, cell));
+				continue;
+			}
+
+			if (tileId == IndestructibleObstacleMarkerTileId)
+			{
+				obstacleCounter++;
+				markerObstacleCells.Add(cell);
+				spawns.Add(CreateIndestructibleObstacleSpawn(obstacleCounter, cell));
+				continue;
+			}
+
+			if (tileId == SlowPassObstacleMarkerTileId)
+			{
+				obstacleCounter++;
+				markerObstacleCells.Add(cell);
+				spawns.Add(CreateSlowPassObstacleSpawn(obstacleCounter, cell));
+				continue;
+			}
+
 		}
 
 		foreach (Vector2I cell in DefaultDestructibleObstacleCells)
 		{
+			if (markerObstacleCells.Contains(cell))
+			{
+				continue;
+			}
+
 			obstacleCounter++;
 			spawns.Add(CreateDestructibleObstacleSpawn(obstacleCounter, cell));
 		}
 
 		foreach (Vector2I cell in DefaultIndestructibleObstacleCells)
 		{
+			if (markerObstacleCells.Contains(cell))
+			{
+				continue;
+			}
+
 			obstacleCounter++;
 			spawns.Add(CreateIndestructibleObstacleSpawn(obstacleCounter, cell));
 		}
 
 		foreach (Vector2I cell in DefaultSlowPassObstacleCells)
 		{
+			if (markerObstacleCells.Contains(cell))
+			{
+				continue;
+			}
+
 			obstacleCounter++;
 			spawns.Add(CreateSlowPassObstacleSpawn(obstacleCounter, cell));
 		}
@@ -279,7 +319,7 @@ public partial class BattleRoomTemplate : Node2D
 
 	private void EnsureEditableTileSet()
 	{
-		if (_floorLayer.TileSet != null && _markerLayer.TileSet != null)
+		if (!Engine.IsEditorHint() && _floorLayer.TileSet != null && _markerLayer.TileSet != null)
 		{
 			if (_escapeLayer.TileSet == null)
 			{
@@ -293,14 +333,25 @@ public partial class BattleRoomTemplate : Node2D
 		}
 
 		Texture2D floorTexture = GD.Load<Texture2D>("res://Assets/Tilemap/CosmicLegacy_PetricakeGamesPNG.png");
-		PackedScene playerScene = GD.Load<PackedScene>("res://Scene/Battle/Tiles/BattlePlayerToken.tscn");
-		PackedScene enemyScene = GD.Load<PackedScene>("res://Scene/Battle/Tiles/BattleEnemyToken.tscn");
-		PackedScene obstacleScene = GD.Load<PackedScene>("res://Scene/Battle/Tiles/BattleObstacleToken.tscn");
+		PackedScene playerScene = GD.Load<PackedScene>("res://Scene/Battle/Tiles/Markers/MarkerBase_Player.tscn");
+		PackedScene enemyScene = GD.Load<PackedScene>("res://Scene/Battle/Tiles/Markers/MarkerEnemy_Generic.tscn");
+		PackedScene obstacleScene = GD.Load<PackedScene>("res://Scene/Battle/Tiles/Markers/MarkerObstacle_Breakable.tscn");
 		PackedScene escapeScene = GD.Load<PackedScene>("res://Scene/Battle/Tiles/BattleEscapeTile.tscn");
 		PackedScene facingLeftScene = GD.Load<PackedScene>("res://Scene/Battle/Tiles/BattleFacingLeftTile.tscn");
 		PackedScene facingUpScene = GD.Load<PackedScene>("res://Scene/Battle/Tiles/BattleFacingUpTile.tscn");
 		PackedScene facingRightScene = GD.Load<PackedScene>("res://Scene/Battle/Tiles/BattleFacingRightTile.tscn");
 		PackedScene facingDownScene = GD.Load<PackedScene>("res://Scene/Battle/Tiles/BattleFacingDownTile.tscn");
+		PackedScene scene01TutorialEnemyScene = GD.Load<PackedScene>("res://Scene/Battle/Tiles/Markers/MarkerEnemy_Scene01Tutorial.tscn");
+		PackedScene pirateBlockerScene = GD.Load<PackedScene>("res://Scene/Battle/Tiles/Markers/MarkerEnemy_PirateBlocker.tscn");
+		PackedScene pirateScoutScene = GD.Load<PackedScene>("res://Scene/Battle/Tiles/Markers/MarkerEnemy_PirateScout.tscn");
+		PackedScene pirateShockerScene = GD.Load<PackedScene>("res://Scene/Battle/Tiles/Markers/MarkerEnemy_PirateShocker.tscn");
+		PackedScene pirateGunnerScene = GD.Load<PackedScene>("res://Scene/Battle/Tiles/Markers/MarkerEnemy_PirateGunner.tscn");
+		PackedScene piratePipeBomberScene = GD.Load<PackedScene>("res://Scene/Battle/Tiles/Markers/MarkerEnemy_PiratePipeBomber.tscn");
+		PackedScene pirateBruteEliteScene = GD.Load<PackedScene>("res://Scene/Battle/Tiles/Markers/MarkerEnemy_PirateBruteElite.tscn");
+		PackedScene scrapMedicEliteScene = GD.Load<PackedScene>("res://Scene/Battle/Tiles/Markers/MarkerEnemy_ScrapMedicElite.tscn");
+		PackedScene sewerGatekeeperScene = GD.Load<PackedScene>("res://Scene/Battle/Tiles/Markers/MarkerEnemy_SewerGatekeeper.tscn");
+		PackedScene obstacleWallScene = GD.Load<PackedScene>("res://Scene/Battle/Tiles/Markers/MarkerObstacle_Wall.tscn");
+		PackedScene obstacleSlowScene = GD.Load<PackedScene>("res://Scene/Battle/Tiles/Markers/MarkerObstacle_Slow.tscn");
 
 		TileSet tileSet = BattleRoomTileSetFactory.CreateTileSet(
 			floorTexture,
@@ -312,6 +363,17 @@ public partial class BattleRoomTemplate : Node2D
 			facingUpScene,
 			facingRightScene,
 			facingDownScene,
+			scene01TutorialEnemyScene,
+			pirateBlockerScene,
+			pirateScoutScene,
+			pirateShockerScene,
+			pirateGunnerScene,
+			piratePipeBomberScene,
+			pirateBruteEliteScene,
+			scrapMedicEliteScene,
+			sewerGatekeeperScene,
+			obstacleWallScene,
+			obstacleSlowScene,
 			CellSizePixels);
 
 		_floorLayer.TileSet = tileSet;

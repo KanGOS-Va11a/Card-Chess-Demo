@@ -43,8 +43,10 @@ public partial class BattleHudController : CanvasLayer
 	private const float WindowCloseButtonSize = 16.0f;
 	private const float WindowCloseIconSize = 8.0f;
 	private const float PileOverscrollPixels = 18.0f;
+	private const float StatusBadgeSize = 16.0f;
 
 	private static readonly Dictionary<string, Texture2D> BattleButtonTextures = new(StringComparer.Ordinal);
+	private static readonly Dictionary<string, Texture2D> BattleStatusTextures = new(StringComparer.Ordinal);
 	private readonly PackedScene _cardViewScene = GD.Load<PackedScene>("res://Scene/Battle/UI/BattleCardView.tscn");
 	private readonly StyleBoxFlat _compactButtonStyle = new()
 	{
@@ -121,6 +123,8 @@ public partial class BattleHudController : CanvasLayer
 	private readonly Dictionary<Button, TextureRect> _buttonBackgroundRects = new();
 	private readonly Dictionary<Button, TextureRect> _windowCloseIconRects = new();
 	private readonly Dictionary<Button, TextureRect> _windowCloseBackgroundRects = new();
+	private readonly Dictionary<string, Control> _statusBadgeRoots = new(StringComparer.Ordinal);
+	private readonly Dictionary<string, Label> _statusBadgeLabels = new(StringComparer.Ordinal);
 	private readonly Dictionary<ScrollContainer, Control> _pileOverscrollSpacers = new();
 	private readonly Dictionary<ScrollContainer, Tween> _pileOverscrollTweens = new();
 
@@ -142,6 +146,9 @@ public partial class BattleHudController : CanvasLayer
 	private int _maxEnergy;
 	private int _arakawaCurrentEnergy;
 	private int _arakawaMaxEnergy;
+	private int _playerCurrentHp;
+	private int _playerMaxHp;
+	private int _playerCurrentShield;
 	private bool _canUseArakawa;
 	private bool _showRetreatButton;
 	private bool _isArakawaWheelOpen;
@@ -231,6 +238,13 @@ public partial class BattleHudController : CanvasLayer
 		_canUseArakawa = canUse;
 		_isArakawaWheelOpen = isWheelOpen;
 		_selectedArakawaAbilityId = selectedAbilityId ?? string.Empty;
+	}
+
+	public void SetPlayerStatusState(int currentHp, int maxHp, int currentShield)
+	{
+		_playerCurrentHp = currentHp;
+		_playerMaxHp = maxHp;
+		_playerCurrentShield = currentShield;
 	}
 
 	public void SetRetreatActionState(bool visible)
@@ -339,9 +353,10 @@ public partial class BattleHudController : CanvasLayer
 		{
 			return;
 		}
-		_turnLabel.Text = BuildTurnLabel();
-		_resourceLabel.Text = $"E{_currentEnergy}/{_maxEnergy} R{_energyRechargeProgress}/{_energyRechargeInterval}";
-		_arakawaEnergyLabel.Text = $"\u8352\u5DDD {_arakawaCurrentEnergy}/{_arakawaMaxEnergy}";
+		_turnLabel.Visible = false;
+		_resourceLabel.Visible = false;
+		_arakawaEnergyLabel.Visible = false;
+		RefreshStatusBadges();
 		_arakawaButton.Disabled = !_canUseArakawa && !_isArakawaWheelOpen;
 		_arakawaButton.Text = string.Empty;
 		_arakawaWheel.Visible = _isArakawaWheelOpen;
@@ -355,7 +370,7 @@ public partial class BattleHudController : CanvasLayer
 		_pileButton.Text = string.Empty;
 		_pileButton.TooltipText = $"\u724C\u5806  \u62BD:{_drawPileCards.Length} \u5F03:{_discardPileCards.Length} \u6D88:{_exhaustPileCards.Length}";
 		_attackButton.Visible = _turnState.CanEnterAttackTargeting || _turnState.IsAttackTargeting;
-		_attackButton.Text = string.Empty;
+		_attackButton.Text = _turnState.IsAttackTargeting ? "×" : string.Empty;
 		_attackButton.TooltipText = _turnState.IsAttackTargeting ? "\u53D6\u6D88\u653B\u51FB" : "\u653B\u51FB";
 		_attackButton.Disabled = !_turnState.CanEnterAttackTargeting && !_turnState.IsAttackTargeting;
 		_defendButton.Text = string.Empty;
@@ -925,6 +940,7 @@ public partial class BattleHudController : CanvasLayer
 		_pileDismissButton.Pressed += OnPilePopupClosePressed;
 		_pilePopupCloseButton.Pressed += OnPilePopupClosePressed;
 		_handArea.Resized += OnHandAreaResized;
+		EnsureStatusBadges();
 		_signalsHooked = true;
 	}
 
@@ -945,6 +961,83 @@ public partial class BattleHudController : CanvasLayer
 		button.AddThemeStyleboxOverride("hover", hover);
 		button.AddThemeStyleboxOverride("pressed", pressed);
 		button.AddThemeStyleboxOverride("disabled", disabled);
+	}
+
+	private void EnsureStatusBadges()
+	{
+		if (_statusBadgeRoots.Count > 0)
+		{
+			return;
+		}
+
+		CreateStatusBadge("hp", "TopBar/LeftInfo", "res://Assets/UI/Battle/Status/\u751F\u547D1.png");
+		CreateStatusBadge("shield", "TopBar/LeftInfo", "res://Assets/UI/Battle/Status/shield.png");
+		CreateStatusBadge("energy", "TopBar/LeftInfo", "res://Assets/UI/Battle/Status/\u4E3B\u89D2\u80FD\u91CF.png");
+		CreateStatusBadge("arakawa", "TopBar/ArakawaInfo", "res://Assets/UI/Battle/Status/arakawa_energy.png");
+	}
+
+	private void CreateStatusBadge(string key, string parentPath, string texturePath)
+	{
+		if (GetNodeOrNull<Control>(parentPath) is not Control parent)
+		{
+			return;
+		}
+
+		Control root = new()
+		{
+			Name = $"{key}_badge",
+			CustomMinimumSize = new Vector2(StatusBadgeSize, StatusBadgeSize),
+			Size = new Vector2(StatusBadgeSize, StatusBadgeSize),
+			MouseFilter = Control.MouseFilterEnum.Ignore,
+		};
+		parent.AddChild(root);
+
+		TextureRect icon = new()
+		{
+			Name = "Icon",
+			Texture = ResolveBattleStatusTexture(texturePath),
+			CustomMinimumSize = new Vector2(StatusBadgeSize, StatusBadgeSize),
+			Size = new Vector2(StatusBadgeSize, StatusBadgeSize),
+			TextureFilter = CanvasItem.TextureFilterEnum.Nearest,
+			StretchMode = TextureRect.StretchModeEnum.Scale,
+			ExpandMode = TextureRect.ExpandModeEnum.IgnoreSize,
+			MouseFilter = Control.MouseFilterEnum.Ignore,
+		};
+		root.AddChild(icon);
+
+		Label label = new()
+		{
+			Name = "Value",
+			AnchorRight = 1.0f,
+			AnchorBottom = 1.0f,
+			HorizontalAlignment = HorizontalAlignment.Center,
+			VerticalAlignment = VerticalAlignment.Center,
+			MouseFilter = Control.MouseFilterEnum.Ignore,
+		};
+		label.AddThemeFontSizeOverride("font_size", 16);
+		label.AddThemeColorOverride("font_color", Colors.White);
+		label.AddThemeColorOverride("font_outline_color", Colors.Black);
+		label.AddThemeConstantOverride("outline_size", 2);
+		root.AddChild(label);
+
+		_statusBadgeRoots[key] = root;
+		_statusBadgeLabels[key] = label;
+	}
+
+	private static Texture2D? ResolveBattleStatusTexture(string path)
+	{
+		if (BattleStatusTextures.TryGetValue(path, out Texture2D? cached))
+		{
+			return cached;
+		}
+
+		Texture2D? texture = ResourceLoader.Load<Texture2D>(path);
+		if (texture != null)
+		{
+			BattleStatusTextures[path] = texture;
+		}
+
+		return texture;
 	}
 
 	private void ApplyWindowCloseButtonStyle(Button button)
@@ -1221,6 +1314,27 @@ public partial class BattleHudController : CanvasLayer
 			Mathf.Round(squareOffset.Y + (sideLength - SpriteIconSize) * 0.5f));
 		iconRect.Position = iconOffset;
 		iconRect.Size = new Vector2(SpriteIconSize, SpriteIconSize);
+		iconRect.Visible = !(button == _attackButton && _turnState?.IsAttackTargeting == true);
+	}
+
+	private void RefreshStatusBadges()
+	{
+		RefreshStatusBadge("hp", _playerCurrentHp.ToString(), $"HP {_playerCurrentHp}/{_playerMaxHp}");
+		RefreshStatusBadge("shield", _playerCurrentShield.ToString(), $"SH {_playerCurrentShield}");
+		RefreshStatusBadge("energy", _currentEnergy.ToString(), $"E {_currentEnergy}/{_maxEnergy}");
+		RefreshStatusBadge("arakawa", _arakawaCurrentEnergy.ToString(), $"\u8352\u5DDD {_arakawaCurrentEnergy}/{_arakawaMaxEnergy}");
+	}
+
+	private void RefreshStatusBadge(string key, string value, string tooltip)
+	{
+		if (!_statusBadgeRoots.TryGetValue(key, out Control? root)
+			|| !_statusBadgeLabels.TryGetValue(key, out Label? label))
+		{
+			return;
+		}
+
+		label.Text = value;
+		root.TooltipText = tooltip;
 	}
 
 	private void LayoutWindowCloseButton(Button button)

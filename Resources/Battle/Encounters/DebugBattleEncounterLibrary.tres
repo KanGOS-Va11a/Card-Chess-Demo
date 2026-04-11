@@ -3,13 +3,86 @@
 [ext_resource type="Script" uid="uid://blbhtyj15rk4f" path="res://Scripts/Battle/Encounters/BattleEncounterLibrary.cs" id="1_lib"]
 [ext_resource type="Script" uid="uid://d0iglgawcrcpb" path="res://Scripts/Battle/Encounters/BattleEncounterProfile.cs" id="2_profile"]
 
-[sub_resource type="Resource" id="Encounter_grunt_debug"]
+[sub_resource type="Resource" id="Encounter_scene01_tutorial"]
 script = ExtResource("2_profile")
-EncounterId = "grunt_debug"
+EncounterId = "scene01_tutorial"
 DisplayName = "Scene01 Tutorial Encounter"
 PrimaryEnemyDefinitionId = "scene01_tutorial_enemy"
 EnemyTypeIds = PackedStringArray("scene01_tutorial_enemy")
+PreferredRoomPoolId = "scene01_tutorial"
+
+[sub_resource type="Resource" id="Encounter_pirate_blocker"]
+script = ExtResource("2_profile")
+EncounterId = "pirate_blocker"
+DisplayName = "Pirate Blocker Encounter"
+PrimaryEnemyDefinitionId = "pirate_blocker"
+EnemyTypeIds = PackedStringArray("pirate_blocker")
+PreferredRoomPoolId = "pirate_blocker"
+
+[sub_resource type="Resource" id="Encounter_pirate_scout"]
+script = ExtResource("2_profile")
+EncounterId = "pirate_scout"
+DisplayName = "Pirate Scout Encounter"
+PrimaryEnemyDefinitionId = "pirate_scout"
+EnemyTypeIds = PackedStringArray("pirate_scout")
+PreferredRoomPoolId = "pirate_scout"
+
+[sub_resource type="Resource" id="Encounter_pirate_shocker"]
+script = ExtResource("2_profile")
+EncounterId = "pirate_shocker"
+DisplayName = "Pirate Shocker Encounter"
+PrimaryEnemyDefinitionId = "pirate_shocker"
+EnemyTypeIds = PackedStringArray("pirate_shocker")
+PreferredRoomPoolId = "pirate_shocker"
+
+[sub_resource type="Resource" id="Encounter_pirate_gunner"]
+script = ExtResource("2_profile")
+EncounterId = "pirate_gunner"
+DisplayName = "Pirate Gunner Encounter"
+PrimaryEnemyDefinitionId = "pirate_gunner"
+EnemyTypeIds = PackedStringArray("pirate_gunner")
+PreferredRoomPoolId = "pirate_gunner"
+
+[sub_resource type="Resource" id="Encounter_pirate_pipe_bomber"]
+script = ExtResource("2_profile")
+EncounterId = "pirate_pipe_bomber"
+DisplayName = "Pirate Pipe Bomber Encounter"
+PrimaryEnemyDefinitionId = "pirate_pipe_bomber"
+EnemyTypeIds = PackedStringArray("pirate_pipe_bomber")
+PreferredRoomPoolId = "pirate_pipe_bomber"
+
+[sub_resource type="Resource" id="Encounter_pirate_brute_elite"]
+script = ExtResource("2_profile")
+EncounterId = "pirate_brute_elite"
+DisplayName = "Pirate Brute Elite Encounter"
+PrimaryEnemyDefinitionId = "pirate_brute_elite"
+EnemyTypeIds = PackedStringArray("pirate_brute_elite")
+PreferredRoomPoolId = "pirate_brute_elite"
+
+[sub_resource type="Resource" id="Encounter_scrap_medic_elite"]
+script = ExtResource("2_profile")
+EncounterId = "scrap_medic_elite"
+DisplayName = "Scrap Medic Elite Encounter"
+PrimaryEnemyDefinitionId = "scrap_medic_elite"
+EnemyTypeIds = PackedStringArray("scrap_medic_elite")
+PreferredRoomPoolId = "scrap_medic_elite"
+
+[sub_resource type="Resource" id="Encounter_sewer_gatekeeper"]
+script = ExtResource("2_profile")
+EncounterId = "sewer_gatekeeper"
+DisplayName = "Sewer Gatekeeper Encounter"
+PrimaryEnemyDefinitionId = "sewer_gatekeeper"
+EnemyTypeIds = PackedStringArray("sewer_gatekeeper")
+PreferredRoomPoolId = "sewer_gatekeeper"
+
+[sub_resource type="Resource" id="Encounter_grunt_debug"]
+script = ExtResource("2_profile")
+EncounterId = "grunt_debug"
+DisplayName = "Legacy Grunt Debug Encounter"
+PrimaryEnemyDefinitionId = "scene01_tutorial_enemy"
+EnemyTypeIds = PackedStringArray("scene01_tutorial_enemy")
+PreferredRoomPoolId = "scene01_tutorial"
 
 [resource]
 script = ExtResource("1_lib")
-Entries = [SubResource("Encounter_grunt_debug")]
+Entries = [SubResource("Encounter_scene01_tutorial"), SubResource("Encounter_pirate_blocker"), SubResource("Encounter_pirate_scout"), SubResource("Encounter_pirate_shocker"), SubResource("Encounter_pirate_gunner"), SubResource("Encounter_pirate_pipe_bomber"), SubResource("Encounter_pirate_brute_elite"), SubResource("Encounter_scrap_medic_elite"), SubResource("Encounter_sewer_gatekeeper"), SubResource("Encounter_grunt_debug")]

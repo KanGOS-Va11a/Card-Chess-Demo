@@ -31,6 +31,9 @@ public partial class SystemFeatureLabController : CanvasLayer
 	private Button _statusUnequipButton = null!;
 
 	private RichTextLabel _inventoryText = null!;
+	private ItemList _inventoryItemList = null!;
+	private Button _inventoryUseButton = null!;
+	private string _selectedInventoryItemId = string.Empty;
 
 	private Label _masteryLabel = null!;
 	private Control _talentBody = null!;
@@ -231,7 +234,9 @@ public partial class SystemFeatureLabController : CanvasLayer
 		_statusEquipmentDetailText = GetNode<RichTextLabel>("PanelRoot/Window/Margin/Root/Tabs/StatusTab/Columns/EquipmentColumn/EquipmentDetailPanel/EquipmentDetailText");
 		_statusEquipButton = GetNode<Button>("PanelRoot/Window/Margin/Root/Tabs/StatusTab/Columns/EquipmentColumn/ActionRow/EquipButton");
 		_statusUnequipButton = GetNode<Button>("PanelRoot/Window/Margin/Root/Tabs/StatusTab/Columns/EquipmentColumn/ActionRow/UnequipButton");
-		_inventoryText = GetNode<RichTextLabel>("PanelRoot/Window/Margin/Root/Tabs/InventoryTab/InventoryText");
+		_inventoryItemList = GetNode<ItemList>("PanelRoot/Window/Margin/Root/Tabs/InventoryTab/Columns/ItemList");
+		_inventoryText = GetNode<RichTextLabel>("PanelRoot/Window/Margin/Root/Tabs/InventoryTab/Columns/DetailPanel/DetailText");
+		_inventoryUseButton = GetNode<Button>("PanelRoot/Window/Margin/Root/Tabs/InventoryTab/Footer/UseButton");
 		_talentBody = GetNode<Control>("PanelRoot/Window/Margin/Root/Tabs/TalentTab/Body");
 		_masteryLabel = GetNode<Label>("PanelRoot/Window/Margin/Root/Tabs/TalentTab/Body/MasteryFixedLabel");
 		_talentTreeScroll = GetNode<ScrollContainer>("PanelRoot/Window/Margin/Root/Tabs/TalentTab/Body/TalentTreeScroll");
@@ -294,6 +299,8 @@ public partial class SystemFeatureLabController : CanvasLayer
 		_refundTalentButton.Pressed += OnRefundTalentPressed;
 		_seedInventoryButton.Pressed += OnSeedInventoryPressed;
 		_clearInventoryButton.Pressed += OnClearInventoryPressed;
+		_inventoryItemList.ItemSelected += OnInventoryItemSelected;
+		_inventoryUseButton.Pressed += OnInventoryUsePressed;
 		_talentDetailDim.GuiInput += OnTalentDetailDimGuiInput;
 		_availableList.ItemSelected += OnAvailableSelected;
 		_deckList.ItemSelected += OnDeckSelected;
@@ -890,7 +897,8 @@ public partial class SystemFeatureLabController : CanvasLayer
 		_statusEquipButton.Text = "Equip";
 		_statusUnequipButton.Text = "Unequip";
 		GetNode<RichTextLabel>("PanelRoot/Window/Margin/Root/Tabs/StatusTab/Columns/EquipmentColumn/EquipmentDetailPanel/EquipmentDetailText").Text = "Equipment Detail";
-		GetNode<RichTextLabel>("PanelRoot/Window/Margin/Root/Tabs/InventoryTab/InventoryText").Text = "Bag Info";
+		GetNode<RichTextLabel>("PanelRoot/Window/Margin/Root/Tabs/InventoryTab/Columns/DetailPanel/DetailText").Text = "Bag Info";
+		_inventoryUseButton.Text = "Use";
 		_seedInventoryButton.Text = "Seed";
 		_clearInventoryButton.Text = "Clear";
 		_masteryLabel.Text = "Mastery";
@@ -929,7 +937,8 @@ public partial class SystemFeatureLabController : CanvasLayer
 		_statusEquipButton.Text = "\u88C5\u5907";
 		_statusUnequipButton.Text = "\u5378\u4E0B";
 		GetNode<RichTextLabel>("PanelRoot/Window/Margin/Root/Tabs/StatusTab/Columns/EquipmentColumn/EquipmentDetailPanel/EquipmentDetailText").Text = "\u9009\u62E9\u88C5\u5907\u540E\u5728\u8FD9\u91CC\u67E5\u770B\u8BE6\u60C5";
-		GetNode<RichTextLabel>("PanelRoot/Window/Margin/Root/Tabs/InventoryTab/InventoryText").Text = "\u80CC\u5305\u5185\u5BB9";
+		GetNode<RichTextLabel>("PanelRoot/Window/Margin/Root/Tabs/InventoryTab/Columns/DetailPanel/DetailText").Text = "\u80CC\u5305\u5185\u5BB9";
+		_inventoryUseButton.Text = "\u4F7F\u7528";
 		_seedInventoryButton.Text = "\u586B\u5145\u6D4B\u8BD5\u7269\u8D44";
 		_clearInventoryButton.Text = "\u6E05\u7A7A\u6D4B\u8BD5\u7269\u8D44";
 		_masteryLabel.Text = "\u5269\u4F59\u4E13\u7CBE\u70B9";
@@ -966,7 +975,7 @@ public partial class SystemFeatureLabController : CanvasLayer
 		_statusEquipButton.Text = "装备";
 		_statusUnequipButton.Text = "卸下";
 		GetNode<RichTextLabel>("PanelRoot/Window/Margin/Root/Tabs/StatusTab/Columns/EquipmentColumn/EquipmentDetailPanel/EquipmentDetailText").Text = "选择装备后在这里查看详情";
-		GetNode<RichTextLabel>("PanelRoot/Window/Margin/Root/Tabs/InventoryTab/InventoryText").Text = "背包内容";
+		GetNode<RichTextLabel>("PanelRoot/Window/Margin/Root/Tabs/InventoryTab/Columns/DetailPanel/DetailText").Text = "背包内容";
 		_seedInventoryButton.Text = "填充测试物资";
 		_clearInventoryButton.Text = "清空测试物资";
 		_masteryLabel.Text = "剩余专精点";
@@ -1377,6 +1386,7 @@ public partial class SystemFeatureLabController : CanvasLayer
 			$"\u7ECF\u9A8C: {_session.GetExperienceProgressWithinLevel()}/{_session.GetExperienceRequiredForNextLevel()}",
 			$"\u8DDD\u4E0B\u4E00\u7EA7: {_session.GetExperienceNeededToLevelUp()}",
 			$"\u4E13\u7CBE\u70B9: {_session.ProgressionState.PlayerMasteryPoints}",
+			$"\u8352\u5DDD\u80FD\u91CF: {_session.ArakawaCurrentEnergy}/{_session.ArakawaMaxEnergy}",
 			string.Empty,
 			$"\u751F\u547D: {_session.PlayerCurrentHp}/{_session.GetResolvedPlayerMaxHp()}",
 			$"\u79FB\u52A8: {_session.GetResolvedPlayerMovePointsPerTurn()}",
@@ -1426,36 +1436,45 @@ public partial class SystemFeatureLabController : CanvasLayer
 		if (_session == null)
 		{
 			_inventoryText.Text = "\u672A\u627E\u5230 GlobalGameSession";
+			_inventoryItemList.Clear();
+			_inventoryUseButton.Disabled = true;
 			return;
 		}
 
-		List<string> readableBagLines = new()
-		{
-			"[b]\u80CC\u5305\u7269\u54C1[/b]",
-			string.Empty,
-		};
+		List<string> itemIds = _session.InventoryState.ItemCounts.Keys
+			.Select(key => key.AsString())
+			.Where(itemId => !string.IsNullOrWhiteSpace(itemId))
+			.OrderBy(GetInventoryItemDisplayName, StringComparer.Ordinal)
+			.ToList();
 
-		if (_session.InventoryState.ItemCounts.Count == 0)
+		_inventoryItemList.Clear();
+		foreach (string itemId in itemIds)
 		{
-			readableBagLines.Add("- (\u7A7A)");
-		}
-		else
-		{
-			foreach (Variant key in _session.InventoryState.ItemCounts.Keys)
-			{
-				string itemId = key.AsString();
-				readableBagLines.Add($"- {GetInventoryItemDisplayName(itemId)} x{_session.InventoryState.ItemCounts[key].AsInt32()}");
-			}
+			int amount = _session.InventoryState.ItemCounts[itemId].AsInt32();
+			_inventoryItemList.AddItem($"{GetInventoryItemDisplayName(itemId)} x{amount}");
 		}
 
-		readableBagLines.Add(string.Empty);
-		readableBagLines.Add("[b]\u989D\u5916\u89E3\u9501\u5361\u724C[/b]");
-		readableBagLines.AddRange(_session.ProgressionState.UnlockedCardIds.Length == 0
-			? new[] { "- (\u65E0)" }
-			: _session.ProgressionState.UnlockedCardIds
-				.OrderBy(value => value, StringComparer.Ordinal)
-				.Select(value => $"- {GetCardDisplayName(value)}"));
-		_inventoryText.Text = string.Join('\n', readableBagLines);
+		if (itemIds.Count == 0)
+		{
+			_selectedInventoryItemId = string.Empty;
+			_inventoryText.Text = "[b]\u80CC\u5305\u7269\u54C1[/b]\n\n- (\u7A7A)";
+			_inventoryUseButton.Disabled = true;
+			return;
+		}
+
+		if (string.IsNullOrWhiteSpace(_selectedInventoryItemId) || !itemIds.Contains(_selectedInventoryItemId, StringComparer.Ordinal))
+		{
+			_selectedInventoryItemId = itemIds[0];
+		}
+
+		int selectedIndex = itemIds.FindIndex(itemId => string.Equals(itemId, _selectedInventoryItemId, StringComparison.Ordinal));
+		if (selectedIndex >= 0)
+		{
+			_inventoryItemList.Select(selectedIndex);
+		}
+
+		_inventoryText.Text = BuildInventoryDetailText(_selectedInventoryItemId);
+		_inventoryUseButton.Disabled = !CanUseInventoryItem(_selectedInventoryItemId, out _);
 		return;
 		}
 
@@ -2349,6 +2368,49 @@ public partial class SystemFeatureLabController : CanvasLayer
 		RefreshBagView();
 	}
 
+	private void OnInventoryItemSelected(long index)
+	{
+		if (_session == null || index < 0)
+		{
+			return;
+		}
+
+		string[] itemIds = _session.InventoryState.ItemCounts.Keys
+			.Select(key => key.AsString())
+			.Where(itemId => !string.IsNullOrWhiteSpace(itemId))
+			.OrderBy(GetInventoryItemDisplayName, StringComparer.Ordinal)
+			.ToArray();
+		if (index >= itemIds.Length)
+		{
+			return;
+		}
+
+		GameAudio.Instance?.PlayUiConfirm();
+		_selectedInventoryItemId = itemIds[index];
+		_inventoryText.Text = BuildInventoryDetailText(_selectedInventoryItemId);
+		_inventoryUseButton.Disabled = !CanUseInventoryItem(_selectedInventoryItemId, out _);
+	}
+
+	private void OnInventoryUsePressed()
+	{
+		if (_session == null || string.IsNullOrWhiteSpace(_selectedInventoryItemId))
+		{
+			return;
+		}
+
+		if (!_session.TryUseInventoryItem(_selectedInventoryItemId, out string resultMessage))
+		{
+			_inventoryText.Text = BuildInventoryDetailText(_selectedInventoryItemId, resultMessage);
+			_inventoryUseButton.Disabled = !CanUseInventoryItem(_selectedInventoryItemId, out _);
+			return;
+		}
+
+		GameAudio.Instance?.PlayUiConfirm();
+		RefreshStatusView();
+		RefreshBagView();
+		_inventoryText.Text = BuildInventoryDetailText(_selectedInventoryItemId, resultMessage);
+	}
+
 	private void OnEquipmentSlotSelected(long index)
 	{
 		if (index < 0 || index >= EquipmentSlotOrder.Length)
@@ -2553,6 +2615,7 @@ public partial class SystemFeatureLabController : CanvasLayer
 		items.Clear();
 		items["steel_scrap"] = 5;
 		items["charged_core"] = 2;
+		items["arakawa_battery"] = 2;
 		items["medical_gel"] = 3;
 		items["optical_part"] = 1;
 		items["equip_magnetic_scabbard"] = 1;
@@ -2742,10 +2805,93 @@ public partial class SystemFeatureLabController : CanvasLayer
 		{
 			"steel_scrap" => "\u94A2\u94C1\u788E\u7247",
 			"charged_core" => "\u5145\u80FD\u6838\u5FC3",
+			"arakawa_battery" => "\u8352\u5DDD\u5145\u80FD\u7535\u6C60",
 			"medical_gel" => "\u533B\u7597\u51DD\u80F6",
 			"optical_part" => "\u5149\u5B66\u96F6\u4EF6",
 			_ => itemId,
 		};
+	}
+
+	private string GetInventoryItemDescription(string itemId)
+	{
+		if (FindEquipmentDefinition(itemId) is RuntimeEquipmentDefinition equipmentDefinition)
+		{
+			return equipmentDefinition.Description;
+		}
+
+		return itemId switch
+		{
+			"arakawa_battery" => "\u4F7F\u7528\u540E\u56DE\u590D 1 \u70B9\u8352\u5DDD\u80FD\u91CF\u3002\u5F53\u8352\u5DDD\u80FD\u91CF\u5DF2\u6EE1\u65F6\u65E0\u6CD5\u4F7F\u7528\u3002",
+			"steel_scrap" => "\u5DE5\u4E1A\u5E9F\u6599\uff0C\u76EE\u524D\u4E3B\u8981\u7528\u4E8E\u6D4B\u8BD5\u80CC\u5305\u6D41\u7A0B\u3002",
+			"charged_core" => "\u5B58\u50A8\u80FD\u91CF\u7684\u6838\u5FC3\u90E8\u4EF6\uff0C\u76EE\u524D\u6682\u65E0\u76F4\u63A5\u4F7F\u7528\u529F\u80FD\u3002",
+			"medical_gel" => "\u533B\u7597\u7528\u51DD\u80F6\uff0C\u540E\u7EED\u53EF\u6269\u5C55\u4E3A\u6218\u540E\u6216\u5730\u56FE\u5185\u6D88\u8017\u54C1\u3002",
+			"optical_part" => "\u5149\u5B66\u88C5\u7F6E\u6B8B\u4EF6\uff0C\u76EE\u524D\u4F5C\u4E3A\u6750\u6599\u5360\u4F4D\u3002",
+			_ => "\u6682\u65E0\u8BE6\u7EC6\u8BF4\u660E\u3002",
+		};
+	}
+
+	private string BuildInventoryDetailText(string itemId, string extraMessage = "")
+	{
+		if (_session == null || string.IsNullOrWhiteSpace(itemId))
+		{
+			return "\u9009\u62E9\u4E00\u4E2A\u7269\u54C1\u67E5\u770B\u8BE6\u60C5";
+		}
+
+		int count = _session.InventoryState.ItemCounts.TryGetValue(itemId, out Variant value) ? value.AsInt32() : 0;
+		bool canUse = CanUseInventoryItem(itemId, out string useHint);
+		List<string> lines = new()
+		{
+			$"[b]{GetInventoryItemDisplayName(itemId)}[/b]",
+			$"\u6301\u6709\u6570\u91CF: {count}",
+			$"\u53EF\u7528\u6027: {(canUse ? "\u53EF\u4F7F\u7528" : "\u4E0D\u53EF\u4F7F\u7528")}",
+			string.Empty,
+			GetInventoryItemDescription(itemId),
+		};
+
+		if (!string.IsNullOrWhiteSpace(useHint))
+		{
+			lines.Add(string.Empty);
+			lines.Add($"\u63D0\u793A: {useHint}");
+		}
+
+		if (!string.IsNullOrWhiteSpace(extraMessage))
+		{
+			lines.Add(string.Empty);
+			lines.Add($"\u7ED3\u679C: {extraMessage}");
+		}
+
+		return string.Join('\n', lines);
+	}
+
+	private bool CanUseInventoryItem(string itemId, out string reason)
+	{
+		reason = string.Empty;
+		if (_session == null || string.IsNullOrWhiteSpace(itemId))
+		{
+			reason = "\u672A\u9009\u62E9\u7269\u54C1";
+			return false;
+		}
+
+		if (!_session.InventoryState.ItemCounts.TryGetValue(itemId, out Variant amountValue) || amountValue.AsInt32() <= 0)
+		{
+			reason = "\u8BE5\u7269\u54C1\u5DF2\u8017\u5C3D";
+			return false;
+		}
+
+		if (string.Equals(itemId, "arakawa_battery", StringComparison.Ordinal))
+		{
+			if (_session.ArakawaCurrentEnergy >= _session.ArakawaMaxEnergy)
+			{
+				reason = "\u8352\u5DDD\u80FD\u91CF\u5DF2\u6EE1\uff0C\u4E0D\u53EF\u4F7F\u7528";
+				return false;
+			}
+
+			reason = "\u4F7F\u7528\u540E\u56DE\u590D 1 \u70B9\u8352\u5DDD\u80FD\u91CF";
+			return true;
+		}
+
+		reason = "\u5F53\u524D\u6682\u65E0\u53EF\u7528\u6548\u679C";
+		return false;
 	}
 
 	private string GetCardDisplayName(string cardId)

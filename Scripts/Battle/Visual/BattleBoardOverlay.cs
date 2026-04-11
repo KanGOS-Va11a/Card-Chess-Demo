@@ -8,6 +8,9 @@ namespace CardChessDemo.Battle.Visual;
 
 public partial class BattleBoardOverlay : Node2D
 {
+    private const string ArcTerrainSpriteSheetPath = "res://Assets/Tilemap/Battle/terrain/electiric_terrain.png";
+    private static readonly Texture2D? ArcTerrainSpriteSheet = ResourceLoader.Load<Texture2D>(ArcTerrainSpriteSheetPath);
+
     [Export] public Color HoverColor { get; set; } = new(0.2f, 0.85f, 1.0f, 0.28f);
     [Export] public Color ReachableColor { get; set; } = new(0.42f, 0.98f, 0.22f, 0.18f);
     [Export] public Color AttackTargetColor { get; set; } = new(1.0f, 0.35f, 0.35f, 0.22f);
@@ -22,6 +25,7 @@ public partial class BattleBoardOverlay : Node2D
     [Export(PropertyHint.Range, "0.05,0.60,0.01")] public float MinCellRevealScale { get; set; } = 0.12f;
     [Export(PropertyHint.Range, "0.01,0.30,0.01")] public float PathSegmentRevealDuration { get; set; } = 0.12f;
     [Export(PropertyHint.Range, "0.00,0.16,0.005")] public float PathSegmentDelaySeconds { get; set; } = 0.028f;
+    [Export(PropertyHint.Range, "1,24,1")] public int ArcTerrainAnimationFps { get; set; } = 8;
 
     private BattleRoomTemplate? _room;
     private readonly AnimatedCellLayer _reachableCells = new();
@@ -341,10 +345,19 @@ public partial class BattleBoardOverlay : Node2D
         }
 
         Color borderColor = BuildCellBorderColor(ArcTerrainColor);
+        Rect2? frameRegion = ResolveArcTerrainFrameRegion();
         foreach (Vector2I cell in _arcTerrainCells)
         {
             Rect2 cellRect = _room.GetCellRect(cell);
-            DrawRect(cellRect, ArcTerrainColor, true);
+            if (ArcTerrainSpriteSheet != null && frameRegion.HasValue)
+            {
+                DrawTextureRectRegion(ArcTerrainSpriteSheet, cellRect, frameRegion.Value, Colors.White);
+                DrawRect(cellRect, new Color(0.34f, 0.46f, 1.0f, 0.08f), true);
+            }
+            else
+            {
+                DrawRect(cellRect, ArcTerrainColor, true);
+            }
             DrawRect(cellRect.Grow(-1.0f), borderColor, false, 2.0f);
         }
     }
@@ -433,6 +446,22 @@ public partial class BattleBoardOverlay : Node2D
     private static double GetNowSeconds()
     {
         return Time.GetTicksMsec() / 1000.0d;
+    }
+
+    private Rect2? ResolveArcTerrainFrameRegion()
+    {
+        if (ArcTerrainSpriteSheet == null || ArcTerrainAnimationFps <= 0)
+        {
+            return null;
+        }
+
+        const int frameWidth = 16;
+        const int frameHeight = 16;
+        int frameCount = Mathf.Max(1, ArcTerrainSpriteSheet.GetWidth() / frameWidth);
+        int millisecondsPerFrame = Mathf.Max(1, 1000 / ArcTerrainAnimationFps);
+        long ticksMs = (long)Time.GetTicksMsec();
+        int frameIndex = (int)(ticksMs / millisecondsPerFrame) % frameCount;
+        return new Rect2(frameIndex * frameWidth, 0.0f, frameWidth, frameHeight);
     }
 
     private sealed class AnimatedCellLayer

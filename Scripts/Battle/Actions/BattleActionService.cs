@@ -76,6 +76,11 @@ public sealed class BattleActionService
 
     public double LastImpactPresentationDurationSeconds => _lastImpactPresentationDurationSeconds;
 
+    public void RegisterExternalPresentationDuration(double durationSeconds)
+    {
+        _lastImpactPresentationDurationSeconds = Math.Max(_lastImpactPresentationDurationSeconds, Math.Max(0.0d, durationSeconds));
+    }
+
     public bool TryMoveObject(string objectId, Vector2I targetCell, out string failureReason, bool ignoreTerrainEffects = false)
     {
         failureReason = string.Empty;
@@ -602,7 +607,7 @@ public sealed class BattleActionService
 
                 if (target.ObjectType == BoardObjectType.Unit)
                 {
-                    GameAudio.Instance?.PlayUnitDeath();
+                    RegisterExternalPresentationDuration(GameAudio.Instance?.PlayUnitDeath() ?? 0.0d);
                     _ = _pieceViewManager.PlayKillSequenceAsync(
                         target.ObjectId,
                         allowKillKnockback ? knockbackDirection : Vector2.Zero,
@@ -616,7 +621,7 @@ public sealed class BattleActionService
                 }
                 else if (target.ObjectType == BoardObjectType.Obstacle)
                 {
-                    GameAudio.Instance?.PlayUnitDeath();
+                    RegisterExternalPresentationDuration(GameAudio.Instance?.PlayUnitDeath() ?? 0.0d);
                     _ = _pieceViewManager.PlayObstacleBreakSequenceAsync(
                         target.ObjectId,
                         ObstacleBreakWhitenPresentationDurationSeconds,
@@ -633,7 +638,7 @@ public sealed class BattleActionService
         {
             if (playTargetHitSound && damageAmount > 0 && target.ObjectType == BoardObjectType.Unit && target.Faction == BoardObjectFaction.Enemy)
             {
-                GameAudio.Instance?.PlayEnemyHit();
+                RegisterExternalPresentationDuration(GameAudio.Instance?.PlayEnemyHit() ?? 0.0d);
             }
             _pieceViewManager.PlayHit(target.ObjectId);
         }
@@ -674,7 +679,7 @@ public sealed class BattleActionService
 
     private void PlayAttackPresentation(BoardObject attacker, BoardObject target, Vector2 direction)
     {
-        GameAudio.Instance?.PlayBasicAttack();
+        RegisterExternalPresentationDuration(GameAudio.Instance?.PlayBasicAttack() ?? 0.0d);
         _pieceViewManager.PlayAttackExchange(attacker.ObjectId, direction, target.ObjectId);
     }
 

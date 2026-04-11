@@ -94,6 +94,7 @@ public partial class BattleSceneController : Node2D
 	[Export] public string EncounterId { get; set; } = string.Empty;
 	[Export] public string[] EncounterEnemyTypeIds { get; set; } = { "grunt" };
 	[Export] public string EncounterEnemyDefinitionId { get; set; } = "battle_enemy";
+	[Export] public string EncounterPreferredRoomPoolId { get; set; } = string.Empty;
 	[Export] public int RandomSeed { get; set; } = 1337;
 	[Export] public float CameraZoom { get; set; } = 1.0f;
 	[Export] public int CameraTopMarginPixels { get; set; } = 8;
@@ -497,6 +498,10 @@ public partial class BattleSceneController : Node2D
 				canUseArakawa,
 				_isArakawaWheelOpen,
 				GetCurrentArakawaAbilityId());
+			_hud.SetPlayerStatusState(
+				playerState?.CurrentHp ?? 0,
+				playerState?.MaxHp ?? 0,
+				playerState?.CurrentShield ?? 0);
 			_hud.SetRetreatActionState(playerState != null && IsPlayerStandingOnEscapeCell(playerState.Cell) && IsRetreatFeatureAvailable());
 			_hud.SetActionLogState(_currentTurnActionLogTurnIndex, _currentTurnActionLogEntries, _previousTurnActionLogTurnIndex, _previousTurnActionLogEntries);
 		}
@@ -1315,7 +1320,10 @@ public partial class BattleSceneController : Node2D
 		}
 
 		_hud?.PlayCardUseEffect(cardInstance);
-		GameAudio.Instance?.PlayCardUse();
+		double cardUseAudioDuration = cardInstance.Definition.CardId == LearningCardId
+			? GameAudio.Instance?.PlayLearningCardUse() ?? 0.0d
+			: GameAudio.Instance?.PlayCardUse() ?? 0.0d;
+		_actionService?.RegisterExternalPresentationDuration(cardUseAudioDuration);
 		_pieceViewManager.PlayAction(attackerId);
 
 		if (!TryResolveSpecialCardEffect(attackerId, cardInstance, targetObject, targetCell, out failureReason))
@@ -2634,6 +2642,10 @@ public partial class BattleSceneController : Node2D
 		{
 			EncounterEnemyTypeIds = configuredEnemyTypeIds;
 		}
+
+		EncounterPreferredRoomPoolId = !string.IsNullOrWhiteSpace(encounterProfile.PreferredRoomPoolId)
+			? encounterProfile.PreferredRoomPoolId.Trim()
+			: encounterProfile.EncounterId;
 	}
 
 	private PackedScene SelectRoomScene()
@@ -2698,6 +2710,30 @@ public partial class BattleSceneController : Node2D
 
 		if (BattleRoomPools != null)
 		{
+			if (!string.IsNullOrWhiteSpace(EncounterPreferredRoomPoolId))
+			{
+				foreach (BattleRoomPoolEntry entry in BattleRoomPools.Entries)
+				{
+					if (!string.Equals(entry.RoomPoolId, EncounterPreferredRoomPoolId, StringComparison.OrdinalIgnoreCase))
+					{
+						continue;
+					}
+
+					foreach (PackedScene scene in entry.RoomScenes)
+					{
+						if (scene != null)
+						{
+							pooledScenes.Add(scene);
+						}
+					}
+				}
+			}
+
+			if (pooledScenes.Count > 0)
+			{
+				return pooledScenes;
+			}
+
 			foreach (BattleRoomPoolEntry entry in BattleRoomPools.Entries)
 			{
 				bool entryMatchesEncounter = string.IsNullOrWhiteSpace(entry.EnemyTypeId)

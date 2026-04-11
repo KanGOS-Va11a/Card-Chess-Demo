@@ -219,6 +219,48 @@ public partial class GlobalGameSession : Node
 		SetArakawaCurrentEnergy(ArakawaCurrentEnergy + amount);
 	}
 
+	public bool TryUseInventoryItem(string itemId, out string resultMessage)
+	{
+		resultMessage = string.Empty;
+		if (string.IsNullOrWhiteSpace(itemId))
+		{
+			resultMessage = "\u672A\u9009\u62E9\u7269\u54C1";
+			return false;
+		}
+
+		if (!InventoryItemCounts.TryGetValue(itemId, out Variant amountValue) || amountValue.AsInt32() <= 0)
+		{
+			resultMessage = "\u8BE5\u7269\u54C1\u4E0D\u5728\u80CC\u5305\u4E2D";
+			return false;
+		}
+
+		if (string.Equals(itemId, "arakawa_battery", StringComparison.Ordinal))
+		{
+			if (ArakawaCurrentEnergy >= ArakawaMaxEnergy)
+			{
+				resultMessage = "\u8352\u5DDD\u80FD\u91CF\u5DF2\u6EE1\uff0C\u4E0D\u53EF\u4F7F\u7528";
+				return false;
+			}
+
+			RestoreArakawaEnergy(1);
+			int nextAmount = Math.Max(0, amountValue.AsInt32() - 1);
+			if (nextAmount <= 0)
+			{
+				InventoryItemCounts.Remove(itemId);
+			}
+			else
+			{
+				InventoryItemCounts[itemId] = nextAmount;
+			}
+
+			resultMessage = "\u8352\u5DDD\u80FD\u91CF +1";
+			return true;
+		}
+
+		resultMessage = "\u5F53\u524D\u6682\u65E0\u53EF\u4F7F\u7528\u6548\u679C";
+		return false;
+	}
+
 	public void ApplyMovePointDelta(int delta)
 	{
 		SetPlayerMovePointsPerTurn(PlayerMovePointsPerTurn + delta);

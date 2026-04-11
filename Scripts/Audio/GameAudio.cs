@@ -16,6 +16,7 @@ public partial class GameAudio : Node
 	public const string BasicAttackCueId = "sfx_basic_attack";
 	public const string CardSelectCueId = "sfx_card_select";
 	public const string CardPlayCueId = "sfx_card_play";
+	public const string LearningCardCueId = "sfx_card_learning";
 	public const string EnemyHitCueId = "sfx_enemy_hit";
 	public const string UnitDeathCueId = "sfx_unit_death";
 	public const string UiConfirmCueId = "sfx_ui_confirm";
@@ -32,6 +33,26 @@ public partial class GameAudio : Node
 	private const float DefaultImpactCutoffHz = 720.0f;
 	private const float DefaultImpactResonance = 0.8f;
 	private const float DefaultImpactBassBoostDb = 6.0f;
+	private const float DefaultMapMusicVolumeDb = -9.0f;
+	private const float DefaultBattleMusicVolumeDb = -5.0f;
+
+	private static readonly IReadOnlyDictionary<string, float> CueVolumeDb =
+		new Dictionary<string, float>(StringComparer.Ordinal)
+		{
+			[MapMusicCueId] = DefaultMapMusicVolumeDb,
+			[BattleMusicCueId] = DefaultBattleMusicVolumeDb,
+			[BasicAttackCueId] = -1.5f,
+			[CardSelectCueId] = -7.0f,
+			[CardPlayCueId] = -2.0f,
+			[LearningCardCueId] = -1.5f,
+			[EnemyHitCueId] = -3.5f,
+			[UnitDeathCueId] = -1.0f,
+			[UiConfirmCueId] = -6.0f,
+			[UiCancelCueId] = -6.0f,
+			[UiToggleOnCueId] = -5.0f,
+			[UiToggleOffCueId] = -5.0f,
+			[DialoguePopupCueId] = -8.5f,
+		};
 
 	private static readonly IReadOnlyDictionary<string, string[]> CueCandidatePaths =
 		new Dictionary<string, string[]>(StringComparer.Ordinal)
@@ -41,6 +62,7 @@ public partial class GameAudio : Node
 			[BasicAttackCueId] = new[] { "res://Assets/Audio/SFX/attack_normal.wav" },
 			[CardSelectCueId] = new[] { "res://Assets/Audio/SFX/card_selected.wav" },
 			[CardPlayCueId] = new[] { "res://Assets/Audio/SFX/card_played.wav" },
+			[LearningCardCueId] = new[] { "res://Assets/Audio/SFX/card_learning.wav" },
 			[EnemyHitCueId] = new[] { "res://Assets/Audio/SFX/attack_metal.wav" },
 			[UnitDeathCueId] = new[] { "res://Assets/Audio/SFX/something_died.wav" },
 			[UiConfirmCueId] = new[] { "res://Assets/Audio/SFX/UI_clicked.wav" },
@@ -69,8 +91,8 @@ public partial class GameAudio : Node
 	private float _impactBassBoostDb;
 	private string _activeMusicCueId = string.Empty;
 	private float _masterVolumeLinear = 1.0f;
-	private float _musicVolumeLinear = 1.0f;
-	private float _sfxVolumeLinear = 1.0f;
+	private float _musicVolumeLinear = 0.82f;
+	private float _sfxVolumeLinear = 0.92f;
 	private bool _masterMuted;
 	private bool _musicMuted;
 	private bool _sfxMuted;
@@ -138,6 +160,7 @@ public partial class GameAudio : Node
 		_musicTween?.Kill();
 
 		nextPlayer.Stream = stream;
+		float targetVolumeDb = ResolveCueVolumeDb(cueId);
 		nextPlayer.VolumeDb = SilentDb;
 		nextPlayer.Play();
 
@@ -146,7 +169,7 @@ public partial class GameAudio : Node
 		_musicTween.SetParallel();
 		_musicTween.SetEase(Tween.EaseType.Out);
 		_musicTween.SetTrans(Tween.TransitionType.Cubic);
-		_musicTween.TweenProperty(nextPlayer, "volume_db", 0.0f, Math.Max(fadeSeconds, 0.01f));
+		_musicTween.TweenProperty(nextPlayer, "volume_db", targetVolumeDb, Math.Max(fadeSeconds, 0.01f));
 		if (previousPlayer.Playing)
 		{
 			_musicTween.TweenProperty(previousPlayer, "volume_db", SilentDb, Math.Max(fadeSeconds, 0.01f));
@@ -154,7 +177,7 @@ public partial class GameAudio : Node
 
 		_activeMusicPlayer = nextPlayer;
 		_activeMusicCueId = cueId;
-		_ = FinalizeMusicSwapAsync(previousPlayer, Math.Max(fadeSeconds, 0.01f));
+		_ = FinalizeMusicSwapAsync(previousPlayer, Math.Max(fadeSeconds, 0.01f), targetVolumeDb);
 	}
 
 	public void StopMusic(float fadeSeconds = 0.25f)
@@ -186,18 +209,30 @@ public partial class GameAudio : Node
 		_ = StopMusicPlayersAsync(duration);
 	}
 
-	public void PlayBasicAttack() => PlaySfx(BasicAttackCueId, SfxBusName);
-	public void PlayCardSelect() => PlaySfx(CardSelectCueId, UiBusName, minimumIntervalSeconds: 0.05f);
-	public void PlayCardUse() => PlaySfx(CardPlayCueId, SfxBusName);
-	public void PlayEnemyHit() => PlaySfx(EnemyHitCueId, SfxBusName, minimumIntervalSeconds: 0.04f);
-	public void PlayUnitDeath() => PlaySfx(UnitDeathCueId, SfxBusName, minimumIntervalSeconds: 0.05f);
-	public void PlayUiConfirm() => PlaySfx(UiConfirmCueId, UiBusName, minimumIntervalSeconds: 0.03f);
-	public void PlayUiCancel() => PlaySfx(UiCancelCueId, UiBusName, minimumIntervalSeconds: 0.03f);
-	public void PlayUiToggleOn() => PlaySfx(UiToggleOnCueId, MasterBusName, minimumIntervalSeconds: 0.03f);
-	public void PlayUiToggleOff() => PlaySfx(UiToggleOffCueId, MasterBusName, minimumIntervalSeconds: 0.03f);
-	public void PlayDialoguePopup() => PlaySfx(DialoguePopupCueId, UiBusName, minimumIntervalSeconds: 0.04f);
+	public double PlayBasicAttack() => PlaySfx(BasicAttackCueId, SfxBusName, minimumIntervalSeconds: 0.03f);
+	public double PlayCardSelect() => PlaySfx(CardSelectCueId, UiBusName, minimumIntervalSeconds: 0.05f);
+	public double PlayCardUse() => PlaySfx(CardPlayCueId, SfxBusName, minimumIntervalSeconds: 0.03f);
+	public double PlayLearningCardUse() => PlaySfx(LearningCardCueId, SfxBusName, minimumIntervalSeconds: 0.03f);
+	public double PlayEnemyHit() => PlaySfx(EnemyHitCueId, SfxBusName, minimumIntervalSeconds: 0.04f);
+	public double PlayUnitDeath() => PlaySfx(UnitDeathCueId, SfxBusName, minimumIntervalSeconds: 0.05f);
+	public double PlayUiConfirm() => PlaySfx(UiConfirmCueId, UiBusName, minimumIntervalSeconds: 0.03f);
+	public double PlayUiCancel() => PlaySfx(UiCancelCueId, UiBusName, minimumIntervalSeconds: 0.03f);
+	public double PlayUiToggleOn() => PlaySfx(UiToggleOnCueId, MasterBusName, minimumIntervalSeconds: 0.03f);
+	public double PlayUiToggleOff() => PlaySfx(UiToggleOffCueId, MasterBusName, minimumIntervalSeconds: 0.03f);
+	public double PlayDialoguePopup() => PlaySfx(DialoguePopupCueId, UiBusName, minimumIntervalSeconds: 0.04f);
 
-	public void TriggerDamageImpact(float durationSeconds = 0.42f, float cutoffHz = DefaultImpactCutoffHz, float bassBoostDb = DefaultImpactBassBoostDb)
+	public double GetCueDurationSeconds(string cueId)
+	{
+		AudioStream? stream = ResolveStream(cueId);
+		if (stream == null)
+		{
+			return 0.0d;
+		}
+
+		return Math.Max(0.0d, stream.GetLength());
+	}
+
+	public void TriggerDamageImpact(float durationSeconds = 0.20f, float cutoffHz = DefaultImpactCutoffHz, float bassBoostDb = DefaultImpactBassBoostDb)
 	{
 		if (_masterLowPass == null || _masterEq == null)
 		{
@@ -211,8 +246,8 @@ public partial class GameAudio : Node
 
 		float clampedDuration = Mathf.Max(durationSeconds, 0.05f);
 		float downDuration = clampedDuration * 0.18f;
-		float holdDuration = clampedDuration * 0.32f;
-		float upDuration = clampedDuration * 0.50f;
+		float holdDuration = clampedDuration * 0.18f;
+		float upDuration = clampedDuration * 0.54f;
 
 		_impactTween = CreateTween();
 		_impactTween.SetPauseMode(Tween.TweenPauseMode.Process);
@@ -368,7 +403,7 @@ public partial class GameAudio : Node
 		return player;
 	}
 
-	private async System.Threading.Tasks.Task FinalizeMusicSwapAsync(AudioStreamPlayer previousPlayer, float waitSeconds)
+	private async System.Threading.Tasks.Task FinalizeMusicSwapAsync(AudioStreamPlayer previousPlayer, float waitSeconds, float targetVolumeDb)
 	{
 		await ToSignal(GetTree().CreateTimer(waitSeconds, false, false, true), SceneTreeTimer.SignalName.Timeout);
 		if (previousPlayer != _activeMusicPlayer)
@@ -377,7 +412,7 @@ public partial class GameAudio : Node
 			previousPlayer.VolumeDb = SilentDb;
 		}
 
-		_activeMusicPlayer.VolumeDb = 0.0f;
+		_activeMusicPlayer.VolumeDb = targetVolumeDb;
 	}
 
 	private async System.Threading.Tasks.Task StopMusicPlayersAsync(float waitSeconds)
@@ -389,12 +424,12 @@ public partial class GameAudio : Node
 		_musicPlayerB.VolumeDb = SilentDb;
 	}
 
-	private void PlaySfx(string cueId, string busName, float volumeDb = 0.0f, float pitchScale = 1.0f, float minimumIntervalSeconds = 0.0f)
+	private double PlaySfx(string cueId, string busName, float? volumeDb = null, float pitchScale = 1.0f, float minimumIntervalSeconds = 0.0f)
 	{
 		AudioStream? stream = ResolveStream(cueId);
 		if (stream == null || !PassesCooldown(cueId, minimumIntervalSeconds))
 		{
-			return;
+			return 0.0d;
 		}
 
 		List<AudioStreamPlayer> pool = string.Equals(busName, UiBusName, StringComparison.Ordinal)
@@ -403,9 +438,10 @@ public partial class GameAudio : Node
 		AudioStreamPlayer player = AcquireFreePlayer(pool, busName);
 		player.Bus = busName;
 		player.Stream = stream;
-		player.VolumeDb = volumeDb;
+		player.VolumeDb = volumeDb ?? ResolveCueVolumeDb(cueId);
 		player.PitchScale = pitchScale;
 		player.Play();
+		return Math.Max(0.0d, stream.GetLength());
 	}
 
 	private AudioStreamPlayer AcquireFreePlayer(List<AudioStreamPlayer> pool, string busName)
@@ -579,5 +615,10 @@ public partial class GameAudio : Node
 		config.SetValue("audio", "music_muted", _musicMuted);
 		config.SetValue("audio", "sfx_muted", _sfxMuted);
 		config.Save(SettingsConfigPath);
+	}
+
+	private static float ResolveCueVolumeDb(string cueId)
+	{
+		return CueVolumeDb.TryGetValue(cueId, out float volumeDb) ? volumeDb : 0.0f;
 	}
 }

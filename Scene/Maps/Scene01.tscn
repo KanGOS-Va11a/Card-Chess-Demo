@@ -468,6 +468,7 @@ texture = SubResource("GradientTexture2D_akln8")
 
 [node name="Enemy" parent="." unique_id=1781789759 instance=ExtResource("19_08wqd")]
 position = Vector2(-441, -184)
+EncounterId = "scene01_tutorial"
 
 [node name="CanvasModulate" type="CanvasModulate" parent="." unique_id=435870026]
 color = Color(0.14154336, 0.11568459, 0.1869502, 1)

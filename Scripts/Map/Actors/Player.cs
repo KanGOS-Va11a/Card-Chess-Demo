@@ -245,18 +245,21 @@ public partial class Player : CharacterBody2D
 		}
 
 		SpriteFrames frames = new();
-		AddDirectionalStripAnimation(frames, "idle_down", "res://Assets/Character/MainPlayer/Idle/Idle_Down.png");
-		AddDirectionalStripAnimation(frames, "idle_up", "res://Assets/Character/MainPlayer/Idle/Idle_Up.png");
-		AddDirectionalStripAnimation(frames, "idle_left_down", "res://Assets/Character/MainPlayer/Idle/Idle_Left_Down.png");
-		AddDirectionalStripAnimation(frames, "idle_left_up", "res://Assets/Character/MainPlayer/Idle/Idle_Left_Up.png");
-		AddDirectionalStripAnimation(frames, "idle_right_down", "res://Assets/Character/MainPlayer/Idle/Idle_Right_Down.png");
-		AddDirectionalStripAnimation(frames, "idle_right_up", "res://Assets/Character/MainPlayer/Idle/Idle_Right_Up.png");
-		AddDirectionalStripAnimation(frames, "walk_down", "res://Assets/Character/MainPlayer/Walk/walk_Down.png");
-		AddDirectionalStripAnimation(frames, "walk_up", "res://Assets/Character/MainPlayer/Walk/walk_Up.png");
-		AddDirectionalStripAnimation(frames, "walk_left_down", "res://Assets/Character/MainPlayer/Walk/walk_Left_Down.png");
-		AddDirectionalStripAnimation(frames, "walk_left_up", "res://Assets/Character/MainPlayer/Walk/walk_Left_Up.png");
-		AddDirectionalStripAnimation(frames, "walk_right_down", "res://Assets/Character/MainPlayer/Walk/walk_Right_Down.png");
-		AddDirectionalStripAnimation(frames, "walk_right_up", "res://Assets/Character/MainPlayer/Walk/walk_Right_Up.png");
+		string idleDownPath = ResolvePreferredAnimationStripPath("res://Assets/Character/MainPlayer/Idle/Idle_Down-export.png", "res://Assets/Character/MainPlayer/Idle/Idle_Down.png");
+		string idleUpPath = ResolvePreferredAnimationStripPath("res://Assets/Character/MainPlayer/Idle/Idle_Up-export.png", "res://Assets/Character/MainPlayer/Idle/Idle_Up.png");
+		string idleRightPath = ResolvePreferredAnimationStripPath("res://Assets/Character/MainPlayer/Idle/Idle_Right_Down-export.png", "res://Assets/Character/MainPlayer/Idle/Idle_Right_Down.png");
+		string walkDownPath = ResolvePreferredAnimationStripPath("res://Assets/Character/MainPlayer/Walk/walk_Down-export.png", "res://Assets/Character/MainPlayer/Walk/walk_Down.png");
+		string walkUpPath = ResolvePreferredAnimationStripPath("res://Assets/Character/MainPlayer/Walk/walk_Up-export.png", "res://Assets/Character/MainPlayer/Walk/walk_Up.png");
+		string walkRightPath = ResolvePreferredAnimationStripPath("res://Assets/Character/MainPlayer/Walk/walk_Right_Down-export.png", "res://Assets/Character/MainPlayer/Walk/walk_Right_Down.png");
+
+		AddDirectionalStripAnimation(frames, "idle_down", idleDownPath, SpriteFps * 0.5f);
+		AddDirectionalStripAnimation(frames, "idle_up", idleUpPath, SpriteFps * 0.5f);
+		AddDirectionalStripAnimation(frames, "idle_left_down", idleRightPath);
+		AddDirectionalStripAnimation(frames, "idle_right_down", idleRightPath);
+		AddDirectionalStripAnimation(frames, "walk_down", walkDownPath);
+		AddDirectionalStripAnimation(frames, "walk_up", walkUpPath);
+		AddDirectionalStripAnimation(frames, "walk_left_down", walkRightPath);
+		AddDirectionalStripAnimation(frames, "walk_right_down", walkRightPath);
 
 		if (!frames.HasAnimation("idle_down"))
 		{
@@ -266,10 +269,16 @@ public partial class Player : CharacterBody2D
 
 		_animatedSprite.SpriteFrames = frames;
 		_activeAnimation = "idle_down";
+		_animatedSprite.FlipH = false;
 		_animatedSprite.Play(_activeAnimation);
 	}
 
-	private void AddDirectionalStripAnimation(SpriteFrames frames, string animationName, string texturePath)
+	private static string ResolvePreferredAnimationStripPath(string preferredPath, string fallbackPath)
+	{
+		return ResourceLoader.Exists(preferredPath) ? preferredPath : fallbackPath;
+	}
+
+	private void AddDirectionalStripAnimation(SpriteFrames frames, string animationName, string texturePath, float? fpsOverride = null)
 	{
 		Texture2D? stripTexture = ResourceLoader.Load<Texture2D>(texturePath);
 		if (stripTexture == null)
@@ -289,7 +298,7 @@ public partial class Player : CharacterBody2D
 
 		frames.AddAnimation(animationName);
 		frames.SetAnimationLoop(animationName, true);
-		frames.SetAnimationSpeed(animationName, Mathf.Max(1, SpriteFps));
+		frames.SetAnimationSpeed(animationName, Mathf.Max(1.0f, fpsOverride ?? SpriteFps));
 
 		for (int i = 0; i < frameCount; i++)
 		{
@@ -330,8 +339,15 @@ public partial class Player : CharacterBody2D
 		Vector2 direction = isMoving ? inputDirection.Normalized() : _lastFacingDirection;
 		string directionKey = ResolveDirectionKey(direction);
 		string nextAnimation = (isMoving ? "walk_" : "idle_") + directionKey;
+		bool shouldFlipHorizontally = directionKey == "left_down";
 
-		if (_activeAnimation == nextAnimation || !_animatedSprite.SpriteFrames.HasAnimation(nextAnimation))
+		if (!_animatedSprite.SpriteFrames.HasAnimation(nextAnimation))
+		{
+			return;
+		}
+
+		_animatedSprite.FlipH = shouldFlipHorizontally;
+		if (_activeAnimation == nextAnimation)
 		{
 			return;
 		}

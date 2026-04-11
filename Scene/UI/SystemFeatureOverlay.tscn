@@ -41,14 +41,14 @@ offset_left = 12.0
 offset_top = 10.0
 offset_right = 520.0
 offset_bottom = 28.0
-text = "WASD 移动  E 交互  C 打开系统菜单"
+text = "WASD 绉诲姩  E 浜や簰  C 鎵撳紑绯荤粺鑿滃崟"
 
 [node name="StatusLabel" type="Label" parent="."]
 offset_left = 12.0
 offset_top = 30.0
 offset_right = 610.0
 offset_bottom = 52.0
-text = "靠近可交互对象后按 E 交互"
+text = "闈犺繎鍙氦浜掑璞″悗鎸?E 浜や簰"
 
 [node name="PanelRoot" type="Control" parent="."]
 visible = false
@@ -94,7 +94,7 @@ theme_override_constants/separation = 6
 
 [node name="TitleLabel" type="Label" parent="PanelRoot/Window/Margin/Root"]
 layout_mode = 2
-text = "系统菜单 · 按 C 关闭"
+text = "绯荤粺鑿滃崟 路 鎸?C 鍏抽棴"
 
 [node name="Tabs" type="TabContainer" parent="PanelRoot/Window/Margin/Root"]
 layout_mode = 2
@@ -136,7 +136,7 @@ theme_override_constants/separation = 4
 
 [node name="Title" type="Label" parent="PanelRoot/Window/Margin/Root/Tabs/StatusTab/Columns/EquipmentColumn"]
 layout_mode = 2
-text = "装备管理"
+text = "瑁呭绠＄悊"
 
 [node name="SlotList" type="ItemList" parent="PanelRoot/Window/Margin/Root/Tabs/StatusTab/Columns/EquipmentColumn"]
 custom_minimum_size = Vector2(0, 64)
@@ -157,12 +157,12 @@ theme_override_constants/separation = 8
 [node name="EquipButton" type="Button" parent="PanelRoot/Window/Margin/Root/Tabs/StatusTab/Columns/EquipmentColumn/ActionRow"]
 layout_mode = 2
 size_flags_horizontal = 3
-text = "装备"
+text = "瑁呭"
 
 [node name="UnequipButton" type="Button" parent="PanelRoot/Window/Margin/Root/Tabs/StatusTab/Columns/EquipmentColumn/ActionRow"]
 layout_mode = 2
 size_flags_horizontal = 3
-text = "卸下"
+text = "鍗镐笅"
 
 [node name="EquipmentDetailPanel" type="PanelContainer" parent="PanelRoot/Window/Margin/Root/Tabs/StatusTab/Columns/EquipmentColumn"]
 layout_mode = 2
@@ -176,32 +176,53 @@ size_flags_vertical = 3
 bbcode_enabled = true
 fit_content = false
 scroll_active = true
-text = "装备详情"
+text = "瑁呭璇︽儏"
 
 [node name="InventoryTab" type="VBoxContainer" parent="PanelRoot/Window/Margin/Root/Tabs"]
 layout_mode = 2
 theme_override_constants/separation = 6
 
-[node name="InventoryText" type="RichTextLabel" parent="PanelRoot/Window/Margin/Root/Tabs/InventoryTab"]
+[node name="Columns" type="HBoxContainer" parent="PanelRoot/Window/Margin/Root/Tabs/InventoryTab"]
+custom_minimum_size = Vector2(0, 176)
+layout_mode = 2
+size_flags_vertical = 3
+
+[node name="ItemList" type="ItemList" parent="PanelRoot/Window/Margin/Root/Tabs/InventoryTab/Columns"]
+custom_minimum_size = Vector2(112, 176)
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+
+[node name="DetailPanel" type="PanelContainer" parent="PanelRoot/Window/Margin/Root/Tabs/InventoryTab/Columns"]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+theme_override_styles/panel = SubResource("StyleBoxFlat_panel")
+
+[node name="DetailText" type="RichTextLabel" parent="PanelRoot/Window/Margin/Root/Tabs/InventoryTab/Columns/DetailPanel"]
 custom_minimum_size = Vector2(0, 176)
 layout_mode = 2
 size_flags_vertical = 3
 bbcode_enabled = true
 fit_content = false
 scroll_active = true
-text = "背包信息"
+text = "鑳屽寘淇℃伅"
 
 [node name="Footer" type="HBoxContainer" parent="PanelRoot/Window/Margin/Root/Tabs/InventoryTab"]
 layout_mode = 2
 theme_override_constants/separation = 8
 
+[node name="UseButton" type="Button" parent="PanelRoot/Window/Margin/Root/Tabs/InventoryTab/Footer"]
+layout_mode = 2
+text = "浣跨敤"
+
 [node name="SeedInventoryButton" type="Button" parent="PanelRoot/Window/Margin/Root/Tabs/InventoryTab/Footer"]
 layout_mode = 2
-text = "填充测试物资"
+text = "濉厖娴嬭瘯鐗╄祫"
 
 [node name="ClearInventoryButton" type="Button" parent="PanelRoot/Window/Margin/Root/Tabs/InventoryTab/Footer"]
 layout_mode = 2
-text = "清空测试物资"
+text = "娓呯┖娴嬭瘯鐗╄祫"
 
 [node name="TalentTab" type="VBoxContainer" parent="PanelRoot/Window/Margin/Root/Tabs"]
 layout_mode = 2
@@ -235,7 +256,7 @@ theme_override_colors/font_outline_color = Color(0, 0, 0, 1)
 theme_override_constants/outline_size = 2
 theme_override_font_sizes/font_size = 18
 mouse_filter = 2
-text = "涓撶簿鐐?0"
+text = "娑撴挾绨块悙?0"
 
 [node name="TalentTreeScroll" type="ScrollContainer" parent="PanelRoot/Window/Margin/Root/Tabs/TalentTab/Body"]
 layout_mode = 1
@@ -317,7 +338,7 @@ theme_override_colors/font_color = Color(1, 0.96, 0.78, 1)
 theme_override_colors/font_outline_color = Color(0, 0, 0, 1)
 theme_override_constants/outline_size = 2
 theme_override_font_sizes/font_size = 18
-text = "专精点 0"
+text = "涓撶簿鐐?0"
 
 [node name="CardTreeRootBackdrop" type="ColorRect" parent="PanelRoot/Window/Margin/Root/Tabs/TalentTab/Body/TalentTreeScroll/TalentTreeCanvas"]
 visible = false
@@ -402,7 +423,7 @@ theme_override_constants/separation = 8
 [node name="TitleLabel" type="Label" parent="PanelRoot/Window/Margin/Root/Tabs/TalentTab/Body/DetailPanel/Margin/Content"]
 layout_mode = 2
 theme_override_font_sizes/font_size = 16
-text = "天赋详情"
+text = "澶╄祴璇︽儏"
 
 [node name="ActionHint" type="Label" parent="PanelRoot/Window/Margin/Root/Tabs/TalentTab/Body/DetailPanel/Margin/Content"]
 layout_mode = 2
@@ -425,7 +446,7 @@ theme_override_constants/separation = 8
 [node name="UnlockTalentButton" type="Button" parent="PanelRoot/Window/Margin/Root/Tabs/TalentTab/Body/DetailPanel/Margin/Content/Footer"]
 layout_mode = 2
 size_flags_horizontal = 3
-text = "解锁"
+text = "瑙ｉ攣"
 
 [node name="RefundTalentButton" type="Button" parent="PanelRoot/Window/Margin/Root/Tabs/TalentTab/Body/DetailPanel/Margin/Content/Footer"]
 layout_mode = 2
@@ -447,7 +468,7 @@ text = "-1 专精点"
 
 [node name="ResetTalentButton" type="Button" parent="PanelRoot/Window/Margin/Root/Tabs/TalentTab/Footer"]
 layout_mode = 2
-text = "重置测试天赋"
+text = "閲嶇疆娴嬭瘯澶╄祴"
 
 [node name="CodexTab" type="VBoxContainer" parent="PanelRoot/Window/Margin/Root/Tabs"]
 layout_mode = 2
@@ -474,7 +495,7 @@ theme_override_constants/separation = 4
 
 [node name="Title" type="Label" parent="PanelRoot/Window/Margin/Root/Tabs/CodexTab/CodexTabs/CardCodex/Columns/ListColumn"]
 layout_mode = 2
-text = "卡牌图鉴"
+text = "鍗＄墝鍥鹃壌"
 
 [node name="CardList" type="ItemList" parent="PanelRoot/Window/Margin/Root/Tabs/CodexTab/CodexTabs/CardCodex/Columns/ListColumn"]
 custom_minimum_size = Vector2(152, 0)
@@ -492,7 +513,7 @@ layout_mode = 2
 bbcode_enabled = true
 fit_content = false
 scroll_active = true
-text = "选择一张卡查看图鉴。"
+text = "选择一张卡牌查看图鉴。"
 
 [node name="EnemyCodex" type="VBoxContainer" parent="PanelRoot/Window/Margin/Root/Tabs/CodexTab/CodexTabs"]
 layout_mode = 2
@@ -510,7 +531,7 @@ theme_override_constants/separation = 4
 
 [node name="Title" type="Label" parent="PanelRoot/Window/Margin/Root/Tabs/CodexTab/CodexTabs/EnemyCodex/Columns/ListColumn"]
 layout_mode = 2
-text = "敌人图鉴"
+text = "鏁屼汉鍥鹃壌"
 
 [node name="EnemyList" type="ItemList" parent="PanelRoot/Window/Margin/Root/Tabs/CodexTab/CodexTabs/EnemyCodex/Columns/ListColumn"]
 custom_minimum_size = Vector2(152, 0)
@@ -540,11 +561,11 @@ theme_override_constants/separation = 10
 
 [node name="PoolSummaryLabel" type="Label" parent="PanelRoot/Window/Margin/Root/Tabs/DeckTab/Header"]
 layout_mode = 2
-text = "可选 0"
+text = "鍙€?0"
 
 [node name="DeckSummaryLabel" type="Label" parent="PanelRoot/Window/Margin/Root/Tabs/DeckTab/Header"]
 layout_mode = 2
-text = "当前 0 张 / 影响 0"
+text = "褰撳墠 0 寮?/ 褰卞搷 0"
 
 [node name="Columns" type="HBoxContainer" parent="PanelRoot/Window/Margin/Root/Tabs/DeckTab"]
 custom_minimum_size = Vector2(0, 116)
@@ -559,7 +580,7 @@ theme_override_constants/separation = 4
 
 [node name="AvailableTitle" type="Label" parent="PanelRoot/Window/Margin/Root/Tabs/DeckTab/Columns/AvailableColumn"]
 layout_mode = 2
-text = "可选牌"
+text = "鍙€夌墝"
 
 [node name="AvailableList" type="ItemList" parent="PanelRoot/Window/Margin/Root/Tabs/DeckTab/Columns/AvailableColumn"]
 custom_minimum_size = Vector2(122, 0)
@@ -572,11 +593,11 @@ theme_override_constants/separation = 6
 
 [node name="AddButton" type="Button" parent="PanelRoot/Window/Margin/Root/Tabs/DeckTab/Columns/ControlColumn"]
 layout_mode = 2
-text = "加入 ->"
+text = "鍔犲叆 ->"
 
 [node name="RemoveButton" type="Button" parent="PanelRoot/Window/Margin/Root/Tabs/DeckTab/Columns/ControlColumn"]
 layout_mode = 2
-text = "<- 移除"
+text = "<- 绉婚櫎"
 
 [node name="DeckColumn" type="VBoxContainer" parent="PanelRoot/Window/Margin/Root/Tabs/DeckTab/Columns"]
 layout_mode = 2
@@ -585,7 +606,7 @@ theme_override_constants/separation = 4
 
 [node name="DeckTitle" type="Label" parent="PanelRoot/Window/Margin/Root/Tabs/DeckTab/Columns/DeckColumn"]
 layout_mode = 2
-text = "当前牌组"
+text = "褰撳墠鐗岀粍"
 
 [node name="DeckList" type="ItemList" parent="PanelRoot/Window/Margin/Root/Tabs/DeckTab/Columns/DeckColumn"]
 custom_minimum_size = Vector2(122, 0)
@@ -602,7 +623,7 @@ layout_mode = 2
 bbcode_enabled = true
 fit_content = false
 scroll_active = true
-text = "选择一张卡查看详情。"
+text = "选择一张卡牌查看详情。"
 
 [node name="ValidationPanel" type="PanelContainer" parent="PanelRoot/Window/Margin/Root/Tabs/DeckTab"]
 layout_mode = 2
@@ -614,7 +635,7 @@ layout_mode = 2
 bbcode_enabled = false
 fit_content = false
 scroll_active = true
-text = "等待校验"
+text = "绛夊緟鏍￠獙"
 
 [node name="Footer" type="HBoxContainer" parent="PanelRoot/Window/Margin/Root/Tabs/DeckTab"]
 layout_mode = 2
@@ -622,12 +643,12 @@ theme_override_constants/separation = 8
 
 [node name="StarterButton" type="Button" parent="PanelRoot/Window/Margin/Root/Tabs/DeckTab/Footer"]
 layout_mode = 2
-text = "默认牌组"
+text = "榛樿鐗岀粍"
 
 [node name="ResetButton" type="Button" parent="PanelRoot/Window/Margin/Root/Tabs/DeckTab/Footer"]
 layout_mode = 2
-text = "恢复会话"
+text = "鎭㈠浼氳瘽"
 
 [node name="SaveButton" type="Button" parent="PanelRoot/Window/Margin/Root/Tabs/DeckTab/Footer"]
 layout_mode = 2
-text = "保存构筑"
+text = "淇濆瓨鏋勭瓚"

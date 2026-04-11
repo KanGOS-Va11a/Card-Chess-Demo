@@ -1,0 +1,27 @@
+[gd_scene load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://Scripts/Battle/Rooms/BattleRoomMarkerTile.cs" id="1_marker"]
+
+[node name="MarkerObstacle_Slow" type="Node2D"]
+script = ExtResource("1_marker")
+FillColor = Color(0.74, 0.68, 0.30, 0.96)
+OutlineColor = Color(0.16, 0.12, 0.04, 1)
+TextColor = Color(0.12, 0.10, 0.04, 1)
+MarkerText = "SL"
+
+[node name="Fill" type="Polygon2D" parent="."]
+polygon = PackedVector2Array(-8, -8, 8, -8, 8, 8, -8, 8)
+
+[node name="Outline" type="Line2D" parent="."]
+width = 1.0
+default_color = Color(0, 0, 0, 1)
+closed = true
+points = PackedVector2Array(-8, -8, 8, -8, 8, 8, -8, 8)
+
+[node name="Label" type="Label" parent="."]
+offset_left = -8.0
+offset_top = -6.0
+offset_right = 8.0
+offset_bottom = 6.0
+horizontal_alignment = 1
+vertical_alignment = 1

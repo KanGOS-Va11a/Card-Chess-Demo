@@ -9,6 +9,8 @@ public static class BattleRoomTileSetFactory
 	public static readonly Vector2I FloorAtlasCoords = Vector2I.Zero;
 	public const int GenericEnemySceneTileId = 2;
 	public const int DestructibleObstacleSceneTileId = 3;
+	public const int IndestructibleObstacleSceneTileId = 4;
+	public const int SlowObstacleSceneTileId = 5;
 	public const int EscapeSceneTileId = 6;
 	public const int FacingLeftSceneTileId = 7;
 	public const int FacingUpSceneTileId = 8;
@@ -34,6 +36,17 @@ public static class BattleRoomTileSetFactory
 		PackedScene facingUpScene,
 		PackedScene facingRightScene,
 		PackedScene facingDownScene,
+		PackedScene scene01TutorialEnemyScene,
+		PackedScene pirateBlockerScene,
+		PackedScene pirateScoutScene,
+		PackedScene pirateShockerScene,
+		PackedScene pirateGunnerScene,
+		PackedScene piratePipeBomberScene,
+		PackedScene pirateBruteEliteScene,
+		PackedScene scrapMedicEliteScene,
+		PackedScene sewerGatekeeperScene,
+		PackedScene obstacleWallScene,
+		PackedScene obstacleSlowScene,
 		int cellSizePixels)
 	{
 		TileSet tileSet = new TileSet
@@ -58,15 +71,17 @@ public static class BattleRoomTileSetFactory
 		sceneSource.CreateSceneTile(facingUpScene, FacingUpSceneTileId);
 		sceneSource.CreateSceneTile(facingRightScene, FacingRightSceneTileId);
 		sceneSource.CreateSceneTile(facingDownScene, FacingDownSceneTileId);
-		sceneSource.CreateSceneTile(enemyScene, Scene01TutorialEnemySceneTileId);
-		sceneSource.CreateSceneTile(enemyScene, PirateBlockerEnemySceneTileId);
-		sceneSource.CreateSceneTile(enemyScene, PirateScoutEnemySceneTileId);
-		sceneSource.CreateSceneTile(enemyScene, PirateShockerEnemySceneTileId);
-		sceneSource.CreateSceneTile(enemyScene, PirateGunnerEnemySceneTileId);
-		sceneSource.CreateSceneTile(enemyScene, PiratePipeBomberEnemySceneTileId);
-		sceneSource.CreateSceneTile(enemyScene, PirateBruteEliteEnemySceneTileId);
-		sceneSource.CreateSceneTile(enemyScene, ScrapMedicEliteEnemySceneTileId);
-		sceneSource.CreateSceneTile(enemyScene, SewerGatekeeperEnemySceneTileId);
+		sceneSource.CreateSceneTile(scene01TutorialEnemyScene, Scene01TutorialEnemySceneTileId);
+		sceneSource.CreateSceneTile(pirateBlockerScene, PirateBlockerEnemySceneTileId);
+		sceneSource.CreateSceneTile(pirateScoutScene, PirateScoutEnemySceneTileId);
+		sceneSource.CreateSceneTile(pirateShockerScene, PirateShockerEnemySceneTileId);
+		sceneSource.CreateSceneTile(pirateGunnerScene, PirateGunnerEnemySceneTileId);
+		sceneSource.CreateSceneTile(piratePipeBomberScene, PiratePipeBomberEnemySceneTileId);
+		sceneSource.CreateSceneTile(pirateBruteEliteScene, PirateBruteEliteEnemySceneTileId);
+		sceneSource.CreateSceneTile(scrapMedicEliteScene, ScrapMedicEliteEnemySceneTileId);
+		sceneSource.CreateSceneTile(sewerGatekeeperScene, SewerGatekeeperEnemySceneTileId);
+		sceneSource.CreateSceneTile(obstacleWallScene, IndestructibleObstacleSceneTileId);
+		sceneSource.CreateSceneTile(obstacleSlowScene, SlowObstacleSceneTileId);
 		tileSet.AddSource(sceneSource, SceneSourceId);
 
 		return tileSet;
