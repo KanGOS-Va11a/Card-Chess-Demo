@@ -2942,6 +2942,11 @@ public partial class BattleSceneController : Node2D
 		return NormalizeEnhancementDefinition(fallback);
 	}
 
+	public static BattleCardEnhancementDefinition ResolveArakawaEnhancementPreview(BattleCardDefinition definition)
+	{
+		return ResolveArakawaEnhancementDefinition(definition);
+	}
+
 	private static BattleCardEnhancementDefinition NormalizeEnhancementDefinition(BattleCardEnhancementDefinition enhancement)
 	{
 		return new BattleCardEnhancementDefinition(

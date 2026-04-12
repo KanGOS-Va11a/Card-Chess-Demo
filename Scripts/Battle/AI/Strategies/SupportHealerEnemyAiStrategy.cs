@@ -17,10 +17,7 @@ public sealed class SupportHealerEnemyAiStrategy : IEnemyAiStrategy
             return EnemyAiDecision.Support(supportTarget.ObjectId, healingAmount: 3, shieldAmount: 2);
         }
 
-        BoardObject? attackTarget = context.ActionService
-            .FindAttackableTargetsInRange(context.Self.ObjectId, context.Self.Cell, context.SelfState.AttackRange)
-            .OrderBy(target => GetManhattanDistance(context.Self.Cell, target.Cell))
-            .FirstOrDefault();
+        BoardObject? attackTarget = EnemyAiTactics.FindOpponentAttackTargetInRange(context);
         if (attackTarget != null)
         {
             return EnemyAiDecision.Attack(attackTarget.ObjectId);
@@ -42,20 +39,18 @@ public sealed class SupportHealerEnemyAiStrategy : IEnemyAiStrategy
             }
         }
 
-        BoardObject? nearestOpponent = FindNearestOpponent(context);
+        BoardObject? nearestOpponent = EnemyAiTactics.FindNearestOpponentUnit(context);
         if (nearestOpponent == null)
         {
             return EnemyAiDecision.Wait();
         }
 
-        Vector2I? nextCell = context.Pathfinder
-            .FindReachableCells(context.Self.ObjectId, context.Self.Cell, context.SelfState.MovePointsPerTurn)
-            .Where(cell => cell != context.Self.Cell)
-            .OrderBy(cell => Math.Abs(GetManhattanDistance(cell, nearestOpponent.Cell) - Math.Max(2, context.SelfState.AttackRange)))
-            .ThenBy(cell => cell.Y)
-            .ThenBy(cell => cell.X)
-            .Select(cell => (Vector2I?)cell)
-            .FirstOrDefault();
+        Vector2I? nextCell = EnemyAiTactics.FindBestApproachCell(
+            context,
+            nearestOpponent,
+            desiredMaxRange: context.SelfState.AttackRange,
+            desiredMinRange: Math.Min(2, context.SelfState.AttackRange),
+            preferFlank: true);
 
         return nextCell.HasValue ? EnemyAiDecision.Move(nextCell.Value) : EnemyAiDecision.Wait();
     }
@@ -77,17 +72,6 @@ public sealed class SupportHealerEnemyAiStrategy : IEnemyAiStrategy
             .ThenBy(candidate => candidate.State!.CurrentHp)
             .ThenBy(candidate => candidate.State!.CurrentShield)
             .Select(candidate => candidate.Object)
-            .FirstOrDefault();
-    }
-
-    private static BoardObject? FindNearestOpponent(EnemyAiContext context)
-    {
-        return context.Registry.AllObjects
-            .Where(boardObject => boardObject.ObjectType == BoardObjectType.Unit)
-            .Where(boardObject => boardObject.ObjectId != context.Self.ObjectId)
-            .Where(boardObject => boardObject.Faction != context.Self.Faction)
-            .OrderBy(boardObject => GetManhattanDistance(context.Self.Cell, boardObject.Cell))
-            .ThenBy(boardObject => boardObject.ObjectId, StringComparer.Ordinal)
             .FirstOrDefault();
     }
 

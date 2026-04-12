@@ -11,6 +11,27 @@ public sealed class ObstacleBomberEnemyAiStrategy : IEnemyAiStrategy
 
     public EnemyAiDecision Decide(EnemyAiContext context)
     {
+        BoardObject? nearestOpponent = EnemyAiTactics.FindNearestOpponentUnit(context);
+        if (nearestOpponent != null)
+        {
+            BoardObject? playerAttackTarget = EnemyAiTactics.FindOpponentAttackTargetInRange(context);
+            if (playerAttackTarget != null)
+            {
+                return EnemyAiDecision.Attack(playerAttackTarget.ObjectId);
+            }
+
+            Vector2I? playerApproachCell = EnemyAiTactics.FindBestApproachCell(
+                context,
+                nearestOpponent,
+                desiredMaxRange: context.SelfState.AttackRange,
+                desiredMinRange: Math.Min(2, context.SelfState.AttackRange),
+                preferFlank: true);
+            if (playerApproachCell.HasValue)
+            {
+                return EnemyAiDecision.Move(playerApproachCell.Value);
+            }
+        }
+
         BoardObject? obstacleTarget = FindNearestDestructibleObstacle(context);
         if (obstacleTarget != null
             && GetManhattanDistance(context.Self.Cell, obstacleTarget.Cell) <= context.SelfState.AttackRange)
@@ -18,30 +39,33 @@ public sealed class ObstacleBomberEnemyAiStrategy : IEnemyAiStrategy
             return EnemyAiDecision.Attack(obstacleTarget.ObjectId);
         }
 
-        BoardObject? attackTarget = context.ActionService
-            .FindAttackableTargetsInRange(context.Self.ObjectId, context.Self.Cell, context.SelfState.AttackRange)
-            .OrderBy(target => target.ObjectType == BoardObjectType.Obstacle ? 0 : 1)
-            .ThenBy(target => GetManhattanDistance(context.Self.Cell, target.Cell))
-            .FirstOrDefault();
+        BoardObject? attackTarget = EnemyAiTactics.FindPreferredAttackTarget(context);
         if (attackTarget != null)
         {
             return EnemyAiDecision.Attack(attackTarget.ObjectId);
         }
 
-        BoardObject? moveTarget = obstacleTarget ?? FindNearestOpponent(context);
+        BoardObject? moveTarget = nearestOpponent ?? obstacleTarget;
         if (moveTarget == null)
         {
             return EnemyAiDecision.Wait();
         }
 
-        Vector2I? nextCell = context.Pathfinder
-            .FindReachableCells(context.Self.ObjectId, context.Self.Cell, context.SelfState.MovePointsPerTurn)
-            .Where(cell => cell != context.Self.Cell)
-            .OrderBy(cell => GetManhattanDistance(cell, moveTarget.Cell))
-            .ThenBy(cell => cell.Y)
-            .ThenBy(cell => cell.X)
-            .Select(cell => (Vector2I?)cell)
-            .FirstOrDefault();
+        Vector2I? nextCell = moveTarget.ObjectType == BoardObjectType.Unit
+            ? EnemyAiTactics.FindBestApproachCell(
+                context,
+                moveTarget,
+                desiredMaxRange: context.SelfState.AttackRange,
+                desiredMinRange: Math.Min(2, context.SelfState.AttackRange),
+                preferFlank: true)
+            : context.Pathfinder
+                .FindReachableCells(context.Self.ObjectId, context.Self.Cell, context.SelfState.MovePointsPerTurn)
+                .Where(cell => cell != context.Self.Cell)
+                .OrderBy(cell => GetManhattanDistance(cell, moveTarget.Cell))
+                .ThenBy(cell => cell.Y)
+                .ThenBy(cell => cell.X)
+                .Select(cell => (Vector2I?)cell)
+                .FirstOrDefault();
 
         return nextCell.HasValue ? EnemyAiDecision.Move(nextCell.Value) : EnemyAiDecision.Wait();
     }
@@ -50,17 +74,6 @@ public sealed class ObstacleBomberEnemyAiStrategy : IEnemyAiStrategy
     {
         return context.Registry.AllObjects
             .Where(boardObject => boardObject.ObjectType == BoardObjectType.Obstacle && boardObject.HasTag("destructible"))
-            .OrderBy(boardObject => GetManhattanDistance(context.Self.Cell, boardObject.Cell))
-            .ThenBy(boardObject => boardObject.ObjectId, StringComparer.Ordinal)
-            .FirstOrDefault();
-    }
-
-    private static BoardObject? FindNearestOpponent(EnemyAiContext context)
-    {
-        return context.Registry.AllObjects
-            .Where(boardObject => boardObject.ObjectType == BoardObjectType.Unit)
-            .Where(boardObject => boardObject.ObjectId != context.Self.ObjectId)
-            .Where(boardObject => boardObject.Faction != context.Self.Faction)
             .OrderBy(boardObject => GetManhattanDistance(context.Self.Cell, boardObject.Cell))
             .ThenBy(boardObject => boardObject.ObjectId, StringComparer.Ordinal)
             .FirstOrDefault();

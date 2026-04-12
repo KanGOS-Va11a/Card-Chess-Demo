@@ -7,6 +7,7 @@ namespace CardChessDemo.Battle.Cards;
 
 public sealed class BattleDeckState
 {
+    private const int MaxHandCardLimit = 10;
     private readonly List<BattleCardDefinition> _startingDeck;
     private readonly List<BattleCardInstance> _drawPile = new();
     private readonly List<BattleCardInstance> _hand = new();
@@ -34,6 +35,8 @@ public sealed class BattleDeckState
     }
 
     public int HandSize { get; }
+
+    public int MaxHandSize => MaxHandCardLimit;
 
     public int MaxEnergyPerTurn { get; }
 
@@ -71,6 +74,7 @@ public sealed class BattleDeckState
             AddInstances(_drawPile, runtimeInit.StartingDrawPileCards);
             AddInstances(_discardPile, runtimeInit.StartingDiscardPileCards);
             AddInstances(_exhaustPile, runtimeInit.StartingExhaustPileCards);
+            NormalizeOverflowHandToDiscard();
         }
         else
         {
@@ -224,7 +228,15 @@ public sealed class BattleDeckState
     public BattleCardInstance AddTemporaryCardToHand(BattleCardDefinition definition)
     {
         BattleCardInstance instance = CreateInstance(definition);
-        _hand.Add(instance);
+        if (_hand.Count >= MaxHandCardLimit)
+        {
+            _discardPile.Add(instance);
+        }
+        else
+        {
+            _hand.Add(instance);
+        }
+
         return instance;
     }
 
@@ -262,8 +274,30 @@ public sealed class BattleDeckState
 
         BattleCardInstance nextCard = _drawPile[0];
         _drawPile.RemoveAt(0);
+        if (_hand.Count >= MaxHandCardLimit)
+        {
+            _discardPile.Add(nextCard);
+            return true;
+        }
+
         _hand.Add(nextCard);
         return true;
+    }
+
+    private void NormalizeOverflowHandToDiscard()
+    {
+        if (_hand.Count <= MaxHandCardLimit)
+        {
+            return;
+        }
+
+        int overflowCount = _hand.Count - MaxHandCardLimit;
+        List<BattleCardInstance> overflowCards = _hand
+            .Skip(MaxHandCardLimit)
+            .Take(overflowCount)
+            .ToList();
+        _hand.RemoveRange(MaxHandCardLimit, overflowCount);
+        _discardPile.AddRange(overflowCards);
     }
 
     private void EnsureDrawPile()

@@ -6,6 +6,7 @@ public static class BattleRoomTileSetFactory
 {
 	public const int FloorSourceId = 0;
 	public const int SceneSourceId = 1;
+	public const int AlternateFloorSourceId = 2;
 	public static readonly Vector2I FloorAtlasCoords = Vector2I.Zero;
 	public const int GenericEnemySceneTileId = 2;
 	public const int DestructibleObstacleSceneTileId = 3;
@@ -28,6 +29,7 @@ public static class BattleRoomTileSetFactory
 
 	public static TileSet CreateTileSet(
 		Texture2D floorTexture,
+		Texture2D? alternateFloorTexture,
 		PackedScene playerScene,
 		PackedScene enemyScene,
 		PackedScene obstacleScene,
@@ -59,8 +61,19 @@ public static class BattleRoomTileSetFactory
 			Texture = floorTexture,
 			TextureRegionSize = new Vector2I(cellSizePixels, cellSizePixels),
 		};
-		atlasSource.CreateTile(FloorAtlasCoords);
+		CreateAllAtlasTiles(atlasSource, floorTexture, cellSizePixels);
 		tileSet.AddSource(atlasSource, FloorSourceId);
+
+		if (alternateFloorTexture != null)
+		{
+			TileSetAtlasSource alternateAtlasSource = new TileSetAtlasSource
+			{
+				Texture = alternateFloorTexture,
+				TextureRegionSize = new Vector2I(cellSizePixels, cellSizePixels),
+			};
+			CreateAllAtlasTiles(alternateAtlasSource, alternateFloorTexture, cellSizePixels);
+			tileSet.AddSource(alternateAtlasSource, AlternateFloorSourceId);
+		}
 
 		TileSetScenesCollectionSource sceneSource = new();
 		sceneSource.CreateSceneTile(playerScene);
@@ -85,5 +98,26 @@ public static class BattleRoomTileSetFactory
 		tileSet.AddSource(sceneSource, SceneSourceId);
 
 		return tileSet;
+	}
+
+	private static void CreateAllAtlasTiles(TileSetAtlasSource atlasSource, Texture2D floorTexture, int cellSizePixels)
+	{
+		if (floorTexture == null || cellSizePixels <= 0)
+		{
+			atlasSource.CreateTile(FloorAtlasCoords);
+			return;
+		}
+
+		Vector2 textureSize = floorTexture.GetSize();
+		int columns = Mathf.Max(1, Mathf.CeilToInt(textureSize.X / cellSizePixels));
+		int rows = Mathf.Max(1, Mathf.CeilToInt(textureSize.Y / cellSizePixels));
+
+		for (int y = 0; y < rows; y++)
+		{
+			for (int x = 0; x < columns; x++)
+			{
+				atlasSource.CreateTile(new Vector2I(x, y));
+			}
+		}
 	}
 }

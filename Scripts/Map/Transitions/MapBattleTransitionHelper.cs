@@ -1,3 +1,4 @@
+using System;
 using Godot;
 using CardChessDemo.Battle.Boundary;
 using CardChessDemo.Battle.Shared;
@@ -46,7 +47,8 @@ public static class MapBattleTransitionHelper
         string sourceInteractablePath = currentScene != null && currentScene.IsAncestorOf(contextNode)
             ? currentScene.GetPathTo(contextNode).ToString()
             : string.Empty;
-        globalSession.BeginBattle(BattleRequest.FromSession(globalSession, battleEncounterId));
+        int battleSeed = BuildBattleSeed(battleEncounterId);
+        globalSession.BeginBattle(BattleRequest.FromSession(globalSession, battleEncounterId, battleSeed));
         globalSession.SetPendingBattleEncounterId(battleEncounterId);
         globalSession.SetPendingMapResumeContext(new MapResumeContext(
             currentScenePath,
@@ -57,6 +59,16 @@ public static class MapBattleTransitionHelper
 
         _ = ExecuteBattleTransitionAsync(contextNode, battleScene, battleScenePath, globalSession, deferredFailureCallback);
         return true;
+    }
+
+    private static int BuildBattleSeed(string battleEncounterId)
+    {
+        int timeSeed = unchecked((int)(Time.GetTicksUsec() & 0x7fffffff));
+        int encounterHash = string.IsNullOrWhiteSpace(battleEncounterId)
+            ? 0
+            : StringComparer.Ordinal.GetHashCode(battleEncounterId);
+        int combined = timeSeed ^ encounterHash;
+        return Math.Max(1, combined & 0x7fffffff);
     }
 
     private static async Task ExecuteBattleTransitionAsync(

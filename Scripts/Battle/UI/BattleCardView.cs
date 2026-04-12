@@ -9,8 +9,39 @@ public partial class BattleCardView : Button
 {
 	private static readonly Dictionary<string, Texture2D> BadgeTextures = new(StringComparer.Ordinal);
 	private static readonly Dictionary<string, Texture2D> ArtTextures = new(StringComparer.Ordinal);
+	private static readonly IReadOnlyDictionary<string, string> CardArtNameOverrides = new Dictionary<string, string>(StringComparer.Ordinal)
+	{
+		["card_punch"] = "\u62F3\u51FB",
+		["card_guard"] = "\u62A4\u8EAB",
+		["card_calm"] = "\u51B7\u9759",
+		["card_boot"] = "\u542F\u52A8",
+		["draw_revolver"] = "\u62D4\u67AA",
+		["card_stance"] = "\u67B6\u52BF",
+		["card_heavy_blow"] = "\u91CD\u51FB",
+		["card_pressure_breach"] = "\u9AD8\u538B\u7A81\u8FDB",
+		["card_weathering"] = "\u98CE\u5316",
+		["card_ram"] = "\u51B2\u649E",
+		["card_arc_leak"] = "\u7535\u5F27\u6CC4\u9732",
+		["card_roll"] = "\u7FFB\u6EDA",
+		["card_charge_up"] = "\u84C4\u52BF",
+		["card_learning"] = "\u5B66\u4E60",
+		["card_tactical_shift"] = "\u6218\u7565\u8F6C\u79FB",
+		["card_quick_shot"] = "\u5FEB\u67AA",
+		["card_alert"] = "\u6212\u5907",
+		["card_alert_guard"] = "\u8B66\u60D5",
+		["card_plunder"] = "\u6380\u593A",
+		["card_contemplate"] = "\u6C89\u601D",
+		["card_repair"] = "\u4FEE\u590D",
+		["card_structural_boost"] = "\u7ED3\u6784\u6027\u8865\u5F3A",
+		["card_concussion_shot"] = "\u9707\u8361\u5C04\u51FB",
+		["card_snipe"] = "\u72D9\u51FB",
+		["card_aim"] = "\u7784\u51C6",
+		["card_mark"] = "\u70B9\u540D",
+		["card_vault"] = "\u5B9D\u5E93",
+	};
 	private static readonly string[] ArtSearchPaths =
 	{
+		"res://Assets/Cards/card_arts/{0}.png",
 		"res://Assets/Cards/{0}.png",
 		"res://Assets/Battle/Cards/{0}.png",
 	};
@@ -18,11 +49,12 @@ public partial class BattleCardView : Button
 	private TextureRect _costIcon = null!;
 	private Label _costLabel = null!;
 	private Label _nameLabel = null!;
-	private TextureRect _artTexture = null!;
+	private BattleCardArtView _artTexture = null!;
 	private ColorRect _artShade = null!;
 	private Label _artSymbolLabel = null!;
 	private Label _keywordLabel = null!;
 	private Label _descriptionLabel = null!;
+	private PanelContainer _cardPanel = null!;
 	private PanelContainer _artFrame = null!;
 	private PanelContainer _titleBanner = null!;
 	private PanelContainer _typePlate = null!;
@@ -65,7 +97,7 @@ public partial class BattleCardView : Button
 		_nameLabel.Text = card.Definition.DisplayName;
 		_keywordLabel.Text = BuildTypeText(card.Definition);
 		_descriptionLabel.Text = card.Definition.Description;
-		_artSymbolLabel.Text = BuildArtSymbol(card.Definition);
+		_artSymbolLabel.Text = string.Empty;
 		_costIcon.Texture = GetBadgeTexture(card.Definition);
 		_artTexture.Texture = GetArtTexture(card.Definition);
 		_descriptionPanel.Visible = false;
@@ -82,18 +114,20 @@ public partial class BattleCardView : Button
 			return;
 		}
 
-		_costIcon = GetNode<TextureRect>("Margin/Root/Head/CostBox/CostIcon");
-		_costLabel = GetNode<Label>("Margin/Root/Head/CostBox/CostLabel");
-		_nameLabel = GetNode<Label>("Margin/Root/Head/TitleBanner/NameLabel");
-		_artFrame = GetNode<PanelContainer>("Margin/Root/ArtFrame");
-		_artTexture = GetNode<TextureRect>("Margin/Root/ArtFrame/ArtTexture");
-		_artShade = GetNode<ColorRect>("Margin/Root/ArtFrame/ArtShade");
-		_artSymbolLabel = GetNode<Label>("Margin/Root/ArtFrame/ArtSymbol");
-		_titleBanner = GetNode<PanelContainer>("Margin/Root/Head/TitleBanner");
-		_typePlate = GetNode<PanelContainer>("Margin/Root/TypePlate");
-		_keywordLabel = GetNode<Label>("Margin/Root/TypePlate/KeywordLabel");
-		_descriptionPanel = GetNode<PanelContainer>("Margin/Root/DescriptionPanel");
-		_descriptionLabel = GetNode<Label>("Margin/Root/DescriptionPanel/DescriptionLabel");
+		_cardPanel = GetNode<PanelContainer>("CardPanel");
+		_costIcon = GetNode<TextureRect>("CardPanel/Margin/Root/Head/CostBox/CostIcon");
+		_costLabel = GetNode<Label>("CardPanel/Margin/Root/Head/CostBox/CostLabel");
+		_nameLabel = GetNode<Label>("CardPanel/Margin/Root/Head/TitleBanner/NameLabel");
+		_artFrame = GetNode<PanelContainer>("CardPanel/Margin/Root/ArtFrame");
+		_artTexture = GetNode<BattleCardArtView>("CardPanel/Margin/Root/ArtFrame/ArtTexture");
+		_artTexture.CustomMinimumSize = Vector2.Zero;
+		_artShade = GetNode<ColorRect>("CardPanel/Margin/Root/ArtFrame/ArtShade");
+		_artSymbolLabel = GetNode<Label>("CardPanel/Margin/Root/ArtFrame/ArtSymbol");
+		_titleBanner = GetNode<PanelContainer>("CardPanel/Margin/Root/Head/TitleBanner");
+		_typePlate = GetNode<PanelContainer>("CardPanel/Margin/Root/TypePlate");
+		_keywordLabel = GetNode<Label>("CardPanel/Margin/Root/TypePlate/KeywordLabel");
+		_descriptionPanel = GetNode<PanelContainer>("CardPanel/Margin/Root/DescriptionPanel");
+		_descriptionLabel = GetNode<Label>("CardPanel/Margin/Root/DescriptionPanel/DescriptionLabel");
 	}
 
 	public void PlayEnhancementPulse()
@@ -136,7 +170,7 @@ public partial class BattleCardView : Button
 			typeColor = typeColor.Lerp(new Color(0.46f, 0.88f, 1.0f), 0.70f);
 		}
 
-		StyleBoxFlat normalStyle = new()
+		StyleBoxFlat panelStyle = new()
 		{
 			BgColor = fillColor,
 			BorderColor = frameColor,
@@ -151,11 +185,7 @@ public partial class BattleCardView : Button
 			ShadowSize = isPlayable ? 2 : 0,
 			ShadowColor = new Color(0.0f, 0.0f, 0.0f, 0.30f),
 		};
-
-		AddThemeStyleboxOverride("normal", normalStyle);
-		AddThemeStyleboxOverride("hover", normalStyle.Duplicate() as StyleBoxFlat ?? normalStyle);
-		AddThemeStyleboxOverride("pressed", normalStyle.Duplicate() as StyleBoxFlat ?? normalStyle);
-		AddThemeStyleboxOverride("disabled", normalStyle.Duplicate() as StyleBoxFlat ?? normalStyle);
+		_cardPanel.AddThemeStyleboxOverride("panel", panelStyle);
 
 		StyleBoxFlat artStyle = new()
 		{
@@ -223,31 +253,7 @@ public partial class BattleCardView : Button
 
 	private static string BuildTypeText(BattleCardDefinition definition)
 	{
-		List<string> tags = new()
-		{
-			definition.Category == BattleCardCategory.Attack ? "攻击" : "技能"
-		};
-
-		if (definition.IsQuick)
-		{
-			tags.Add("迅速");
-		}
-
-		if (definition.ExhaustsOnPlay)
-		{
-			tags.Add("消耗");
-		}
-
-		return string.Join(" ", tags);
-	}
-
-	private static string BuildArtSymbol(BattleCardDefinition definition)
-	{
-		return definition.Category switch
-		{
-			BattleCardCategory.Attack => definition.TargetingMode == BattleCardTargetingMode.StraightLineEnemy ? "射" : "斩",
-			_ => definition.HealingAmount > 0 ? "愈" : definition.EnergyGain > 0 ? "能" : definition.DrawCount > 0 ? "抽" : "技",
-		};
+		return definition.Category == BattleCardCategory.Attack ? "\u653B\u51FB" : "\u6280\u80FD";
 	}
 
 	private static Texture2D GetBadgeTexture(BattleCardDefinition definition)
@@ -290,11 +296,16 @@ public partial class BattleCardView : Button
 
 	private static Texture2D GetArtTexture(BattleCardDefinition definition)
 	{
-		foreach (string template in ArtSearchPaths)
+		foreach (string candidateName in EnumerateArtCandidateNames(definition))
 		{
-			string artPath = string.Format(template, definition.CardId);
-			if (ResourceLoader.Exists(artPath))
+			foreach (string template in ArtSearchPaths)
 			{
+				string artPath = string.Format(template, candidateName);
+				if (!ResourceLoader.Exists(artPath))
+				{
+					continue;
+				}
+
 				Texture2D? loadedTexture = GD.Load<Texture2D>(artPath);
 				if (loadedTexture != null)
 				{
@@ -343,6 +354,28 @@ public partial class BattleCardView : Button
 		ImageTexture texture = ImageTexture.CreateFromImage(image);
 		ArtTextures[cacheKey] = texture;
 		return texture;
+	}
+
+	private static IEnumerable<string> EnumerateArtCandidateNames(BattleCardDefinition definition)
+	{
+		HashSet<string> names = new(StringComparer.Ordinal);
+		if (!string.IsNullOrWhiteSpace(definition.CardId))
+		{
+			names.Add(definition.CardId.Trim());
+		}
+
+		if (CardArtNameOverrides.TryGetValue(definition.CardId, out string overrideName)
+			&& !string.IsNullOrWhiteSpace(overrideName))
+		{
+			names.Add(overrideName.Trim());
+		}
+
+		if (!string.IsNullOrWhiteSpace(definition.DisplayName))
+		{
+			names.Add(definition.DisplayName.Trim());
+		}
+
+		return names;
 	}
 
 	private void OnMouseEntered()

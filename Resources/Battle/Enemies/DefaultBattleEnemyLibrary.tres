@@ -32,6 +32,9 @@ MovePointsPerTurn = 3
 AttackRange = 1
 AttackDamage = 2
 DefeatExperience = 20
+NormalLearnCardId = "card_barricade_shove"
+SignatureLearnCardId = "card_iron_checkpoint"
+SignatureLearnAvailableAtHalfHpOrBelow = true
 
 [sub_resource type="Resource" id="Enemy_pirate_scout"]
 script = ExtResource("2_definition")
@@ -45,6 +48,9 @@ MovePointsPerTurn = 4
 AttackRange = 1
 AttackDamage = 2
 DefeatExperience = 22
+NormalLearnCardId = "card_flank_sting"
+SignatureLearnCardId = "card_shadow_pursuit"
+SignatureLearnAvailableAtHalfHpOrBelow = true
 
 [sub_resource type="Resource" id="Enemy_pirate_shocker"]
 script = ExtResource("2_definition")
@@ -58,6 +64,9 @@ MovePointsPerTurn = 3
 AttackRange = 1
 AttackDamage = 3
 DefeatExperience = 24
+NormalLearnCardId = "card_shock_baton"
+SignatureLearnCardId = "card_overload_baton"
+SignatureLearnAvailableAtHalfHpOrBelow = true
 
 [sub_resource type="Resource" id="Enemy_pirate_gunner"]
 script = ExtResource("2_definition")
@@ -71,6 +80,9 @@ MovePointsPerTurn = 2
 AttackRange = 3
 AttackDamage = 2
 DefeatExperience = 24
+NormalLearnCardId = "card_suppressive_burst"
+SignatureLearnCardId = "card_ranging_barrage"
+SignatureLearnAvailableAtHalfHpOrBelow = true
 
 [sub_resource type="Resource" id="Enemy_pirate_pipe_bomber"]
 script = ExtResource("2_definition")
@@ -84,6 +96,9 @@ MovePointsPerTurn = 2
 AttackRange = 3
 AttackDamage = 2
 DefeatExperience = 26
+NormalLearnCardId = "card_blast_charge"
+SignatureLearnCardId = "card_chain_detonation"
+SignatureLearnAvailableAtHalfHpOrBelow = true
 
 [sub_resource type="Resource" id="Enemy_pirate_brute_elite"]
 script = ExtResource("2_definition")
@@ -145,6 +160,9 @@ MovePointsPerTurn = 2
 AttackRange = 1
 AttackDamage = 3
 DefeatExperience = 30
+NormalLearnCardId = "card_gate_strike"
+SignatureLearnCardId = "card_dead_hold"
+SignatureLearnAvailableAtHalfHpOrBelow = true
 [resource]
 script = ExtResource("1_library")
 Entries = [SubResource("Enemy_scene01_tutorial"), SubResource("Enemy_pirate_blocker"), SubResource("Enemy_pirate_scout"), SubResource("Enemy_pirate_shocker"), SubResource("Enemy_pirate_gunner"), SubResource("Enemy_pirate_pipe_bomber"), SubResource("Enemy_pirate_brute_elite"), SubResource("Enemy_scrap_medic_elite"), SubResource("Enemy_sewer_gatekeeper"), SubResource("Enemy_boss_rust_captain")]

@@ -333,6 +333,10 @@ public partial class BattleRoomTemplate : Node2D
 		}
 
 		Texture2D floorTexture = GD.Load<Texture2D>("res://Assets/Tilemap/CosmicLegacy_PetricakeGamesPNG.png");
+		const string alternateFloorTexturePath = "res://Assets/Tilemap/\u5730\u677F\u7247\u96C6\u5408.png";
+		Texture2D? alternateFloorTexture = ResourceLoader.Exists(alternateFloorTexturePath)
+			? GD.Load<Texture2D>(alternateFloorTexturePath)
+			: null;
 		PackedScene playerScene = GD.Load<PackedScene>("res://Scene/Battle/Tiles/Markers/MarkerBase_Player.tscn");
 		PackedScene enemyScene = GD.Load<PackedScene>("res://Scene/Battle/Tiles/Markers/MarkerEnemy_Generic.tscn");
 		PackedScene obstacleScene = GD.Load<PackedScene>("res://Scene/Battle/Tiles/Markers/MarkerObstacle_Breakable.tscn");
@@ -355,6 +359,7 @@ public partial class BattleRoomTemplate : Node2D
 
 		TileSet tileSet = BattleRoomTileSetFactory.CreateTileSet(
 			floorTexture,
+			alternateFloorTexture,
 			playerScene,
 			enemyScene,
 			obstacleScene,

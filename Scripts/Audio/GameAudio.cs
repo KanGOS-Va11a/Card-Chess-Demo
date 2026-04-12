@@ -90,6 +90,7 @@ public partial class GameAudio : Node
 	private float _impactCutoffHz = 20500.0f;
 	private float _impactBassBoostDb;
 	private string _activeMusicCueId = string.Empty;
+	private int _musicTransitionVersion;
 	private float _masterVolumeLinear = 1.0f;
 	private float _musicVolumeLinear = 0.82f;
 	private float _sfxVolumeLinear = 0.92f;
@@ -158,6 +159,7 @@ public partial class GameAudio : Node
 		AudioStreamPlayer nextPlayer = ReferenceEquals(_activeMusicPlayer, _musicPlayerA) ? _musicPlayerB : _musicPlayerA;
 		AudioStreamPlayer previousPlayer = _activeMusicPlayer;
 		_musicTween?.Kill();
+		int transitionVersion = ++_musicTransitionVersion;
 
 		nextPlayer.Stream = stream;
 		float targetVolumeDb = ResolveCueVolumeDb(cueId);
@@ -177,13 +179,14 @@ public partial class GameAudio : Node
 
 		_activeMusicPlayer = nextPlayer;
 		_activeMusicCueId = cueId;
-		_ = FinalizeMusicSwapAsync(previousPlayer, Math.Max(fadeSeconds, 0.01f), targetVolumeDb);
+		_ = FinalizeMusicSwapAsync(previousPlayer, Math.Max(fadeSeconds, 0.01f), targetVolumeDb, transitionVersion);
 	}
 
 	public void StopMusic(float fadeSeconds = 0.25f)
 	{
 		_activeMusicCueId = string.Empty;
 		_musicTween?.Kill();
+		int transitionVersion = ++_musicTransitionVersion;
 
 		if (!_musicPlayerA.Playing && !_musicPlayerB.Playing)
 		{
@@ -206,7 +209,7 @@ public partial class GameAudio : Node
 			_musicTween.TweenProperty(_musicPlayerB, "volume_db", SilentDb, duration);
 		}
 
-		_ = StopMusicPlayersAsync(duration);
+		_ = StopMusicPlayersAsync(duration, transitionVersion);
 	}
 
 	public double PlayBasicAttack() => PlaySfx(BasicAttackCueId, SfxBusName, minimumIntervalSeconds: 0.03f);
@@ -403,9 +406,14 @@ public partial class GameAudio : Node
 		return player;
 	}
 
-	private async System.Threading.Tasks.Task FinalizeMusicSwapAsync(AudioStreamPlayer previousPlayer, float waitSeconds, float targetVolumeDb)
+	private async System.Threading.Tasks.Task FinalizeMusicSwapAsync(AudioStreamPlayer previousPlayer, float waitSeconds, float targetVolumeDb, int transitionVersion)
 	{
 		await ToSignal(GetTree().CreateTimer(waitSeconds, false, false, true), SceneTreeTimer.SignalName.Timeout);
+		if (transitionVersion != _musicTransitionVersion)
+		{
+			return;
+		}
+
 		if (previousPlayer != _activeMusicPlayer)
 		{
 			previousPlayer.Stop();
@@ -415,9 +423,14 @@ public partial class GameAudio : Node
 		_activeMusicPlayer.VolumeDb = targetVolumeDb;
 	}
 
-	private async System.Threading.Tasks.Task StopMusicPlayersAsync(float waitSeconds)
+	private async System.Threading.Tasks.Task StopMusicPlayersAsync(float waitSeconds, int transitionVersion)
 	{
 		await ToSignal(GetTree().CreateTimer(waitSeconds, false, false, true), SceneTreeTimer.SignalName.Timeout);
+		if (transitionVersion != _musicTransitionVersion)
+		{
+			return;
+		}
+
 		_musicPlayerA.Stop();
 		_musicPlayerB.Stop();
 		_musicPlayerA.VolumeDb = SilentDb;

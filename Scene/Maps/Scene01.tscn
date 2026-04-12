@@ -22,6 +22,7 @@
 [ext_resource type="FontFile" uid="uid://ct58dk6apiarx" path="res://Assets/Fonts/unifont_t-17.0.04.otf" id="17_rcrua"]
 [ext_resource type="PackedScene" uid="uid://cygseefr5cx8a" path="res://Scene/Character/MainPlayer.tscn" id="18_behge"]
 [ext_resource type="PackedScene" uid="uid://tln526npf6w6" path="res://Scene/Character/Enemy.tscn" id="19_08wqd"]
+[ext_resource type="PackedScene" uid="uid://d2d78i3h3l6rb" path="res://Scene/Character/EnemyPirateBlocker.tscn" id="21_1up3g"]
 
 [sub_resource type="CanvasTexture" id="CanvasTexture_q0cei"]
 diffuse_texture = ExtResource("2_pnvrq")
@@ -469,6 +470,9 @@ texture = SubResource("GradientTexture2D_akln8")
 [node name="Enemy" parent="." unique_id=1781789759 instance=ExtResource("19_08wqd")]
 position = Vector2(-441, -184)
 EncounterId = "scene01_tutorial"
+
+[node name="PirateBlockerEnemy" parent="." instance=ExtResource("21_1up3g")]
+position = Vector2(-393, -184)
 
 [node name="CanvasModulate" type="CanvasModulate" parent="." unique_id=435870026]
 color = Color(0.14154336, 0.11568459, 0.1869502, 1)

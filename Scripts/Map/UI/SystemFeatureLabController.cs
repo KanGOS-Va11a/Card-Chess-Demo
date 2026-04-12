@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using Godot;
 using CardChessDemo.Audio;
+using CardChessDemo.Battle;
 using CardChessDemo.Battle.Boundary;
 using CardChessDemo.Battle.Cards;
 using CardChessDemo.Battle.Equipment;
@@ -98,6 +99,72 @@ public partial class SystemFeatureLabController : CanvasLayer
 	private const int TalentTabIndex = 2;
 
 	private static readonly string[] EquipmentSlotOrder = EquipmentSlotIds.All;
+	private static readonly IReadOnlyDictionary<string, string> CardDisplayNameOverrides = new Dictionary<string, string>(StringComparer.Ordinal)
+	{
+		["debug_finisher"] = "\u5904\u51B3",
+		["cross_slash"] = "\u4EA4\u65A9",
+		["quick_cut"] = "\u75BE\u65A9",
+		["line_shot"] = "\u8D2F\u5C04",
+		["heavy_shot"] = "\u91CD\u94F3",
+		["battle_read"] = "\u6574\u5907",
+		["meditate"] = "\u8C03\u606F",
+		["surge"] = "\u84C4\u80FD",
+		["draw_spark"] = "\u7075\u611F",
+		["quick_plan"] = "\u5FEB\u8C0B",
+		["burning_edge"] = "\u71C3\u5203",
+		["hook_shot"] = "\u94A9\u5C04",
+		["deep_focus"] = "\u6C89\u5FF5",
+		["spark_charge"] = "\u706B\u82B1",
+		["burst_drive"] = "\u7206\u9A71",
+		["guard_up"] = "\u4E3E\u76FE",
+		["brace"] = "\u67B6\u76FE",
+		["quick_guard"] = "\u77AC\u5B88",
+		["field_patch"] = "\u73B0\u573A\u5305\u624E",
+		["draw_revolver"] = "\u62D4\u67AA",
+		["card_arc_leak"] = "\u7535\u5F27\u6CC4\u9732",
+		["card_ram"] = "\u51B2\u649E",
+		["card_alert"] = "\u6212\u5907",
+		["card_quick_shot"] = "\u5FEB\u67AA",
+		["card_stance"] = "\u67B6\u52BF",
+		["card_heavy_blow"] = "\u91CD\u51FB",
+		["card_concussion_shot"] = "\u9707\u8361\u5C04\u51FB",
+		["card_weathering"] = "\u98CE\u5316",
+		["card_pressure_breach"] = "\u9AD8\u538B\u7A81\u8FDB",
+		["card_patrol_strike"] = "\u5DE1\u730E\u7A81\u523A",
+		["card_last_chase"] = "\u7A77\u8FFD",
+		["card_learning"] = "\u5B66\u4E60",
+		["card_punch"] = "\u6325\u51FB",
+		["card_guard"] = "\u62A4\u8EAB",
+		["card_roll"] = "\u7FFB\u6EDA",
+		["card_calm"] = "\u51B7\u9759",
+		["card_charge_up"] = "\u84C4\u52BF",
+		["card_boot"] = "\u542F\u52A8",
+		["card_alert_guard"] = "\u8B66\u60D5",
+		["card_plunder"] = "\u6380\u593A",
+		["card_structural_boost"] = "\u7ED3\u6784\u8865\u5F3A",
+		["card_tactical_shift"] = "\u6218\u7565\u8F6C\u79FB",
+		["card_vault"] = "\u5B9D\u5E93",
+		["card_optimize"] = "\u6700\u4F18\u5316",
+		["card_contemplate"] = "\u6C89\u601D",
+		["card_repair"] = "\u4FEE\u590D",
+		["card_field_patch_plus"] = "\u7D27\u6025\u4FEE\u590D",
+		["card_heavy_bash"] = "\u91CD\u538B\u6325\u7838",
+		["card_emergency_repair"] = "\u7D27\u6025\u4FEE\u590D\u534F\u8BAE",
+		["card_captain_bash"] = "\u8239\u957F\u91CD\u7838",
+		["card_magnetic_hunt"] = "\u78C1\u7D22\u6355\u730E",
+		["card_barricade_shove"] = "\u5C01\u95E8\u9876\u76FE",
+		["card_iron_checkpoint"] = "\u94C1\u6F6E\u6A2A\u62E6",
+		["card_flank_sting"] = "\u4FA7\u7FFC\u523A\u5165",
+		["card_shadow_pursuit"] = "\u63A0\u5F71\u8FFD\u51FB",
+		["card_shock_baton"] = "\u7535\u68CD\u731B\u7838",
+		["card_overload_baton"] = "\u8FC7\u8F7D\u9707\u8361",
+		["card_suppressive_burst"] = "\u538B\u5236\u70B9\u5C04",
+		["card_ranging_barrage"] = "\u6821\u51C6\u7206\u5C04",
+		["card_blast_charge"] = "\u7206\u7834\u6295\u63B7",
+		["card_chain_detonation"] = "\u8FDE\u9501\u7206\u538B",
+		["card_gate_strike"] = "\u95E8\u7981\u6572\u51FB",
+		["card_dead_hold"] = "\u6B7B\u5B88\u67B6\u52BF",
+	};
 
 #if false
 
@@ -1280,14 +1347,14 @@ public partial class SystemFeatureLabController : CanvasLayer
 		return new[]
 		{
 			new EnemyCodexEntry("scene01_tutorial_enemy", "\u6559\u7A0B\u8352\u962A\u654C\u4EBA", "\u6559\u5B66\u6218\u4E2D\u7528\u4E8E\u6F14\u793A\u5B66\u4E60\u5956\u52B1\u7684\u57FA\u7840\u8FFD\u51FB\u578B\u654C\u4EBA\u3002", true, "\u521D\u59CB\u5373\u53EF\u67E5\u770B", "\u6559\u5B66\u8FFD\u51FB", 6, 1, 3, 2, 1, 40, "card_patrol_strike", "card_last_chase", "\u534A\u8840\u540E\u79FB\u52A8\u529B +1\uff0c\u5E76\u8FDB\u5165\u7279\u6B8A\u5B66\u4E60\u72B6\u6001"),
-			new EnemyCodexEntry("pirate_blocker", "\u63A0\u8239\u5BA2\u5835\u95E8\u8005", "\u6B63\u9762\u627F\u4F24\u7684\u8FD1\u6218\u538B\u8FEB\u578B\u654C\u4EBA\uff0c\u9002\u5408\u548C\u5176\u4ED6\u706B\u529B\u5355\u4F4D\u914D\u5408\u3002", true, "\u521D\u59CB\u5373\u53EF\u67E5\u770B", "\u8FD1\u6218", 7, 2, 3, 2, 1, 20, "\u65E0", "\u65E0", "\u7A33\u5B9A\u6B63\u9762\u63A8\u8FDB\uff0c\u4F18\u5148\u538B\u8FD1\u73A9\u5BB6"),
-			new EnemyCodexEntry("pirate_scout", "\u63A0\u8239\u5BA2\u4FA6\u5BDF\u5175", "\u9AD8\u673A\u52A8\u7ED5\u4FA7\u578B\u654C\u4EBA\uff0c\u4F1A\u4F18\u5148\u5BFB\u627E\u7A7A\u6321\u4ECE\u4FA7\u7FFC\u5207\u5165\u3002", true, "\u521D\u59CB\u5373\u53EF\u67E5\u770B", "\u9AD8\u673A\u52A8", 5, 1, 4, 2, 1, 22, "\u65E0", "\u65E0", "\u4F18\u5148\u9009\u62E9\u80FD\u5F62\u6210\u4FA7\u7FFC\u538B\u529B\u7684\u8D70\u4F4D"),
-			new EnemyCodexEntry("pirate_shocker", "\u63A0\u8239\u5BA2\u7535\u68CD\u624B", "\u9AD8\u538B\u8FD1\u6218\u8F93\u51FA\u5355\u4F4D\uff0c\u4F1A\u5728\u8D34\u8EAB\u540E\u7ED9\u51FA\u66F4\u75BC\u7684\u4E00\u51FB\u3002", true, "\u521D\u59CB\u5373\u53EF\u67E5\u770B", "\u8FD1\u6218", 6, 1, 3, 3, 1, 24, "\u65E0", "\u65E0", "\u4EE5\u66F4\u9AD8\u4F24\u5BB3\u7684\u8D34\u8EAB\u6253\u51FB\u4E3A\u4E3B"),
-			new EnemyCodexEntry("pirate_gunner", "\u63A0\u8239\u5BA2\u6742\u67AA\u624B", "\u76F4\u7EBF\u8FDC\u7A0B\u538B\u5236\u578B\u654C\u4EBA\uff0c\u64C5\u957F\u5728\u969C\u788D\u540E\u7EF4\u6301\u706B\u529B\u3002", true, "\u521D\u59CB\u5373\u53EF\u67E5\u770B", "\u8FDC\u7A0B", 5, 0, 2, 2, 3, 24, "\u65E0", "\u65E0", "\u7EF4\u6301\u5C04\u7A0B\u4F18\u52BF\uff0c\u5728\u80FD\u653B\u51FB\u65F6\u4F18\u5148\u8FDC\u7A0B\u538B\u4F4D"),
-			new EnemyCodexEntry("pirate_pipe_bomber", "\u7BA1\u9053\u7206\u7834\u5BA2", "\u4F1A\u4F18\u5148\u5904\u7406\u969C\u788D\u4E0E\u5730\u5F62\u7684\u7206\u7834\u578B\u654C\u4EBA\uff0c\u9002\u5408\u4F5C\u4E3A\u623F\u95F4\u7684\u73AF\u5883\u6838\u5FC3\u3002", true, "\u521D\u59CB\u5373\u53EF\u67E5\u770B", "\u73AF\u5883\u7206\u7834", 5, 0, 2, 2, 3, 26, "\u65E0", "\u65E0", "\u4F18\u5148\u653B\u51FB\u53EF\u7834\u574F\u969C\u788D\uff0c\u4E5F\u4F1A\u5BF9\u73A9\u5BB6\u4FDD\u6301\u8FDC\u7A0B\u538B\u529B"),
+			new EnemyCodexEntry("pirate_blocker", "\u63A0\u8239\u5BA2\u5835\u95E8\u8005", "\u6B63\u9762\u627F\u4F24\u7684\u8FD1\u6218\u538B\u8FEB\u578B\u654C\u4EBA\uff0c\u9002\u5408\u548C\u5176\u4ED6\u706B\u529B\u5355\u4F4D\u914D\u5408\u3002", true, "\u521D\u59CB\u5373\u53EF\u67E5\u770B", "\u8FD1\u6218", 7, 2, 3, 2, 1, 20, "card_barricade_shove", "card_iron_checkpoint", "\u7A33\u5B9A\u6B63\u9762\u63A8\u8FDB\uff1B\u534A\u8840\u540E\u53EF\u5B66\u4E60\u66F4\u5F3A\u7684\u5B88\u95E8\u53CD\u51FB"),
+			new EnemyCodexEntry("pirate_scout", "\u63A0\u8239\u5BA2\u4FA6\u5BDF\u5175", "\u9AD8\u673A\u52A8\u7ED5\u4FA7\u578B\u654C\u4EBA\uff0c\u4F1A\u4F18\u5148\u5BFB\u627E\u7A7A\u6321\u4ECE\u4FA7\u7FFC\u5207\u5165\u3002", true, "\u521D\u59CB\u5373\u53EF\u67E5\u770B", "\u9AD8\u673A\u52A8", 5, 1, 4, 2, 1, 22, "card_flank_sting", "card_shadow_pursuit", "\u4F18\u5148\u9009\u62E9\u80FD\u5F62\u6210\u4FA7\u7FFC\u538B\u529B\u7684\u8D70\u4F4D\uff1B\u534A\u8840\u540E\u53EF\u5B66\u4E60\u7A81\u8FDB\u8FFD\u51FB"),
+			new EnemyCodexEntry("pirate_shocker", "\u63A0\u8239\u5BA2\u7535\u68CD\u624B", "\u9AD8\u538B\u8FD1\u6218\u8F93\u51FA\u5355\u4F4D\uff0c\u4F1A\u5728\u8D34\u8EAB\u540E\u7ED9\u51FA\u66F4\u75BC\u7684\u4E00\u51FB\u3002", true, "\u521D\u59CB\u5373\u53EF\u67E5\u770B", "\u8FD1\u6218", 6, 1, 3, 3, 1, 24, "card_shock_baton", "card_overload_baton", "\u4EE5\u66F4\u9AD8\u4F24\u5BB3\u7684\u8D34\u8EAB\u6253\u51FB\u4E3A\u4E3B\uff1B\u534A\u8840\u540E\u53EF\u5B66\u4E60\u8FC7\u8F7D\u8F93\u51FA"),
+			new EnemyCodexEntry("pirate_gunner", "\u63A0\u8239\u5BA2\u6742\u67AA\u624B", "\u76F4\u7EBF\u8FDC\u7A0B\u538B\u5236\u578B\u654C\u4EBA\uff0c\u64C5\u957F\u5728\u969C\u788D\u540E\u7EF4\u6301\u706B\u529B\u3002", true, "\u521D\u59CB\u5373\u53EF\u67E5\u770B", "\u8FDC\u7A0B", 5, 0, 2, 2, 3, 24, "card_suppressive_burst", "card_ranging_barrage", "\u7EF4\u6301\u5C04\u7A0B\u4F18\u52BF\uff0c\u5728\u80FD\u653B\u51FB\u65F6\u4F18\u5148\u8FDC\u7A0B\u538B\u4F4D\uff1B\u534A\u8840\u540E\u53EF\u5B66\u4E60\u7206\u53D1\u70B9\u5C04"),
+			new EnemyCodexEntry("pirate_pipe_bomber", "\u7BA1\u9053\u7206\u7834\u5BA2", "\u4F1A\u4F18\u5148\u5904\u7406\u969C\u788D\u4E0E\u5730\u5F62\u7684\u7206\u7834\u578B\u654C\u4EBA\uff0c\u9002\u5408\u4F5C\u4E3A\u623F\u95F4\u7684\u73AF\u5883\u6838\u5FC3\u3002", true, "\u521D\u59CB\u5373\u53EF\u67E5\u770B", "\u73AF\u5883\u7206\u7834", 5, 0, 2, 2, 3, 26, "card_blast_charge", "card_chain_detonation", "\u4F18\u5148\u653B\u51FB\u53EF\u7834\u574F\u969C\u788D\uff0c\u4E5F\u4F1A\u5BF9\u73A9\u5BB6\u4FDD\u6301\u8FDC\u7A0B\u538B\u529B\uff1B\u534A\u8840\u540E\u53EF\u5B66\u4E60\u66F4\u7C97\u66B4\u7684\u7206\u7834"),
 			new EnemyCodexEntry("pirate_brute_elite", "\u63A0\u8239\u5BA2\u91CD\u538B\u8005", "\u7CBE\u82F1\u8FD1\u6218\u654C\u4EBA\uff0c\u4EE5\u9AD8\u62A4\u76FE\u3001\u9AD8\u4F24\u5BB3\u548C\u534A\u8840\u7279\u6B8A\u5B66\u4E60\u72B6\u6001\u4E3A\u6807\u5FD7\u3002", false, "\u5728\u7CBE\u82F1\u6218\u4E2D\u5B8C\u6210\u5B66\u4E60\u540E\u89E3\u9501", "\u7CBE\u82F1\u8FD1\u6218", 10, 3, 3, 4, 1, 50, "card_heavy_bash", "card_pressure_breach", "\u534A\u8840\u540E\u79FB\u52A8\u529B +1\uff0c\u5E76\u89E6\u53D1\u7CBE\u82F1\u5B66\u4E60\u7A97\u53E3"),
 			new EnemyCodexEntry("scrap_medic_elite", "\u5E9F\u6599\u533B\u62A4\u673A", "\u652F\u63F4\u578B\u7CBE\u82F1\uff0C\u4F1A\u4E3A\u53CB\u65B9\u63D0\u4F9B\u6CBB\u7597\u4E0E\u62A4\u76FE\uff0C\u5EF6\u957F\u6218\u7EBF\u3002", false, "\u89E6\u53D1\u5176\u652F\u63F4\u5B66\u4E60\u540E\u89E3\u9501", "\u652F\u63F4", 8, 2, 2, 1, 2, 48, "card_field_patch", "card_emergency_repair", "\u4F18\u5148\u6CBB\u7597\u6216\u4E3A\u53CB\u65B9\u4E0A\u76FE\uff0C\u7279\u6B8A\u5B66\u4E60\u4E0E\u6210\u529F\u652F\u63F4\u884C\u4E3A\u6302\u94A9"),
-			new EnemyCodexEntry("sewer_gatekeeper", "\u4E0B\u6C34\u9053\u95E8\u7981\u5B88\u536B", "\u5B88\u95E8\u578B\u654C\u4EBA\uff0c\u4F1A\u5229\u7528\u72ED\u7A84\u5730\u5F62\u5C01\u9501\u8DEF\u7EBF\u5E76\u903C\u8FEB\u73A9\u5BB6\u6B63\u9762\u4EA4\u6218\u3002", true, "\u521D\u59CB\u5373\u53EF\u67E5\u770B", "\u5B88\u95E8", 8, 3, 2, 3, 1, 30, "\u65E0", "\u65E0", "\u4F18\u5148\u9009\u62E9\u9760\u8FD1\u969C\u788D\u7684\u7AD9\u4F4D\uff0C\u5C01\u9501\u72ED\u7A84\u901A\u9053"),
+			new EnemyCodexEntry("sewer_gatekeeper", "\u4E0B\u6C34\u9053\u95E8\u7981\u5B88\u536B", "\u5B88\u95E8\u578B\u654C\u4EBA\uff0C\u4F1A\u5229\u7528\u72ED\u7A84\u5730\u5F62\u5C01\u9501\u8DEF\u7EBF\u5E76\u903C\u8FEB\u73A9\u5BB6\u6B63\u9762\u4EA4\u6218\u3002", true, "\u521D\u59CB\u5373\u53EF\u67E5\u770B", "\u5B88\u95E8", 8, 3, 2, 3, 1, 30, "card_gate_strike", "card_dead_hold", "\u4F18\u5148\u9009\u62E9\u9760\u8FD1\u969C\u788D\u7684\u7AD9\u4F4D\uff0C\u5C01\u9501\u72ED\u7A84\u901A\u9053\uff1B\u534A\u8840\u540E\u53EF\u5B66\u4E60\u6B7B\u5B88\u67B6\u52BF"),
 		};
 	}
 
@@ -1977,7 +2044,7 @@ public partial class SystemFeatureLabController : CanvasLayer
 		foreach (BattleCardTemplate template in _codexTemplates)
 		{
 			bool unlocked = template.IsOwned(progression);
-			int index = _cardCodexList.AddItem(unlocked ? template.DisplayName : "■■■");
+			int index = _cardCodexList.AddItem(unlocked ? GetCardDisplayName(template.CardId) : "■■■");
 			if (!unlocked)
 			{
 				_cardCodexList.SetItemCustomFgColor(index, new Color(0.16f, 0.16f, 0.16f, 1.0f));
@@ -2021,14 +2088,14 @@ public partial class SystemFeatureLabController : CanvasLayer
 		{
 			bool overlimit = !template.CanCarryNormally(readableProgression) && template.CanCarryOverlimit(readableProgression);
 			string suffix = template.IsLearnedCard ? " [\u5B66\u4E60]" : overlimit ? " [\u8D85\u9650]" : string.Empty;
-			_availableList.AddItem($"{template.DisplayName}{suffix}");
+			_availableList.AddItem($"{GetCardDisplayName(template.CardId)}{suffix}");
 		}
 
 		_deckList.Clear();
 		foreach (string cardId in _workingDeck)
 		{
 			BattleCardTemplate? template = _cardLibrary.FindTemplate(cardId);
-			_deckList.AddItem(template?.DisplayName ?? cardId);
+			_deckList.AddItem(template != null ? GetCardDisplayName(template.CardId) : cardId);
 		}
 
 		DeckBuildSnapshot readableSnapshot = new()
@@ -2057,14 +2124,14 @@ public partial class SystemFeatureLabController : CanvasLayer
 		{
 			bool overlimit = !template.CanCarryNormally(progression) && template.CanCarryOverlimit(progression);
 			string suffix = template.IsLearnedCard ? " [学习]" : overlimit ? " [超限]" : string.Empty;
-			_availableList.AddItem($"{template.DisplayName}{suffix}");
+			_availableList.AddItem($"{GetCardDisplayName(template.CardId)}{suffix}");
 		}
 
 		_deckList.Clear();
 		foreach (string cardId in _workingDeck)
 		{
 			BattleCardTemplate? template = _cardLibrary.FindTemplate(cardId);
-			_deckList.AddItem(template?.DisplayName ?? cardId);
+			_deckList.AddItem(template != null ? GetCardDisplayName(template.CardId) : cardId);
 		}
 
 		DeckBuildSnapshot snapshot = new()
@@ -2154,14 +2221,7 @@ public partial class SystemFeatureLabController : CanvasLayer
 		ProgressionSnapshot cardProgression = _session.BuildProgressionSnapshotModel();
 		bool cardUnlocked = selectedTemplate.IsOwned(cardProgression);
 		_cardCodexDetail.Text = cardUnlocked
-			? string.Join('\n', new[]
-			{
-				$"[b]{selectedTemplate.DisplayName}[/b]",
-				selectedTemplate.Description,
-				$"\u8D39\u7528 {selectedTemplate.Cost} / \u5F71\u54CD\u56E0\u5B50 {selectedTemplate.BuildPoints}",
-				$"Quick {selectedTemplate.IsQuick} / Exhaust {selectedTemplate.ExhaustsOnPlay}",
-				"\u72B6\u6001: \u5DF2\u89E3\u9501",
-			})
+			? BuildCardCodexDetailText(selectedTemplate)
 			: string.Join('\n', new[]
 			{
 				"[b]\u672A\u89E3\u9501[/b]",
@@ -2182,7 +2242,7 @@ public partial class SystemFeatureLabController : CanvasLayer
 		_cardCodexDetail.Text = unlocked
 			? string.Join('\n', new[]
 			{
-				$"[b]{template.DisplayName}[/b]",
+				$"[b]{GetCardDisplayName(template.CardId)}[/b]",
 				template.Description,
 				$"费用 {template.Cost} / 影响因子 {template.BuildPoints}",
 				$"Quick {template.IsQuick} / Exhaust {template.ExhaustsOnPlay}",
@@ -2297,10 +2357,108 @@ public partial class SystemFeatureLabController : CanvasLayer
 			$"\u751F\u547D {entry.MaxHp} / \u62A4\u76FE {entry.StartingShield}",
 			$"\u79FB\u52A8 {entry.MovePointsPerTurn} / \u653B\u51FB {entry.AttackDamage} / \u5C04\u7A0B {entry.AttackRange}",
 			$"\u51FB\u8D25\u7ECF\u9A8C: {entry.DefeatExperience}",
-			$"\u5E38\u6001\u5B66\u4E60: {entry.NormalLearnCardId}",
-			$"\u7279\u6B8A\u5B66\u4E60: {entry.SignatureLearnCardId}",
+			$"\u5E38\u6001\u5B66\u4E60: {ResolveCardDisplayName(entry.NormalLearnCardId)}",
+			$"\u7279\u6B8A\u5B66\u4E60: {ResolveCardDisplayName(entry.SignatureLearnCardId)}",
 			$"\u7279\u6B8A\u884C\u4E3A: {entry.SpecialActionSummary}",
 		});
+	}
+
+	private string BuildCardCodexDetailText(BattleCardTemplate template)
+	{
+		BattleCardDefinition definition = template.BuildRuntimeDefinition();
+		BattleCardEnhancementDefinition enhancement = BattleSceneController.ResolveArakawaEnhancementPreview(definition);
+		List<string> lines = new()
+		{
+			$"[b]{(CardDisplayNameOverrides.TryGetValue(template.CardId, out string displayName) ? displayName : template.CardId)}[/b]",
+			template.Description,
+			string.Empty,
+			$"\u8D39\u7528 {FormatEnhancedValue(template.Cost, enhancement.CostDelta)} / \u5F71\u54CD\u56E0\u5B50 {template.BuildPoints}",
+		};
+
+		if (definition.Range > 0 || enhancement.RangeDelta != 0)
+		{
+			lines.Add($"\u5C04\u7A0B {FormatEnhancedValue(definition.Range, enhancement.RangeDelta)}");
+		}
+
+		if (definition.Damage > 0 || enhancement.DamageDelta != 0)
+		{
+			lines.Add($"\u4F24\u5BB3 {FormatEnhancedValue(definition.Damage, enhancement.DamageDelta)}");
+		}
+
+		if (definition.HealingAmount > 0 || enhancement.HealingDelta != 0)
+		{
+			lines.Add($"\u6CBB\u7597 {FormatEnhancedValue(definition.HealingAmount, enhancement.HealingDelta)}");
+		}
+
+		if (definition.ShieldGain > 0 || enhancement.ShieldGainDelta != 0)
+		{
+			lines.Add($"\u62A4\u76FE {FormatEnhancedValue(definition.ShieldGain, enhancement.ShieldGainDelta)}");
+		}
+
+		if (definition.DrawCount > 0 || enhancement.DrawCountDelta != 0)
+		{
+			lines.Add($"\u62BD\u724C {FormatEnhancedValue(definition.DrawCount, enhancement.DrawCountDelta)}");
+		}
+
+		if (definition.EnergyGain > 0 || enhancement.EnergyGainDelta != 0)
+		{
+			lines.Add($"\u56DE\u80FD {FormatEnhancedValue(definition.EnergyGain, enhancement.EnergyGainDelta)}");
+		}
+
+		lines.Add($"Quick {template.IsQuick} / Exhaust {template.ExhaustsOnPlay}");
+		lines.Add($"\u8352\u5DDD\u5F3A\u5316: [color=#6dbbff]{BuildEnhancementSummary(enhancement)}[/color]");
+		lines.Add("\u72B6\u6001: \u5DF2\u89E3\u9501");
+		return string.Join('\n', lines);
+	}
+
+	private static string FormatEnhancedValue(int baseValue, int delta)
+	{
+		if (delta == 0)
+		{
+			return baseValue.ToString();
+		}
+
+		string sign = delta > 0 ? "+" : string.Empty;
+		return $"{baseValue}[color=#6dbbff]\uFF08{sign}{delta}\uFF09[/color]";
+	}
+
+	private static string BuildEnhancementSummary(BattleCardEnhancementDefinition enhancement)
+	{
+		List<string> parts = new();
+		AppendEnhancementPart(parts, "\u8D39\u7528", enhancement.CostDelta);
+		AppendEnhancementPart(parts, "\u5C04\u7A0B", enhancement.RangeDelta);
+		AppendEnhancementPart(parts, "\u4F24\u5BB3", enhancement.DamageDelta);
+		AppendEnhancementPart(parts, "\u6CBB\u7597", enhancement.HealingDelta);
+		AppendEnhancementPart(parts, "\u62A4\u76FE", enhancement.ShieldGainDelta);
+		AppendEnhancementPart(parts, "\u62BD\u724C", enhancement.DrawCountDelta);
+		AppendEnhancementPart(parts, "\u56DE\u80FD", enhancement.EnergyGainDelta);
+		return parts.Count == 0 ? "\u5F3A\u5316" : string.Join("\uFF0C", parts);
+	}
+
+	private static void AppendEnhancementPart(List<string> parts, string label, int delta)
+	{
+		if (delta == 0)
+		{
+			return;
+		}
+
+		string sign = delta > 0 ? "+" : string.Empty;
+		parts.Add($"{label}{sign}{delta}");
+	}
+
+	private string ResolveCardDisplayName(string cardId)
+	{
+		if (string.IsNullOrWhiteSpace(cardId) || string.Equals(cardId, "\u65E0", StringComparison.Ordinal))
+		{
+			return "\u65E0";
+		}
+
+		if (CardDisplayNameOverrides.TryGetValue(cardId, out string displayName))
+		{
+			return displayName;
+		}
+
+		return _cardLibrary?.FindTemplate(cardId)?.DisplayName ?? cardId;
 	}
 
 	private int GetSpentPoints()
@@ -2498,7 +2656,7 @@ public partial class SystemFeatureLabController : CanvasLayer
 
 		return string.Join('\n', new[]
 		{
-			$"[b]{template.DisplayName}[/b]",
+			$"[b]{(CardDisplayNameOverrides.TryGetValue(template.CardId, out string displayName) ? displayName : template.CardId)}[/b]",
 			template.Description,
 			$"璐圭敤 {template.Cost} / 褰卞搷鍥犲瓙 {template.BuildPoints}",
 			$"浼ゅ {template.Damage} / 娌荤枟 {template.HealingAmount} / 鎶界墝 {template.DrawCount} / 鍥炶兘 {template.EnergyGain} / 鎶ょ浘 {template.ShieldGain}",
@@ -2901,6 +3059,11 @@ public partial class SystemFeatureLabController : CanvasLayer
 			return string.Empty;
 		}
 
+		if (CardDisplayNameOverrides.TryGetValue(cardId, out string displayName))
+		{
+			return displayName;
+		}
+
 		return _cardLibrary?.FindTemplate(cardId)?.DisplayName ?? cardId;
 	}
 
@@ -2931,7 +3094,7 @@ public partial class SystemFeatureLabController : CanvasLayer
 	{
 		return string.Join('\n', new[]
 		{
-			$"[b]{template.DisplayName}[/b]",
+			$"[b]{(CardDisplayNameOverrides.TryGetValue(template.CardId, out string displayName) ? displayName : template.CardId)}[/b]",
 			template.Description,
 			$"\u8D39\u7528 {template.Cost} / \u5F71\u54CD\u56E0\u5B50 {template.BuildPoints}",
 			$"\u4F24\u5BB3 {template.Damage} / \u6CBB\u7597 {template.HealingAmount} / \u62BD\u724C {template.DrawCount} / \u56DE\u80FD {template.EnergyGain} / \u62A4\u76FE {template.ShieldGain}",

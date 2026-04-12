@@ -11,58 +11,27 @@ public sealed class ScoutFlankerEnemyAiStrategy : IEnemyAiStrategy
 
     public EnemyAiDecision Decide(EnemyAiContext context)
     {
-        BoardObject? nearestOpponent = FindNearestOpponent(context);
+        BoardObject? nearestOpponent = EnemyAiTactics.FindNearestOpponentUnit(context);
         if (nearestOpponent == null)
         {
             return EnemyAiDecision.Wait();
         }
 
-        BoardObject? attackTarget = context.ActionService
-            .FindAttackableTargetsInRange(context.Self.ObjectId, context.Self.Cell, context.SelfState.AttackRange)
-            .FirstOrDefault();
+        BoardObject? attackTarget = EnemyAiTactics.FindOpponentAttackTargetInRange(context);
         if (attackTarget != null)
         {
             return EnemyAiDecision.Attack(attackTarget.ObjectId);
         }
 
-        int currentDistance = GetManhattanDistance(context.Self.Cell, nearestOpponent.Cell);
-        Vector2I? nextCell = context.Pathfinder
-            .FindReachableCells(context.Self.ObjectId, context.Self.Cell, context.SelfState.MovePointsPerTurn)
-            .Where(cell => cell != context.Self.Cell)
-            .Select(cell => new
-            {
-                Cell = cell,
-                Distance = GetManhattanDistance(cell, nearestOpponent.Cell),
-                Progress = currentDistance - GetManhattanDistance(cell, nearestOpponent.Cell),
-                FlankScore = cell.X != nearestOpponent.Cell.X && cell.Y != nearestOpponent.Cell.Y ? 1 : 0,
-            })
-            .Where(candidate => candidate.Progress > 0)
-            .OrderByDescending(candidate => candidate.FlankScore)
-            .ThenByDescending(candidate => candidate.Progress)
-            .ThenBy(candidate => candidate.Distance)
-            .ThenBy(candidate => candidate.Cell.Y)
-            .ThenBy(candidate => candidate.Cell.X)
-            .Select(candidate => (Vector2I?)candidate.Cell)
-            .FirstOrDefault();
+        Vector2I? nextCell = EnemyAiTactics.FindBestApproachCell(
+            context,
+            nearestOpponent,
+            desiredMaxRange: context.SelfState.AttackRange,
+            desiredMinRange: 1,
+            preferFlank: true);
 
         return nextCell.HasValue
             ? EnemyAiDecision.Move(nextCell.Value)
             : EnemyAiDecision.Wait();
-    }
-
-    private static BoardObject? FindNearestOpponent(EnemyAiContext context)
-    {
-        return context.Registry.AllObjects
-            .Where(boardObject => boardObject.ObjectType == BoardObjectType.Unit)
-            .Where(boardObject => boardObject.ObjectId != context.Self.ObjectId)
-            .Where(boardObject => boardObject.Faction != context.Self.Faction)
-            .OrderBy(boardObject => GetManhattanDistance(context.Self.Cell, boardObject.Cell))
-            .ThenBy(boardObject => boardObject.ObjectId, StringComparer.Ordinal)
-            .FirstOrDefault();
-    }
-
-    private static int GetManhattanDistance(Vector2I a, Vector2I b)
-    {
-        return Mathf.Abs(a.X - b.X) + Mathf.Abs(a.Y - b.Y);
     }
 }
