@@ -31,12 +31,13 @@ corner_radius_bottom_left = 6
 
 [node name="SystemFeatureOverlay" type="CanvasLayer"]
 script = ExtResource("1_ctrl")
-PlayerPath = NodePath("../MainPlayer/Player")
+PlayerPath = NodePath("../WorldObjects/MainPlayer/Player")
 
 [node name="OverlayAdapter" type="Node" parent="."]
 script = ExtResource("2_adapter")
 
 [node name="HintLabel" type="Label" parent="."]
+visible = false
 offset_left = 12.0
 offset_top = 10.0
 offset_right = 520.0
@@ -44,6 +45,7 @@ offset_bottom = 28.0
 text = "WASD 绉诲姩  E 浜や簰  C 鎵撳紑绯荤粺鑿滃崟"
 
 [node name="StatusLabel" type="Label" parent="."]
+visible = false
 offset_left = 12.0
 offset_top = 30.0
 offset_right = 610.0

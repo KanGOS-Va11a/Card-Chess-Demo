@@ -65,4 +65,41 @@ public partial class Enemy : InteractableTemplate
 
 		GD.PushError($"Enemy: {failureReason}");
 	}
+
+	public override Godot.Collections.Dictionary BuildRuntimeSnapshot()
+	{
+		Godot.Collections.Dictionary snapshot = base.BuildRuntimeSnapshot();
+		snapshot["remove_from_scene"] = false;
+		return snapshot;
+	}
+
+	public override void ApplyRuntimeSnapshot(Godot.Collections.Dictionary snapshot)
+	{
+		base.ApplyRuntimeSnapshot(snapshot);
+		if (snapshot == null || snapshot.Count == 0)
+		{
+			return;
+		}
+
+		if (snapshot.TryGetValue("remove_from_scene", out Variant removeVariant) && removeVariant.AsBool())
+		{
+			HideAndRemoveEncounterRoot();
+		}
+	}
+
+	private void HideAndRemoveEncounterRoot()
+	{
+		Node rootToRemove = GetParent() ?? this;
+		if (rootToRemove is CanvasItem canvasItem)
+		{
+			canvasItem.Visible = false;
+		}
+
+		IsDisabled = true;
+		CallDeferred(MethodName.QueueFree);
+		if (rootToRemove != this)
+		{
+			rootToRemove.CallDeferred(MethodName.QueueFree);
+		}
+	}
 }

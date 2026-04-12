@@ -1,7 +1,7 @@
-[gd_resource type="Resource" script_class="BattleEnemyLibrary" format=3]
+[gd_resource type="Resource" script_class="BattleEnemyLibrary" format=3 uid="uid://drxcg314qh4ct"]
 
-[ext_resource type="Script" path="res://Scripts/Battle/Enemies/BattleEnemyLibrary.cs" id="1_library"]
-[ext_resource type="Script" path="res://Scripts/Battle/Enemies/BattleEnemyDefinition.cs" id="2_definition"]
+[ext_resource type="Script" uid="uid://bicomkfbq1osv" path="res://Scripts/Battle/Enemies/BattleEnemyLibrary.cs" id="1_library"]
+[ext_resource type="Script" uid="uid://deem1n1h0jyjj" path="res://Scripts/Battle/Enemies/BattleEnemyDefinition.cs" id="2_definition"]
 [ext_resource type="PackedScene" path="res://Scene/Battle/Tiles/BattleEnemyToken.tscn" id="3_enemy_scene"]
 
 [sub_resource type="Resource" id="Enemy_scene01_tutorial"]
@@ -12,8 +12,6 @@ PrefabScene = ExtResource("3_enemy_scene")
 AiId = "scene01_learning"
 MaxHp = 6
 StartingShield = 1
-MovePointsPerTurn = 3
-AttackRange = 1
 AttackDamage = 2
 DefeatExperience = 40
 NormalLearnCardId = "card_patrol_strike"
@@ -25,11 +23,8 @@ script = ExtResource("2_definition")
 DefinitionId = "pirate_blocker"
 DisplayName = "搭船客堵门者"
 PrefabScene = ExtResource("3_enemy_scene")
-AiId = "melee_basic"
 MaxHp = 7
 StartingShield = 2
-MovePointsPerTurn = 3
-AttackRange = 1
 AttackDamage = 2
 DefeatExperience = 20
 NormalLearnCardId = "card_barricade_shove"
@@ -45,7 +40,6 @@ AiId = "scout_flanker"
 MaxHp = 5
 StartingShield = 1
 MovePointsPerTurn = 4
-AttackRange = 1
 AttackDamage = 2
 DefeatExperience = 22
 NormalLearnCardId = "card_flank_sting"
@@ -57,11 +51,8 @@ script = ExtResource("2_definition")
 DefinitionId = "pirate_shocker"
 DisplayName = "搭船客电棍手"
 PrefabScene = ExtResource("3_enemy_scene")
-AiId = "melee_basic"
 MaxHp = 6
 StartingShield = 1
-MovePointsPerTurn = 3
-AttackRange = 1
 AttackDamage = 3
 DefeatExperience = 24
 NormalLearnCardId = "card_shock_baton"
@@ -75,7 +66,6 @@ DisplayName = "搭船客拾荒枪手"
 PrefabScene = ExtResource("3_enemy_scene")
 AiId = "ranged_line"
 MaxHp = 5
-StartingShield = 0
 MovePointsPerTurn = 2
 AttackRange = 3
 AttackDamage = 2
@@ -91,7 +81,6 @@ DisplayName = "管道爆破客"
 PrefabScene = ExtResource("3_enemy_scene")
 AiId = "obstacle_bomber"
 MaxHp = 5
-StartingShield = 0
 MovePointsPerTurn = 2
 AttackRange = 3
 AttackDamage = 2
@@ -108,8 +97,6 @@ PrefabScene = ExtResource("3_enemy_scene")
 AiId = "elite_brute"
 MaxHp = 10
 StartingShield = 3
-MovePointsPerTurn = 3
-AttackRange = 1
 AttackDamage = 4
 DefeatExperience = 50
 NormalLearnCardId = "card_heavy_bash"
@@ -126,26 +113,9 @@ MaxHp = 8
 StartingShield = 2
 MovePointsPerTurn = 2
 AttackRange = 2
-AttackDamage = 1
 DefeatExperience = 48
 NormalLearnCardId = "card_field_patch"
 SignatureLearnCardId = "card_emergency_repair"
-SignatureLearnRequiresRuntimeFlag = true
-
-[sub_resource type="Resource" id="Enemy_boss_rust_captain"]
-script = ExtResource("2_definition")
-DefinitionId = "boss_rust_captain"
-DisplayName = "锈船长"
-PrefabScene = ExtResource("3_enemy_scene")
-AiId = "melee_basic"
-MaxHp = 16
-StartingShield = 4
-MovePointsPerTurn = 3
-AttackRange = 1
-AttackDamage = 5
-DefeatExperience = 120
-NormalLearnCardId = "card_captain_bash"
-SignatureLearnCardId = "card_magnetic_hunt"
 SignatureLearnRequiresRuntimeFlag = true
 
 [sub_resource type="Resource" id="Enemy_sewer_gatekeeper"]
@@ -157,12 +127,25 @@ AiId = "gatekeeper_guard"
 MaxHp = 8
 StartingShield = 3
 MovePointsPerTurn = 2
-AttackRange = 1
 AttackDamage = 3
 DefeatExperience = 30
 NormalLearnCardId = "card_gate_strike"
 SignatureLearnCardId = "card_dead_hold"
 SignatureLearnAvailableAtHalfHpOrBelow = true
+
+[sub_resource type="Resource" id="Enemy_boss_rust_captain"]
+script = ExtResource("2_definition")
+DefinitionId = "boss_rust_captain"
+DisplayName = "锈船长"
+PrefabScene = ExtResource("3_enemy_scene")
+MaxHp = 16
+StartingShield = 4
+AttackDamage = 5
+DefeatExperience = 120
+NormalLearnCardId = "card_captain_bash"
+SignatureLearnCardId = "card_magnetic_hunt"
+SignatureLearnRequiresRuntimeFlag = true
+
 [resource]
 script = ExtResource("1_library")
 Entries = [SubResource("Enemy_scene01_tutorial"), SubResource("Enemy_pirate_blocker"), SubResource("Enemy_pirate_scout"), SubResource("Enemy_pirate_shocker"), SubResource("Enemy_pirate_gunner"), SubResource("Enemy_pirate_pipe_bomber"), SubResource("Enemy_pirate_brute_elite"), SubResource("Enemy_scrap_medic_elite"), SubResource("Enemy_sewer_gatekeeper"), SubResource("Enemy_boss_rust_captain")]

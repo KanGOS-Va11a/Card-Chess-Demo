@@ -405,50 +405,6 @@ public partial class GlobalGameSession : Node
 		{
 			DeckBuildState.CardIds = starterDeck;
 		}
-		else if (starterDeck.Contains("debug_finisher", StringComparer.Ordinal)
-			&& !DeckBuildState.CardIds.Contains("debug_finisher", StringComparer.Ordinal))
-		{
-			DeckBuildState.CardIds = new[] { "debug_finisher" }.Concat(DeckBuildState.CardIds).ToArray();
-		}
-
-		bool shouldInjectDrawRevolver = DeckBuildState.CardIds.Contains("debug_finisher", StringComparer.Ordinal)
-			|| starterDeck.Contains("draw_revolver", StringComparer.Ordinal);
-		if (shouldInjectDrawRevolver
-			&& !DeckBuildState.CardIds.Contains("draw_revolver", StringComparer.Ordinal))
-		{
-			IEnumerable<string> rebuiltDeck = DeckBuildState.CardIds;
-			if (rebuiltDeck.Contains("debug_finisher", StringComparer.Ordinal))
-			{
-				rebuiltDeck = rebuiltDeck
-					.Take(1)
-					.Concat(new[] { "draw_revolver" })
-					.Concat(rebuiltDeck.Skip(1));
-			}
-			else
-			{
-				rebuiltDeck = new[] { "draw_revolver" }.Concat(rebuiltDeck);
-			}
-
-			DeckBuildState.CardIds = rebuiltDeck.ToArray();
-		}
-
-		bool shouldInjectArcLeak = DeckBuildState.CardIds.Contains("debug_finisher", StringComparer.Ordinal)
-			|| starterDeck.Contains("card_arc_leak", StringComparer.Ordinal);
-		if (shouldInjectArcLeak && !DeckBuildState.CardIds.Contains("card_arc_leak", StringComparer.Ordinal))
-		{
-			IEnumerable<string> rebuiltDeck = DeckBuildState.CardIds;
-			if (rebuiltDeck.Contains("draw_revolver", StringComparer.Ordinal))
-			{
-				List<string> ordered = rebuiltDeck.ToList();
-				int insertIndex = ordered.IndexOf("draw_revolver") + 1;
-				ordered.Insert(insertIndex, "card_arc_leak");
-				DeckBuildState.CardIds = ordered.ToArray();
-			}
-			else
-			{
-				DeckBuildState.CardIds = new[] { "card_arc_leak" }.Concat(rebuiltDeck).ToArray();
-			}
-		}
 
 		SyncFieldsFromCompositeState();
 	}

@@ -1,21 +1,25 @@
 [gd_scene format=4 uid="uid://dlmgyaw7v2e4p"]
 
-[ext_resource type="Script" uid="uid://dyw2yvmw0516w" path="res://Scripts/Map/Controllers/MapResolutionController.cs" id="1_resctl"]
 [ext_resource type="Script" uid="uid://bacvjmwtxs21k" path="res://Scripts/Map/Controllers/MapSceneController.cs" id="1_mapctl"]
-[ext_resource type="PackedScene" path="res://Scene/UI/SystemFeatureOverlay.tscn" id="20_overlay"]
 [ext_resource type="Texture2D" uid="uid://c4hbgup3bropd" path="res://bcg1@0,25x.png" id="1_oq60o"]
+[ext_resource type="Script" uid="uid://dyw2yvmw0516w" path="res://Scripts/Map/Controllers/MapResolutionController.cs" id="1_resctl"]
 [ext_resource type="Script" uid="uid://ko3c2evxdpee" path="res://Scripts/Map/World/WallLayerCollisionBuilder.cs" id="2_5kbg5"]
-[ext_resource type="Texture2D" uid="uid://s5f1cihm0idq" path="res://ArtResource/resource/地图/墙/8.png" id="3_663jx"]
-[ext_resource type="Texture2D" uid="uid://c5thwoux5l8wr" path="res://ArtResource/resource/地图/墙/10.png" id="4_71tmj"]
+[ext_resource type="Texture2D" uid="uid://s5f1cihm0idq" path="res://ArtResource/resource/鍦板浘/澧?8.png" id="3_663jx"]
+[ext_resource type="Texture2D" uid="uid://c5thwoux5l8wr" path="res://ArtResource/resource/鍦板浘/澧?10.png" id="4_71tmj"]
 [ext_resource type="Texture2D" uid="uid://cbnn0o0mufyk5" path="res://CosmicLegacy_PetricakeGamesPNG.png" id="5_y77qp"]
-[ext_resource type="Texture2D" uid="uid://bgi7gmfjh3c5d" path="res://ArtResource/resource/地图/墙/3.png" id="6_ikufq"]
-[ext_resource type="Texture2D" uid="uid://bma1hxkxhkpd3" path="res://ArtResource/resource/地图/墙/4.png" id="7_lwvxv"]
-[ext_resource type="Texture2D" uid="uid://cnkys1b40rfbc" path="res://ArtResource/resource/地图/墙/5.png" id="8_svasp"]
-[ext_resource type="Texture2D" uid="uid://d32cec2mleu5r" path="res://ArtResource/resource/地图/地板/地板2.png" id="9_du57h"]
-[ext_resource type="Texture2D" uid="uid://dl62p3nb03o02" path="res://ArtResource/resource/地图/地板/地板3.png" id="10_b3ija"]
-[ext_resource type="Texture2D" uid="uid://bbwc3apa5ri1d" path="res://ArtResource/resource/地图/地板/地板4.png" id="11_oc58x"]
-[ext_resource type="Texture2D" uid="uid://drdv6dk15nu31" path="res://ArtResource/resource/地图/地板/地板5.png" id="12_ybk3m"]
+[ext_resource type="Texture2D" uid="uid://bgi7gmfjh3c5d" path="res://ArtResource/resource/鍦板浘/澧?3.png" id="6_ikufq"]
+[ext_resource type="Texture2D" uid="uid://bma1hxkxhkpd3" path="res://ArtResource/resource/鍦板浘/澧?4.png" id="7_lwvxv"]
+[ext_resource type="Texture2D" uid="uid://cnkys1b40rfbc" path="res://ArtResource/resource/鍦板浘/澧?5.png" id="8_svasp"]
+[ext_resource type="Texture2D" uid="uid://d32cec2mleu5r" path="res://ArtResource/resource/鍦板浘/鍦版澘/鍦版澘2.png" id="9_ground2"]
+[ext_resource type="PackedScene" uid="uid://bk5e0eijairxv" path="res://Scene/InteractableItem/Door02.tscn" id="10_oq60o"]
+[ext_resource type="Texture2D" uid="uid://dl62p3nb03o02" path="res://ArtResource/resource/鍦板浘/鍦版澘/鍦版澘3.png" id="11_ground3"]
+[ext_resource type="Texture2D" uid="uid://bbwc3apa5ri1d" path="res://ArtResource/resource/鍦板浘/鍦版澘/鍦版澘4.png" id="12_ground4"]
 [ext_resource type="PackedScene" uid="uid://cygseefr5cx8a" path="res://Scene/Character/MainPlayer.tscn" id="13_6eyaw"]
+[ext_resource type="Texture2D" uid="uid://drdv6dk15nu31" path="res://ArtResource/resource/鍦板浘/鍦版澘/鍦版澘5.png" id="14_ground5"]
+[ext_resource type="PackedScene" path="res://Scene/UI/SystemFeatureOverlay.tscn" id="20_overlay"]
+[ext_resource type="PackedScene" uid="uid://tln526npf6w6" path="res://Scene/Character/Enemy.tscn" id="21_enemy"]
+[ext_resource type="PackedScene" uid="uid://cdc88qnl7fo02" path="res://Scene/Battle/BattleTutorialEscape.tscn" id="22_escape_tutorial_battle"]
+[ext_resource type="PackedScene" path="res://Scene/Battle/BattleTutorialArakawa.tscn" id="23_arakawa_tutorial_battle"]
 
 [sub_resource type="TileSetAtlasSource" id="TileSetAtlasSource_akmob"]
 texture = ExtResource("3_663jx")
@@ -222,19 +226,19 @@ texture = ExtResource("5_y77qp")
 16:1/0 = 0
 
 [sub_resource type="TileSetAtlasSource" id="TileSetAtlasSource_7e55m"]
-texture = ExtResource("9_du57h")
+texture = ExtResource("9_ground2")
 0:0/0 = 0
 
 [sub_resource type="TileSetAtlasSource" id="TileSetAtlasSource_2lvqx"]
-texture = ExtResource("10_b3ija")
+texture = ExtResource("11_ground3")
 0:0/0 = 0
 
 [sub_resource type="TileSetAtlasSource" id="TileSetAtlasSource_g8mej"]
-texture = ExtResource("11_oc58x")
+texture = ExtResource("12_ground4")
 0:0/0 = 0
 
 [sub_resource type="TileSetAtlasSource" id="TileSetAtlasSource_rb6g4"]
-texture = ExtResource("12_ybk3m")
+texture = ExtResource("14_ground5")
 0:0/0 = 0
 
 [sub_resource type="TileSet" id="TileSet_2rwtf"]
@@ -245,6 +249,7 @@ sources/3 = SubResource("TileSetAtlasSource_g8mej")
 sources/4 = SubResource("TileSetAtlasSource_rb6g4")
 
 [node name="Scene04" type="Node2D" unique_id=2116960737]
+y_sort_enabled = true
 
 [node name="ScreenBackgroundLayer" type="CanvasLayer" parent="." unique_id=174700001]
 layer = -100
@@ -263,26 +268,57 @@ script = ExtResource("2_5kbg5")
 
 [node name="WallLayer" type="TileMapLayer" parent="." unique_id=1269989216]
 modulate = Color(0.72, 0.8, 0.94, 1)
-z_index = 3
-tile_map_data = PackedByteArray("AAAAAP//AgABAAAAAAABAP//AgABAAAAAAACAP//AgABAAAAAAADAP//AgABAAAAAAAEAP//AgABAAAAAAAFAP//AgABAAAAAAAGAP//AgABAAAAAAAHAP//AgABAAAAAAAIAP//AgABAAAAAAAJAP//AgABAAAAAAAKAP//AgADAAAAAAAKAAAAAgAFAAEAAAALAAAAAgABAAAAAAAMAAAAAgABAAAAAAANAAAAAgABAAAAAAAOAAAAAgABAAAAAAAPAAAAAgABAAAAAAAQAAAAAgABAAAAAAARAAAAAgABAAAAAAASAAAAAgABAAAAAAATAAAAAgABAAAAAAAUAAAAAgABAAAAAAAVAAAAAgABAAAAAAAWAAAAAgABAAAAAAAXAAAAAgABAAAAAAAYAAAAAgABAAAAAAAZAAAAAgABAAAAAAAaAAAAAgABAAAAAAAbAAAAAgABAAAAAAAcAAAAAgABAAAAAAD/////AgAAAAAAAAD//wcAAgAAAAMAAAAAAAcAAgABAAMAAAABAAcAAgACAAMAAAACAAcAAgABAAMAAAADAAcAAgACAAMAAAAEAAcAAgABAAMAAAAFAAcAAgACAAMAAAAGAAcAAgABAAMAAAAHAAcAAgACAAMAAAAIAAcAAgABAAMAAAAJAAcAAgACAAMAAAAKAAcAAgADAAMAAAAKAAUAAgAFAAEAAFAKAAYAAgADAAIAAAALAAUAAgABAAMAAAAMAAUAAgACAAMAAAANAAUAAgABAAMAAAAOAAUAAgACAAMAAAAPAAUAAgABAAMAAAAQAAUAAgACAAMAAAARAAUAAgABAAMAAAASAAUAAgACAAMAAAATAAUAAgABAAMAAAAUAAUAAgACAAMAAAAVAAUAAgABAAMAAAAWAAUAAgACAAMAAAAXAAUAAgABAAMAAAAYAAUAAgABAAMAAAAZAAUAAgACAAMAAAAaAAUAAgABAAMAAAAbAAUAAgACAAMAAAAcAAUAAgABAAMAAAD//wAAAgAEAAEAAAD+/wAAAgAAAAAAAAD+/wEAAgAEAAEAAAD9/wEAAgAAAAAAAAD9/wIAAgAEAAEAAAD+/wUAAgAEAAEAAGD//wYAAgAEAAEAAGD9/wQAAgAEAAEAAGD9/wUAAgADAAAAADD+/wYAAgADAAAAADD8/wMAAgAEAAAAAAA=")
+y_sort_enabled = true
+tile_map_data = PackedByteArray("AAAAAP//AgABAAAAAAABAP//AgABAAAAAAACAP//AgABAAAAAAADAP//AgABAAAAAAAEAP//AgABAAAAAAAFAP//AgABAAAAAAAGAP//AgABAAAAAAAHAP//AgABAAAAAAAIAP//AgABAAAAAAAJAP//AgABAAAAAAAKAP//AgADAAAAAAAKAAAAAgAFAAEAAAALAAAAAgABAAAAAAAMAAAAAgABAAAAAAANAAAAAgABAAAAAAAOAAAAAgABAAAAAAAPAAAAAgABAAAAAAAQAAAAAgABAAAAAAARAAAAAgABAAAAAAASAAAAAgABAAAAAAATAAAAAgABAAAAAAAUAAAAAgABAAAAAAAVAAAAAgABAAAAAAAWAAAAAgABAAAAAAAXAAAAAgABAAAAAAAYAAAAAgABAAAAAAAZAAAAAgABAAAAAAAaAAAAAgABAAAAAAAbAAAAAgABAAAAAAAcAAAAAgABAAAAAAD/////AgAAAAAAAAD//wcAAgAAAAMAAAAAAAcAAgABAAMAAAABAAcAAgACAAMAAAACAAcAAgABAAMAAAADAAcAAgACAAMAAAAEAAcAAgABAAMAAAAFAAcAAgACAAMAAAAGAAcAAgABAAMAAAAHAAcAAgACAAMAAAAIAAcAAgABAAMAAAAJAAcAAgACAAMAAAAKAAcAAgADAAMAAAAKAAUAAgAFAAEAAFAKAAYAAgADAAIAAAALAAUAAgABAAMAAAAMAAUAAgACAAMAAAANAAUAAgABAAMAAAAOAAUAAgACAAMAAAAPAAUAAgABAAMAAAAQAAUAAgACAAMAAAARAAUAAgABAAMAAAASAAUAAgACAAMAAAATAAUAAgABAAMAAAAUAAUAAgACAAMAAAAVAAUAAgABAAMAAAAWAAUAAgACAAMAAAAXAAUAAgABAAMAAAAYAAUAAgABAAMAAAAZAAUAAgACAAMAAAAaAAUAAgABAAMAAAAbAAUAAgACAAMAAAAcAAUAAgABAAMAAAD//wAAAgAEAAEAAAD+/wAAAgAAAAAAAAD+/wEAAgAEAAEAAAD9/wEAAgAAAAAAAAD9/wIAAgAEAAEAAAD+/wUAAgAEAAEAAGD//wYAAgAEAAEAAGD9/wQAAgAEAAEAAGD9/wUAAgADAAAAADD+/wYAAgADAAAAADD8/wMAAgAEAAAAAAAdAAUAAgADAAMAAAAdAAAAAgADAAAAAAA=")
 tile_set = SubResource("TileSet_bcdgs")
-collision_visibility_mode = 1
 
 [node name="GroundLayer" type="TileMapLayer" parent="." unique_id=4210332]
+z_index = -1
 tile_map_data = PackedByteArray("AAAAAAAAAAAGAAEAAAABAAAAAAAGAAEAAAACAAAAAAAGAAEAAAADAAAAAAAGAAEAAAAEAAAAAAAGAAEAAAAFAAAAAAAGAAEAAAAGAAAAAAAGAAEAAAAHAAAAAAAGAAEAAAAIAAAAAAAGAAEAAAAJAAAAAAAGAAEAAAAAAAEAAAAGAAEAAAAAAAIAAAAHAAEAAAAAAAMAAAAGAAEAAAAAAAQAAAAGAAEAAAAAAAUAAAAGAAEAAAAAAAYAAAAGAAEAAAABAAEAAAAGAAEAAAABAAIAAAAIAAEAAAABAAMAAAAGAAEAAAABAAQAAAAGAAEAAAABAAUAAAAGAAEAAAABAAYAAAAGAAEAAAACAAEAAAAGAAEAAAACAAIAAAAHAAEAAAACAAMAAAAGAAEAAAACAAQAAAAGAAEAAAACAAUAAAAIAAEAAAACAAYAAAAGAAEAAAADAAEAAAAGAAEAAAADAAIAAAAGAAEAAAADAAMAAAAGAAEAAAADAAQAAAAGAAEAAAADAAUAAAAIAAEAAAADAAYAAAAGAAEAAAAEAAEAAAAIAAEAAAAEAAIAAAAHAAEAAAAEAAMAAAAGAAEAAAAEAAQAAAAIAAEAAAAEAAUAAAAGAAEAAAAEAAYAAAAGAAEAAAAFAAEAAAAIAAEAAAAFAAIAAAAGAAEAAAAFAAMAAAAGAAEAAAAFAAQAAAAHAAEAAAAFAAUAAAAGAAEAAAAFAAYAAAAGAAEAAAAGAAEAAAAGAAEAAAAGAAIAAAAGAAEAAAAGAAMAAAAIAAEAAAAGAAQAAAAIAAEAAAAGAAUAAAAGAAEAAAAGAAYAAAAGAAEAAAAHAAEAAAAGAAEAAAAHAAIAAAAIAAEAAAAHAAMAAAAGAAEAAAAHAAQAAAAGAAEAAAAHAAUAAAAGAAEAAAAHAAYAAAAGAAEAAAAIAAEAAAAGAAEAAAAIAAIAAAAGAAEAAAAIAAMAAAAIAAEAAAAIAAQAAAAHAAEAAAAIAAUAAAAGAAEAAAAIAAYAAAAGAAEAAAAJAAEAAAAGAAEAAAAJAAIAAAAGAAEAAAAJAAMAAAAIAAEAAAAJAAQAAAAGAAEAAAAJAAUAAAAGAAEAAAAJAAYAAAAGAAEAAAAKAAEAAAAGAAEAAAAKAAIAAAAHAAEAAAAKAAMAAAAGAAEAAAAKAAQAAAAGAAEAAAALAAEAAAAGAAEAAAALAAIAAAAGAAEAAAALAAMAAAAGAAEAAAALAAQAAAAGAAEAAAAMAAEAAAAIAAEAAAAMAAIAAAAGAAEAAAAMAAMAAAAGAAEAAAAMAAQAAAAGAAEAAAANAAEAAAAGAAEAAAANAAIAAAAGAAEAAAANAAMAAAAGAAEAAAANAAQAAAAGAAEAAAAOAAEAAAAGAAEAAAAOAAIAAAAIAAEAAAAOAAMAAAAGAAEAAAAOAAQAAAAGAAEAAAAPAAEAAAAGAAEAAAAPAAIAAAAHAAEAAAAPAAMAAAAGAAEAAAAPAAQAAAAGAAEAAAAQAAEAAAAGAAEAAAAQAAIAAAAGAAEAAAAQAAMAAAAGAAEAAAAQAAQAAAAGAAEAAAARAAEAAAAGAAEAAAARAAIAAAAHAAEAAAARAAMAAAAHAAEAAAARAAQAAAAHAAEAAAASAAEAAAAGAAEAAAASAAIAAAAGAAEAAAASAAMAAAAGAAEAAAASAAQAAAAGAAEAAAATAAEAAAAGAAEAAAATAAIAAAAGAAEAAAATAAMAAAAGAAEAAAATAAQAAAAGAAEAAAAUAAEAAAAGAAEAAAAUAAIAAAAHAAEAAAAUAAMAAAAGAAEAAAAUAAQAAAAHAAEAAAAVAAEAAAAGAAEAAAAVAAIAAAAHAAEAAAAVAAMAAAAIAAEAAAAVAAQAAAAGAAEAAAAWAAEAAAAGAAEAAAAWAAIAAAAHAAEAAAAWAAMAAAAIAAEAAAAWAAQAAAAIAAEAAAAXAAEAAAAGAAEAAAAXAAIAAAAGAAEAAAAXAAMAAAAGAAEAAAAXAAQAAAAGAAEAAAAYAAEAAAAGAAEAAAAYAAIAAAAHAAEAAAAYAAMAAAAHAAEAAAAYAAQAAAAGAAEAAAAZAAEAAAAGAAEAAAAZAAIAAAAGAAEAAAAZAAMAAAAGAAEAAAAZAAQAAAAIAAEAAAAaAAEAAAAGAAEAAAAaAAIAAAAIAAEAAAAaAAMAAAAGAAEAAAAaAAQAAAAIAAEAAAAbAAEAAAAGAAEAAAAbAAIAAAAGAAEAAAAbAAMAAAAIAAEAAAAbAAQAAAAGAAEAAAAcAAEAAAAGAAEAAAAcAAIAAAAIAAEAAAAcAAMAAAAGAAEAAAAcAAQAAAAGAAEAAAD//wEAAAAHAAEAAAD//wIAAAAHAAEAAAD//wMAAAAHAAEAAAD//wQAAAAHAAEAAAD//wUAAAAHAAEAAAD+/wIAAAAHAAEAAAD+/wMAAAAHAAEAAAD+/wQAAAAHAAEAAAD9/wMAAAAHAAEAAAA=")
 tile_set = SubResource("TileSet_2rwtf")
 
-[node name="MainPlayer" parent="." unique_id=375524829 instance=ExtResource("13_6eyaw")]
+[node name="WorldObjects" type="Node2D" parent="." unique_id=21915201]
+y_sort_enabled = true
+
+[node name="MainPlayer" parent="WorldObjects" unique_id=375524829 instance=ExtResource("13_6eyaw")]
 position = Vector2(50, 57)
+
+[node name="Door02" parent="WorldObjects" unique_id=1311460087 instance=ExtResource("10_oq60o")]
+position = Vector2(472, 40)
+rotation = 1.5707964
+
+[node name="Door03" parent="WorldObjects" unique_id=328735162 instance=ExtResource("10_oq60o")]
+position = Vector2(472, 72)
+rotation = 1.5707964
+
+[node name="Door04" parent="WorldObjects" unique_id=2110190930 instance=ExtResource("10_oq60o")]
+position = Vector2(472, 56)
+rotation = 1.5707964
+
+[node name="Door05" parent="WorldObjects" unique_id=1230134832 instance=ExtResource("10_oq60o")]
+position = Vector2(472, 23)
+rotation = 1.5707964
+
+[node name="EnemyEscapeTutorial" parent="WorldObjects" unique_id=1781789760 instance=ExtResource("21_enemy")]
+position = Vector2(136, 56)
+EncounterId = "scene01_tutorial"
+BattleScene = ExtResource("22_escape_tutorial_battle")
+PromptText = "逃跑教程战斗"
+
+[node name="EnemyArakawaTutorial" parent="WorldObjects" unique_id=1781789761 instance=ExtResource("21_enemy")]
+position = Vector2(184, 56)
+EncounterId = "scene01_tutorial"
+BattleScene = ExtResource("23_arakawa_tutorial_battle")
+PromptText = "荒川能力教程战斗"
 
 [node name="CanvasModulate" type="CanvasModulate" parent="." unique_id=1430210351]
 color = Color(0.82811576, 0.7649325, 0.65196294, 1)
 
-[node name="MapSceneController" type="Node2D" parent="."]
+[node name="MapSceneController" type="Node2D" parent="." unique_id=244940889]
 script = ExtResource("1_mapctl")
-PlayerPath = NodePath("../MainPlayer/Player")
+PlayerPath = NodePath("../WorldObjects/MainPlayer/Player")
 
-[node name="MapResolutionController" type="Node" parent="."]
+[node name="MapResolutionController" type="Node" parent="." unique_id=1462383426]
 script = ExtResource("1_resctl")
 
-[node name="SystemFeatureOverlay" parent="." instance=ExtResource("20_overlay")]
+[node name="SystemFeatureOverlay" parent="." unique_id=1715766084 instance=ExtResource("20_overlay")]

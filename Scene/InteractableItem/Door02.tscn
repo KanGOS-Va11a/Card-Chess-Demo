@@ -1,0 +1,31 @@
+[gd_scene format=3 uid="uid://bk5e0eijairxv"]
+
+[ext_resource type="PackedScene" uid="uid://ps2feuyl3u5d" path="res://Scene/InteractableItem/Door01.tscn" id="1_c65y3"]
+[ext_resource type="Texture2D" uid="uid://k5r6c1on221x" path="res://ArtResource/resource/地图/CosmicLegacy_PetricakeGamesPNG.png" id="2_swk7h"]
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_r3myt"]
+size = Vector2(16, 16)
+
+[sub_resource type="CircleShape2D" id="CircleShape2D_dwttu"]
+radius = 12.0
+
+[node name="Door02" type="Node2D" unique_id=1311460087]
+y_sort_enabled = true
+y_sort_origin = 16
+
+[node name="Door" parent="." unique_id=2006372797 instance=ExtResource("1_c65y3")]
+
+[node name="Sprite2D2" type="Sprite2D" parent="Door" unique_id=551661124]
+texture = ExtResource("2_swk7h")
+region_enabled = true
+region_rect = Rect2(160, 0, 16, 16)
+
+[node name="CollisionShape2D2" type="CollisionShape2D" parent="Door" unique_id=11023059]
+shape = SubResource("RectangleShape2D_r3myt")
+
+[node name="InteractionArea2" type="Area2D" parent="Door" unique_id=1137175128]
+collision_layer = 8
+collision_mask = 0
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Door/InteractionArea2" unique_id=1298701085]
+shape = SubResource("CircleShape2D_dwttu")

@@ -10,15 +10,15 @@ size = Vector2(16, 16)
 radius = 24.0
 
 [node name="MainPlayer" type="Node2D" unique_id=375524829]
+y_sort_enabled = true
 
 [node name="Player" type="CharacterBody2D" parent="." unique_id=272412821]
-z_index = 5
+y_sort_origin = 8
 collision_mask = 14
 script = ExtResource("1_mv7q2")
 Speed = 120.0
 
 [node name="AnimatedSprite2D" type="AnimatedSprite2D" parent="Player" unique_id=373331228]
-z_index = 1
 position = Vector2(0, -9)
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="Player" unique_id=160022622]
@@ -27,6 +27,7 @@ shape = SubResource("RectangleShape2D_p5hms")
 
 [node name="Camera2D" type="Camera2D" parent="Player" unique_id=1876884036]
 process_callback = 0
+zoom = Vector2(2, 2)
 
 [node name="InteractionArea" type="Area2D" parent="Player" unique_id=1568551401]
 collision_layer = 0

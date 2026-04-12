@@ -1,0 +1,26 @@
+[gd_scene format=3 uid="uid://bjieum54yqmt0"]
+
+[ext_resource type="Script" uid="uid://djk3dd7jwsjog" path="res://Scripts/Map/Decor/DecorLightBulb.cs" id="1_decor_light"]
+[ext_resource type="Texture2D" uid="uid://bioco6ud2vpud" path="res://ArtResource/resource/道具/灯.png" id="2_0ydrl"]
+
+[sub_resource type="Gradient" id="Gradient_light"]
+colors = PackedColorArray(1, 1, 1, 1, 0, 0, 0, 1)
+
+[sub_resource type="GradientTexture2D" id="GradientTexture2D_light"]
+gradient = SubResource("Gradient_light")
+fill = 1
+fill_from = Vector2(0.5, 0.5)
+fill_to = Vector2(0.5, 0)
+
+[node name="DecorLightBulb" type="Node2D" unique_id=1480370995]
+script = ExtResource("1_decor_light")
+
+[node name="PointLight2D" type="PointLight2D" parent="." unique_id=554925272]
+color = Color(1, 0.87058824, 0.6039216, 1)
+energy = 1.1
+texture = SubResource("GradientTexture2D_light")
+texture_scale = 2.6
+
+[node name="Sprite2D" type="Sprite2D" parent="." unique_id=1073389364]
+position = Vector2(-1, -6)
+texture = ExtResource("2_0ydrl")

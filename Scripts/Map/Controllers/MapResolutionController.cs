@@ -15,7 +15,7 @@ public partial class MapResolutionController : Node
 			return;
 		}
 
-		// Scene-level override: use higher logical size for map exploration.
+		// Map exploration uses a larger logical canvas so overlay UI keeps its authored size.
 		window.Set("content_scale_size", MapContentScaleSize);
 	}
 

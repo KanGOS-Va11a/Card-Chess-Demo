@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using Godot;
 using CardChessDemo.Battle.Shared;
 
@@ -35,6 +36,7 @@ public partial class Player : CharacterBody2D
 	private bool _isGridMoving;
 	private Vector2 _gridMoveTarget = Vector2.Zero;
 	private bool _preferHorizontalInput = true;
+	private readonly HashSet<InteractableTemplate> _highlightedInteractables = new();
 
 	public override void _Ready()
 	{
@@ -83,10 +85,17 @@ public partial class Player : CharacterBody2D
 
 	public override void _Process(double delta)
 	{
+		UpdateNearbyInteractableHighlights();
+
 		if (ShowInteractionGizmo)
 		{
 			QueueRedraw();
 		}
+	}
+
+	public override void _ExitTree()
+	{
+		ClearNearbyInteractableHighlights();
 	}
 
 	public override void _Draw()
@@ -131,14 +140,14 @@ public partial class Player : CharacterBody2D
 		if (SceneTextOverlay.IsVisible(this))
 		{
 			SceneTextOverlay.Hide(this);
-			GetViewport().SetInputAsHandled();
+			GetViewport()?.SetInputAsHandled();
 			return;
 		}
 
 		if (GalDialogueOverlay.IsVisible(this))
 		{
 			GalDialogueOverlay.Hide(this);
-			GetViewport().SetInputAsHandled();
+			GetViewport()?.SetInputAsHandled();
 			return;
 		}
 
@@ -158,7 +167,7 @@ public partial class Player : CharacterBody2D
 		_lastInteractedArea = bestArea;
 		_lastInteractTimeMs = nowMs;
 		bestTarget.Interact(this);
-		GetViewport().SetInputAsHandled();
+		GetViewport()?.SetInputAsHandled();
 	}
 
 	private bool TryGetFacingTileTarget(out IInteractable? bestTarget, out Area2D? bestArea)
@@ -518,6 +527,71 @@ public partial class Player : CharacterBody2D
 
 		GodotObject collider = hit["collider"].AsGodotObject();
 		return collider == targetArea || collider == targetArea.GetParent();
+	}
+
+	private void UpdateNearbyInteractableHighlights()
+	{
+		if (_interactionArea == null)
+		{
+			return;
+		}
+
+		HashSet<InteractableTemplate> currentInteractables = new();
+		foreach (Area2D area in _interactionArea.GetOverlappingAreas())
+		{
+			if (area.GetParent() is not InteractableTemplate interactable)
+			{
+				continue;
+			}
+
+			if (!interactable.CanInteract(this))
+			{
+				continue;
+			}
+
+			currentInteractables.Add(interactable);
+			if (_highlightedInteractables.Contains(interactable))
+			{
+				continue;
+			}
+
+			interactable.SetInteractionHighlight(true);
+		}
+
+		List<InteractableTemplate> staleInteractables = new();
+		foreach (InteractableTemplate interactable in _highlightedInteractables)
+		{
+			if (!GodotObject.IsInstanceValid(interactable) || currentInteractables.Contains(interactable))
+			{
+				continue;
+			}
+
+			staleInteractables.Add(interactable);
+		}
+
+		foreach (InteractableTemplate interactable in staleInteractables)
+		{
+			interactable.SetInteractionHighlight(false);
+			_highlightedInteractables.Remove(interactable);
+		}
+
+		foreach (InteractableTemplate interactable in currentInteractables)
+		{
+			_highlightedInteractables.Add(interactable);
+		}
+	}
+
+	private void ClearNearbyInteractableHighlights()
+	{
+		foreach (InteractableTemplate interactable in _highlightedInteractables)
+		{
+			if (GodotObject.IsInstanceValid(interactable))
+			{
+				interactable.SetInteractionHighlight(false);
+			}
+		}
+
+		_highlightedInteractables.Clear();
 	}
 
 	private float GetInteractionAreaRadius()

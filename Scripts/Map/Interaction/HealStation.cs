@@ -5,6 +5,7 @@ namespace CardChessDemo.Map;
 public partial class HealStation : InteractableTemplate
 {
 	[Export] public int HealAmount = 30;
+	[Export] public string HealText = "\u6062\u590D\u4E86\u751F\u547D\u3002";
 
 	public override void _Ready()
 	{
@@ -16,13 +17,25 @@ public partial class HealStation : InteractableTemplate
 
 	public override string GetInteractText(Player player)
 	{
-		return CanInteract(player) ? string.IsNullOrWhiteSpace(PromptText) ? "治疗" : PromptText : "冷却中";
+		return CanInteract(player)
+			? string.IsNullOrWhiteSpace(PromptText) ? "\u6CBB\u7597" : PromptText
+			: "\u51B7\u5374\u4E2D";
 	}
 
 	protected override void OnInteract(Player player)
 	{
 		player.ReceiveHeal(HealAmount);
-		GD.Print($"治疗站：恢复 {HealAmount} 点生命。");
+		SceneTextOverlay.Show(this, BuildHealMessage());
 		PlayInteractionPulse();
+	}
+
+	private string BuildHealMessage()
+	{
+		if (!string.IsNullOrWhiteSpace(HealText))
+		{
+			return HealText;
+		}
+
+		return $"\u6062\u590D\u4E86 {HealAmount} \u70B9\u751F\u547D\u3002";
 	}
 }

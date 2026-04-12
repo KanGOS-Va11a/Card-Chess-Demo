@@ -1,0 +1,21 @@
+[gd_scene load_steps=3 format=3]
+
+[ext_resource type="Script" path="res://Scripts/Map/Decor/AutoTriggerRectLight.cs" id="1_rect_light"]
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_trigger"]
+size = Vector2(320, 192)
+
+[node name="AutoTriggerRectLight" type="Node2D"]
+script = ExtResource("1_rect_light")
+
+[node name="RectLight2D" type="PointLight2D" parent="."]
+enabled = false
+energy = 1.6
+color = Color(1, 0.96, 0.85, 1)
+
+[node name="TriggerArea" type="Area2D" parent="."]
+collision_layer = 0
+collision_mask = 4294967295
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="TriggerArea"]
+shape = SubResource("RectangleShape2D_trigger")

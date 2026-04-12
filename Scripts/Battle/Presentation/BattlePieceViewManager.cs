@@ -87,6 +87,14 @@ public sealed class BattlePieceViewManager
         }
     }
 
+    public void PlayIdle(string objectId)
+    {
+        if (_views.TryGetValue(objectId, out BattleAnimatedViewBase? view))
+        {
+            view.PlayIdle();
+        }
+    }
+
     public async Task<bool> PlayMovePathAsync(
         string objectId,
         IReadOnlyList<Vector2I> cellPath,

@@ -10,8 +10,11 @@ radius = 94.04786
 radius = 262.27466
 
 [node name="HealingStation" type="Node2D" unique_id=836515479]
+y_sort_enabled = true
+y_sort_origin = 16
 
 [node name="HealingStation" type="StaticBody2D" parent="." unique_id=1395213242]
+y_sort_origin = 16
 collision_layer = 2
 collision_mask = 0
 script = ExtResource("1_pqxix")

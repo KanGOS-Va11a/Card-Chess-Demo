@@ -1961,11 +1961,6 @@ public partial class BattleSceneController : Node2D
 			GD.PushWarning($"BattleSceneController: deck build snapshot failed validation. {string.Join(" | ", validationResult.Errors)}");
 		}
 	}
-		if (definitionMap.TryGetValue("debug_finisher", out BattleCardDefinition? debugFinisher)
-			&& !buildCards.Any(definition => string.Equals(definition.CardId, "debug_finisher", StringComparison.Ordinal)))
-		{
-			buildCards = new[] { debugFinisher }.Concat(buildCards).ToArray();
-		}
 		BattleCardDefinition[] startingHandCards = ResolveCardDefinitionsFromSnapshot(_activeBattleRequest.DeckRuntimeInitOverrides, "starting_hand_card_ids", definitionMap);
 		BattleCardDefinition[] startingDrawPileCards = ResolveCardDefinitionsFromSnapshot(_activeBattleRequest.DeckRuntimeInitOverrides, "starting_draw_pile_card_ids", definitionMap);
 		BattleCardDefinition[] startingDiscardPileCards = ResolveCardDefinitionsFromSnapshot(_activeBattleRequest.DeckRuntimeInitOverrides, "starting_discard_pile_card_ids", definitionMap);
@@ -1974,29 +1969,6 @@ public partial class BattleSceneController : Node2D
 		int maxEnergyOverride = ReadIntOverride(_activeBattleRequest.DeckRuntimeInitOverrides, "max_energy_override");
 		int initialEnergy = ReadIntOverride(_activeBattleRequest.DeckRuntimeInitOverrides, "initial_energy");
 		int openingDrawCount = ReadIntOverride(_activeBattleRequest.DeckRuntimeInitOverrides, "opening_draw_count");
-
-		if (buildCards.Any(definition => string.Equals(definition.CardId, "debug_finisher", StringComparison.Ordinal)))
-		{
-			List<BattleCardDefinition> ensuredStartingHand = startingHandCards.ToList();
-			EnsureDebugStartingHandCard(ensuredStartingHand, definitionMap, "debug_finisher");
-			EnsureDebugStartingHandCard(ensuredStartingHand, definitionMap, DrawRevolverCardId);
-			EnsureDebugStartingHandCard(ensuredStartingHand, definitionMap, ArcLeakCardId);
-			EnsureDebugStartingHandCard(ensuredStartingHand, definitionMap, RamCardId);
-			EnsureDebugStartingHandCard(ensuredStartingHand, definitionMap, LearningCardId);
-			EnsureDebugStartingHandCard(ensuredStartingHand, definitionMap, StanceCardId);
-			EnsureDebugStartingHandCard(ensuredStartingHand, definitionMap, HeavyBlowCardId);
-			EnsureDebugStartingHandCard(ensuredStartingHand, definitionMap, ConcussionShotCardId);
-			EnsureDebugStartingHandCard(ensuredStartingHand, definitionMap, WeatheringCardId);
-			EnsureDebugStartingHandCard(ensuredStartingHand, definitionMap, AimCardId);
-			EnsureDebugStartingHandCard(ensuredStartingHand, definitionMap, AlertCardId);
-			EnsureDebugStartingHandCard(ensuredStartingHand, definitionMap, RollCallCardId);
-			startingHandCards = ensuredStartingHand.ToArray();
-			if (startingDrawPileCards.Length == 0 && startingDiscardPileCards.Length == 0 && startingExhaustPileCards.Length == 0)
-			{
-				startingDrawPileCards = BuildRemainingDeckCards(buildCards, startingHandCards);
-			}
-			openingDrawCount = 0;
-		}
 
 		if (buildCards.Length == 0
 			&& startingHandCards.Length == 0
@@ -2132,7 +2104,7 @@ public partial class BattleSceneController : Node2D
 			return definitions.ToArray();
 		}
 
-		return BuildPrototypePlayerDeck();
+		return Array.Empty<BattleCardDefinition>();
 	}
 
 	private static int ResolveOpeningDrawCount(BattleDeckRuntimeInit? runtimeInit, int defaultCount)
@@ -2171,19 +2143,6 @@ public partial class BattleSceneController : Node2D
 		}
 
 		return resolved.ToArray();
-	}
-
-	private static void EnsureDebugStartingHandCard(List<BattleCardDefinition> startingHandCards, IReadOnlyDictionary<string, BattleCardDefinition> definitionMap, string cardId)
-	{
-		if (startingHandCards.Any(definition => string.Equals(definition.CardId, cardId, StringComparison.Ordinal)))
-		{
-			return;
-		}
-
-		if (definitionMap.TryGetValue(cardId, out BattleCardDefinition? definition))
-		{
-			startingHandCards.Add(definition);
-		}
 	}
 
 	private static BattleCardDefinition[] BuildRemainingDeckCards(IReadOnlyList<BattleCardDefinition> buildCards, IReadOnlyList<BattleCardDefinition> startingHandCards)
@@ -3189,6 +3148,7 @@ public partial class BattleSceneController : Node2D
 		}
 
 		AppendBattleActionLog($"{ResolveObjectDisplayName(attackerId)}->({targetCell.Value.X},{targetCell.Value.Y}) 翻滚");
+		_pieceViewManager?.PlayIdle(attackerId);
 		return true;
 	}
 
@@ -3294,6 +3254,7 @@ public partial class BattleSceneController : Node2D
 		int adjacentObstacleCount = CountAdjacentObstacles(targetCell.Value);
 		if (adjacentObstacleCount <= 0)
 		{
+			_pieceViewManager?.PlayIdle(attackerId);
 			return true;
 		}
 

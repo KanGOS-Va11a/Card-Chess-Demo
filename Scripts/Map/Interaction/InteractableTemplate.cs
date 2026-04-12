@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using Godot;
 
 namespace CardChessDemo.Map;
@@ -9,6 +10,7 @@ namespace CardChessDemo.Map;
 /// </summary>
 public abstract partial class InteractableTemplate : StaticBody2D, IInteractable
 {
+	private static readonly Shader InteractionOutlineShader = GD.Load<Shader>("res://Shaders/Battle/ActiveTurnOutline.gdshader");
 	[Export] public string DisplayName = "交互物";
 	[Export] public string PromptText = "交互";
 	[Export] public float CooldownSeconds = 0.0f;
@@ -16,6 +18,8 @@ public abstract partial class InteractableTemplate : StaticBody2D, IInteractable
 
 	protected ulong _nextAvailableTimeMs = 0;
 	protected bool IsOnCooldown => Time.GetTicksMsec() < _nextAvailableTimeMs;
+	private readonly Dictionary<CanvasItem, Material?> _originalHighlightMaterials = new();
+	private readonly Dictionary<CanvasItem, ShaderMaterial> _highlightMaterials = new();
 
 	/// <summary>
 	/// 获取交互提示文本。
@@ -94,6 +98,87 @@ public abstract partial class InteractableTemplate : StaticBody2D, IInteractable
 		tween.SetEase(Tween.EaseType.Out).SetTrans(Tween.TransitionType.Back);
 		tween.TweenProperty(pulseTarget, "scale", baseScale * scaleFactor, 0.08f);
 		tween.TweenProperty(pulseTarget, "scale", baseScale, 0.10f);
+	}
+
+	public virtual void SetInteractionHighlight(bool highlighted)
+	{
+		List<CanvasItem> targets = GetHighlightTargets();
+		if (targets.Count == 0)
+		{
+			return;
+		}
+
+		foreach (CanvasItem target in targets)
+		{
+			if (highlighted)
+			{
+				ApplyInteractionHighlight(target);
+			}
+			else
+			{
+				ClearInteractionHighlight(target);
+			}
+		}
+	}
+
+	private List<CanvasItem> GetHighlightTargets()
+	{
+		List<CanvasItem> targets = new();
+		CollectHighlightTargets(this, targets);
+		return targets;
+	}
+
+	private static void CollectHighlightTargets(Node root, List<CanvasItem> targets)
+	{
+		foreach (Node child in root.GetChildren())
+		{
+			if (child is Sprite2D sprite && sprite.Texture != null)
+			{
+				targets.Add(sprite);
+			}
+			else if (child is AnimatedSprite2D animatedSprite && animatedSprite.SpriteFrames != null)
+			{
+				targets.Add(animatedSprite);
+			}
+
+			CollectHighlightTargets(child, targets);
+		}
+	}
+
+	private void ApplyInteractionHighlight(CanvasItem target)
+	{
+		if (!_highlightMaterials.TryGetValue(target, out ShaderMaterial? highlightMaterial))
+		{
+			highlightMaterial = new ShaderMaterial
+			{
+				Shader = InteractionOutlineShader,
+			};
+			highlightMaterial.SetShaderParameter("outline_color", new Color(1.0f, 1.0f, 1.0f, 0.95f));
+			highlightMaterial.SetShaderParameter("outline_size", 1.0f);
+			_highlightMaterials[target] = highlightMaterial;
+		}
+
+		if (!_originalHighlightMaterials.ContainsKey(target))
+		{
+			_originalHighlightMaterials[target] = target.Material;
+		}
+
+		target.Material = highlightMaterial;
+	}
+
+	private void ClearInteractionHighlight(CanvasItem target)
+	{
+		if (_originalHighlightMaterials.TryGetValue(target, out Material? originalMaterial))
+		{
+			target.Material = originalMaterial;
+			_originalHighlightMaterials.Remove(target);
+			return;
+		}
+
+		if (_highlightMaterials.TryGetValue(target, out ShaderMaterial? highlightMaterial) && target.Material == highlightMaterial)
+		{
+			target.Material = null;
+		}
 	}
 
 	public virtual Godot.Collections.Dictionary BuildRuntimeSnapshot()

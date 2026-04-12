@@ -1,0 +1,36 @@
+[gd_scene format=3 uid="uid://ejpvnr4o3i7i"]
+
+[ext_resource type="Texture2D" uid="uid://k5r6c1on221x" path="res://ArtResource/resource/地图/CosmicLegacy_PetricakeGamesPNG.png" id="1_oo7r5"]
+[ext_resource type="Script" path="res://Scripts/Map/Interaction/Cabinet.cs" id="2_cabinet"]
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_xrj4w"]
+size = Vector2(13, 14)
+
+[sub_resource type="CircleShape2D" id="CircleShape2D_qv3g8"]
+radius = 19.0
+
+[node name="Cabinet02" type="Node2D" unique_id=591683606]
+y_sort_enabled = true
+y_sort_origin = 16
+
+[node name="StaticBody2D" type="StaticBody2D" parent="." unique_id=1725267346]
+y_sort_origin = 16
+collision_layer = 2
+collision_mask = 0
+script = ExtResource("2_cabinet")
+
+[node name="Sprite2D" type="Sprite2D" parent="StaticBody2D" unique_id=487007629]
+texture = ExtResource("1_oo7r5")
+region_enabled = true
+region_rect = Rect2(256, 16, 16, 32)
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="StaticBody2D" unique_id=593489480]
+position = Vector2(0, 7)
+shape = SubResource("RectangleShape2D_xrj4w")
+
+[node name="Area2D" type="Area2D" parent="StaticBody2D" unique_id=1227086238]
+collision_layer = 8
+collision_mask = 0
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="StaticBody2D/Area2D" unique_id=1331262439]
+shape = SubResource("CircleShape2D_qv3g8")

@@ -65,10 +65,7 @@ public partial class Chest : InteractableTemplate
 	{
 		if (_isOpened)
 		{
-			if (!SceneTextOverlay.Show(this, EmptyDescription))
-			{
-				GalDialogueOverlay.Show(this, ChestName, EmptyDescription);
-			}
+			SceneTextOverlay.Show(this, EmptyDescription);
 			PlayInteractionPulse();
 			return;
 		}
@@ -76,10 +73,7 @@ public partial class Chest : InteractableTemplate
 		_isOpening = true;
 		_isOpened = true;
 		GrantConfiguredItem();
-		if (!SceneTextOverlay.Show(this, ItemDescription))
-		{
-			GalDialogueOverlay.Show(this, ChestName, ItemDescription);
-		}
+		SceneTextOverlay.Show(this, ItemDescription);
 		PlayInteractionPulse();
 
 		bool hasOpenAnimation = _animatedSprite != null

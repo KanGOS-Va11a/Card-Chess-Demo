@@ -288,12 +288,13 @@ public partial class SystemFeatureLabController : CanvasLayer
 		{
 			_session.EnsureDeckBuildInitialized(_cardLibrary);
 			_constructionService = new BattleDeckConstructionService(_cardLibrary, _deckRules);
-			ApplyDebugCardUnlocks();
 		}
 
 		_panelRoot = GetNode<Control>("PanelRoot");
 		_hintLabel = GetNode<Label>("HintLabel");
 		_statusLabel = GetNode<Label>("StatusLabel");
+		_hintLabel.Visible = false;
+		_statusLabel.Visible = false;
 		_tabs = GetNode<TabContainer>("PanelRoot/Window/Margin/Root/Tabs");
 		_statusOverviewText = GetNode<RichTextLabel>("PanelRoot/Window/Margin/Root/Tabs/StatusTab/Columns/StatusColumn/StatusText");
 		_statusEquipmentSlotList = GetNode<ItemList>("PanelRoot/Window/Margin/Root/Tabs/StatusTab/Columns/EquipmentColumn/SlotList");
@@ -455,7 +456,8 @@ public partial class SystemFeatureLabController : CanvasLayer
 		}
 
 		_panelRoot.Visible = !_panelRoot.Visible;
-		_hintLabel.Visible = !_panelRoot.Visible;
+		_hintLabel.Visible = false;
+		_statusLabel.Visible = false;
 		SetPlayerInputEnabled(!_panelRoot.Visible);
 		if (_panelRoot.Visible)
 		{
@@ -2829,34 +2831,11 @@ public partial class SystemFeatureLabController : CanvasLayer
 		_session.UnlockedCardIds = _session.ProgressionState.UnlockedCardIds;
 		_session.DeckPointBudgetBonus = budgetBonus;
 		_session.DeckMaxCopiesPerCardBonus = copiesBonus;
-		ApplyDebugCardUnlocks();
 	}
 
 	private void ApplyDebugCardUnlocks()
 	{
-		if (_session == null || _cardLibrary == null)
-		{
-			return;
-		}
-
-		string[] debugUnlockedCardIds = _cardLibrary.Entries
-			.Where(template => template != null && !template.IsLearnedCard)
-			.Select(template => template.CardId)
-			.Where(cardId => !string.IsNullOrWhiteSpace(cardId))
-			.Distinct(StringComparer.Ordinal)
-			.ToArray();
-		_session.ProgressionState.UnlockedCardIds = _session.ProgressionState.UnlockedCardIds
-			.Concat(debugUnlockedCardIds)
-			.Where(cardId => !string.IsNullOrWhiteSpace(cardId))
-			.Distinct(StringComparer.Ordinal)
-			.ToArray();
-		_session.ProgressionState.TalentBranchTags = _session.ProgressionState.TalentBranchTags
-			.Concat(new[] { "melee", "ranged", "flex" })
-			.Where(tag => !string.IsNullOrWhiteSpace(tag))
-			.Distinct(StringComparer.Ordinal)
-			.ToArray();
-		_session.UnlockedCardIds = _session.ProgressionState.UnlockedCardIds;
-		_session.TalentBranchTags = _session.ProgressionState.TalentBranchTags;
+		// Debug-era global card auto-unlock has been retired.
 	}
 
 	private RuntimeEquipmentDefinition? FindEquipmentDefinition(string itemId)
