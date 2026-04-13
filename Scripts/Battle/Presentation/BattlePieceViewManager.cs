@@ -75,6 +75,7 @@ public sealed class BattlePieceViewManager
             }
 
             view.SetBoardPosition(room.CellToLocalCenter(state.Cell));
+            view.SetTelegraphWarning(state.IsTelegraphing);
         }
     }
 
@@ -84,6 +85,27 @@ public sealed class BattlePieceViewManager
         {
             // 当前移动表现只有本地动画切换，没有位移补间或行动时序。
             view.PlayMove();
+        }
+    }
+
+    public async void PlayMoveOnce(string objectId, double durationSeconds)
+    {
+        if (!_views.TryGetValue(objectId, out BattleAnimatedViewBase? view))
+        {
+            return;
+        }
+
+        view.PlayMove();
+        SceneTree? tree = _pieceRoot.GetTree();
+        if (tree == null)
+        {
+            return;
+        }
+
+        await _pieceRoot.ToSignal(tree.CreateTimer(Math.Max(0.01d, durationSeconds)), SceneTreeTimer.SignalName.Timeout);
+        if (_views.TryGetValue(objectId, out BattleAnimatedViewBase? currentView) && ReferenceEquals(currentView, view))
+        {
+            currentView.PlayIdle();
         }
     }
 
@@ -132,6 +154,14 @@ public sealed class BattlePieceViewManager
         if (_views.TryGetValue(objectId, out BattleAnimatedViewBase? view))
         {
             view.PlayHit();
+        }
+    }
+
+    public void PlayMotionOffset(string objectId, Vector2 targetOffset, double outDuration, double returnDuration, double returnDelay = 0.0d)
+    {
+        if (_views.TryGetValue(objectId, out BattleAnimatedViewBase? view))
+        {
+            view.PlayMotionOffset(targetOffset, outDuration, returnDuration, returnDelay);
         }
     }
 
@@ -447,6 +477,7 @@ public sealed class BattlePieceViewManager
         view.Bind(state);
         _pieceRoot.AddChild(view);
         view.SetBoardPosition(room.CellToLocalCenter(state.Cell));
+        view.SetTelegraphWarning(state.IsTelegraphing);
         view.PlayIdle();
         _views[state.ObjectId] = view;
         return view;

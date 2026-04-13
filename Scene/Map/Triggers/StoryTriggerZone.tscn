@@ -1,0 +1,32 @@
+[gd_scene format=3]
+
+[ext_resource type="Script" path="res://Scripts/Map/Interaction/StoryTriggerZone.cs" id="1_script"]
+
+[sub_resource type="RectangleShape2D" id="1_shape"]
+size = Vector2(32, 32)
+
+[node name="StoryTriggerZone" type="StaticBody2D"]
+collision_layer = 0
+collision_mask = 0
+script = ExtResource("1_script")
+DisplayName = "剧情触发区"
+PromptText = ""
+
+[node name="TriggerArea" type="Area2D" parent="."]
+collision_layer = 0
+collision_mask = 1
+monitoring = true
+monitorable = false
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="TriggerArea"]
+shape = SubResource("1_shape")
+
+[node name="EditorFill" type="Polygon2D" parent="."]
+color = Color(0.96, 0.86, 0.28, 0.18)
+polygon = PackedVector2Array(-16, -16, 16, -16, 16, 16, -16, 16)
+
+[node name="EditorOutline" type="Line2D" parent="."]
+default_color = Color(1, 0.94, 0.56, 0.95)
+width = 2.0
+closed = false
+points = PackedVector2Array(-16, -16, 16, -16, 16, 16, -16, 16, -16, -16)

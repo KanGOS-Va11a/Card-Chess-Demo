@@ -1,4 +1,5 @@
 using Godot;
+using CardChessDemo.Battle.Shared;
 
 namespace CardChessDemo.Map;
 
@@ -6,6 +7,7 @@ public partial class SceneDoor : InteractableTemplate
 {
 	[Export] public PackedScene? NextScene;
 	[Export(PropertyHint.File, "*.tscn")] public string NextScenePath = string.Empty;
+	[Export] public string TargetSpawnId = string.Empty;
 	[Export] public bool UsesInSceneTeleport = false;
 	[Export] public NodePath TeleportTargetPath = new("");
 	[Export] public Vector2 TeleportOffset = Vector2.Zero;
@@ -95,6 +97,15 @@ public partial class SceneDoor : InteractableTemplate
 			GD.PushError("SceneDoor: target scene is not configured.");
 			return;
 		}
+
+		GlobalGameSession? globalSession = GetNodeOrNull<GlobalGameSession>("/root/GlobalGameSession");
+		globalSession?.ClearPendingBattleReturnContext();
+		globalSession?.ConsumeLastBattleResult();
+		globalSession?.ClearPendingRestorePlayerPosition();
+		string targetScenePath = NextScene != null
+			? NextScene.ResourcePath
+			: NextScenePath.Trim();
+		globalSession?.SetPendingSceneTransfer(targetScenePath, TargetSpawnId);
 
 		_isTransitioning = true;
 		Error result = NextScene != null

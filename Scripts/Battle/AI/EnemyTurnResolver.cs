@@ -4,6 +4,7 @@ using System.Threading.Tasks;
 using Godot;
 using CardChessDemo.Battle.Actions;
 using CardChessDemo.Battle.Board;
+using CardChessDemo.Battle.Rooms;
 using CardChessDemo.Battle.State;
 
 namespace CardChessDemo.Battle.AI;
@@ -13,12 +14,15 @@ public sealed class EnemyTurnResolver
     private readonly BoardObjectRegistry _registry;
     private readonly BattleObjectStateManager _stateManager;
     private readonly BoardPathfinder _pathfinder;
+    private readonly BoardQueryService _queryService;
     private readonly BoardTargetingService _targetingService;
     private readonly BattleActionService _actionService;
     private readonly EnemyAiRegistry _aiRegistry;
+    private readonly BattleRoomTemplate _room;
     private readonly Node _awaitHost;
     private readonly Action<string, string, int>? _attackResolvedCallback;
     private readonly Action<string>? _activeEnemyChangedCallback;
+    private readonly Func<string, EnemyAiDecision, Task>? _specialDecisionExecutor;
 
     public double PreActionDelaySeconds { get; set; } = 0.04d;
     public double PostActionDelaySeconds { get; set; } = 0.05d;
@@ -27,22 +31,28 @@ public sealed class EnemyTurnResolver
         BoardObjectRegistry registry,
         BattleObjectStateManager stateManager,
         BoardPathfinder pathfinder,
+        BoardQueryService queryService,
         BoardTargetingService targetingService,
         BattleActionService actionService,
         EnemyAiRegistry aiRegistry,
+        BattleRoomTemplate room,
         Node awaitHost,
         Action<string, string, int>? attackResolvedCallback = null,
-        Action<string>? activeEnemyChangedCallback = null)
+        Action<string>? activeEnemyChangedCallback = null,
+        Func<string, EnemyAiDecision, Task>? specialDecisionExecutor = null)
     {
         _registry = registry;
         _stateManager = stateManager;
         _pathfinder = pathfinder;
+        _queryService = queryService;
         _targetingService = targetingService;
         _actionService = actionService;
         _aiRegistry = aiRegistry;
+        _room = room;
         _awaitHost = awaitHost;
         _attackResolvedCallback = attackResolvedCallback;
         _activeEnemyChangedCallback = activeEnemyChangedCallback;
+        _specialDecisionExecutor = specialDecisionExecutor;
     }
 
     public async Task ResolveTurnAsync()
@@ -68,12 +78,16 @@ public sealed class EnemyTurnResolver
                 continue;
             }
 
+            enemyState.TickSpecialSkillCooldowns();
+
             EnemyAiContext context = new(
                 enemyObject,
                 enemyState,
                 _registry,
                 _stateManager,
+                _queryService,
                 _pathfinder,
+                _room,
                 _targetingService,
                 _actionService);
 
@@ -122,6 +136,14 @@ public sealed class EnemyTurnResolver
                     decision.TargetObjectId,
                     decision.HealingAmount,
                     decision.ShieldAmount);
+                break;
+
+            case EnemyAiDecisionType.Telegraph:
+            case EnemyAiDecisionType.Special:
+                if (_specialDecisionExecutor != null)
+                {
+                    await _specialDecisionExecutor(enemyId, decision);
+                }
                 break;
         }
     }

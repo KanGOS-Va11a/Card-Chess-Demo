@@ -10,6 +10,7 @@
 [ext_resource type="PackedScene" path="res://Scene/Battle/UI/BattleHud_Tutorial.tscn" id="7_hud"]
 [ext_resource type="Resource" uid="uid://bmpjfpqs2pghk" path="res://Resources/Battle/Encounters/DebugBattleEncounterLibrary.tres" id="8_encounter"]
 [ext_resource type="Script" uid="uid://co7rnt3ribqx8" path="res://Scripts/Battle/Visual/BattleFloatingTextLayer.cs" id="9_float"]
+[ext_resource type="Script" path="res://Scripts/Battle/UI/BattleTutorialIntroOverlay.cs" id="10_intro"]
 
 [node name="Battle" type="Node2D" unique_id=990095149]
 script = ExtResource("1_hq08r")
@@ -41,6 +42,10 @@ script = ExtResource("9_float")
 [node name="OverlayRoot" type="Node2D" parent="." unique_id=2099233086]
 
 [node name="BattleHud" parent="." unique_id=672889577 instance=ExtResource("7_hud")]
+
+[node name="BattleTutorialIntro" type="Node" parent="."]
+script = ExtResource("10_intro")
+TutorialPresetId = "basic_battle"
 
 [node name="BattleFailOverlay" type="Control" parent="." unique_id=1655640422]
 visible = false

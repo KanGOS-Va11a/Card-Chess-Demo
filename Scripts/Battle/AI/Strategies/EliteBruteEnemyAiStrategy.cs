@@ -7,10 +7,34 @@ namespace CardChessDemo.Battle.AI.Strategies;
 
 public sealed class EliteBruteEnemyAiStrategy : IEnemyAiStrategy
 {
+    private const string PressureBreachSkillId = "pressure_breach";
+    private const int PressureBreachRange = 4;
+
     public string AiId => "elite_brute";
 
     public EnemyAiDecision Decide(EnemyAiContext context)
     {
+        if (string.Equals(context.SelfState.PendingSpecialSkillId, PressureBreachSkillId, StringComparison.Ordinal))
+        {
+            return EnemyAiDecision.Special(
+                PressureBreachSkillId,
+                context.SelfState.PendingSpecialTargetObjectId,
+                context.SelfState.PendingSpecialTargetCell,
+                context.SelfState.PendingSpecialCells);
+        }
+
+        if (context.SelfState.GetSpecialSkillCooldown(PressureBreachSkillId) <= 0
+            && EnemyAiTactics.TryFindStraightLineTarget(context, PressureBreachRange, out BoardObject? lineTarget, out _, out Vector2I[] traversedCells)
+            && lineTarget != null
+            && lineTarget.ObjectId != context.Self.ObjectId)
+        {
+            return EnemyAiDecision.Telegraph(
+                PressureBreachSkillId,
+                lineTarget.ObjectId,
+                lineTarget.Cell,
+                traversedCells);
+        }
+
         BoardObject? nearestOpponent = FindNearestOpponent(context);
         if (nearestOpponent == null)
         {

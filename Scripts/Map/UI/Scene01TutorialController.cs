@@ -1,6 +1,9 @@
-using Godot;
+using System;
+using System.Linq;
 using CardChessDemo.Battle.Boundary;
 using CardChessDemo.Battle.Shared;
+using CardChessDemo.UI.Dialogue;
+using Godot;
 
 namespace CardChessDemo.Map;
 
@@ -9,192 +12,163 @@ public partial class Scene01TutorialController : Node
 	[Export] public NodePath PlayerCharacterPath = new("MainPlayer/Player");
 	[Export] public NodePath EnemyNodePath = new("Enemy");
 	[Export] public NodePath VisionMaskControllerPath = new("PlayerVisionMaskController");
-	[Export] public NodePath IntroDialogPanelPath = new("TutorialUI/TutorialTipPanel");
-	[Export] public NodePath IntroDialogLabelPath = new("TutorialUI/TutorialTipPanel/TutorialTipLabel");
-	[Export] public NodePath GuideLabelPath = new("TutorialUI/GuideLabel");
 	[Export] public NodePath FollowPointLightPath = new("MainPlayer/PointLight2D");
 	[Export] public Vector2 FollowPointLightOffset = Vector2.Zero;
-	[Export] public float DialogSlideOffset = 86.0f;
-	[Export(PropertyHint.Range, "2,30,1")] public float GuideVisibleSeconds = 10.0f;
 	[Export(PropertyHint.Range, "32,512,1")] public float EnemySightDistance = 176.0f;
 	[Export] public bool UseTileBasedEnemySight = true;
 	[Export(PropertyHint.Range, "1,12,1")] public int EnemySightTiles = 4;
 	[Export] public bool TriggerEnemyDialogByVisionMask = true;
 	[Export(PropertyHint.Range, "0.50,1.20,0.01")] public float VisionTriggerRadiusFactor = 0.90f;
 	[Export] public string TutorialEncounterId = "grunt_debug";
+	[Export] public PackedScene? DialoguePanelScene { get; set; } = GD.Load<PackedScene>("res://Scene/UI/DialogueSequencePanel.tscn");
 	[Export] public string[] IntroDialogLines =
 	{
-		"这......这是哪里？（按e继续）",
-        "先顺着有光的地方看看......或许能有一些线索"
+		"\u65C1\u767D\uff1A\u8FD9\u91CC\u662F\u54EA\u91CC\u2026\u2026",
+		"\u65C1\u767D\uff1A\u5148\u987A\u7740\u6709\u5149\u7684\u5730\u65B9\u770B\u770B\u5427\u3002",
+	};
+	[Export] public string[] EnemySightedLines =
+	{
+		"\u4E3B\u89D2\uff1A\u90A3\u662F\u2026\u2026\u4E00\u4E2A\u602A\u7269\u3002",
+		"\u672A\u77E5\u751F\u7269\uff1A\u5420\u2026\u2026",
+		"\u4E3B\u89D2\uff1A\u770B\u6765\u53EA\u80FD\u5148\u6253\u5012\u5B83\u4E86\u3002",
 	};
 
-	private CharacterBody2D _player;
-	private Node2D _enemy;
-	private PlayerVisionMaskController _visionMaskController;
-	private Panel _introPanel;
-	private Label _introLabel;
-	private Label _guideLabel;
-	private PointLight2D _followPointLight;
-	private GlobalGameSession _globalSession;
-	private static readonly string[] DefaultIntroDialogLines =
-	{
-		"这......是哪里？(按e继续)",
-        "先顺着有光的地方看看......或许能有一些线索"
-	};
-
-	private readonly string[] _enemySightedLines =
-	{
-		"我：那是......一个怪物？",
-		"未知生物：嗷......",
-        "我：看来我需要打倒他才能通过这里"
-	};
+	private CharacterBody2D? _player;
+	private Node2D? _enemy;
+	private PlayerVisionMaskController? _visionMaskController;
+	private PointLight2D? _followPointLight;
+	private GlobalGameSession? _globalSession;
+	private bool _showingDialog;
+	private bool _introCompleted;
+	private bool _enemyDialogCompleted;
 
 	private enum DialogFlow
 	{
-		None,
-		Intro,
-		EnemySighted,
+		None = 0,
+		Intro = 1,
+		EnemySighted = 2,
 	}
 
-	private int _lineIndex;
-	private bool _isDialogActive;
-	private bool _introCompleted;
-	private bool _enemyDialogCompleted;
-	private DialogFlow _currentDialogFlow = DialogFlow.None;
-	private string[] _activeDialogLines = null;
-	private ulong _guideTicket;
-	private float _panelVisibleTop;
-	private float _panelVisibleBottom;
-
-	public bool IsDialogBlockingInput => _isDialogActive;
+	public bool IsDialogBlockingInput => _showingDialog;
 
 	public override void _Ready()
 	{
-		SetProcessInput(true);
-		SetProcessUnhandledInput(true);
 		_player = ResolvePlayerNode();
 		_enemy = ResolveEnemyNode();
 		_visionMaskController = VisionMaskControllerPath.IsEmpty ? null : GetNodeOrNull<PlayerVisionMaskController>(VisionMaskControllerPath);
-		_introPanel = IntroDialogPanelPath.IsEmpty ? null : GetNodeOrNull<Panel>(IntroDialogPanelPath);
-		_introLabel = IntroDialogLabelPath.IsEmpty ? null : GetNodeOrNull<Label>(IntroDialogLabelPath);
-		_guideLabel = GuideLabelPath.IsEmpty ? null : GetNodeOrNull<Label>(GuideLabelPath);
 		_followPointLight = FollowPointLightPath.IsEmpty ? null : GetNodeOrNull<PointLight2D>(FollowPointLightPath);
 		_globalSession = GetNodeOrNull<GlobalGameSession>("/root/GlobalGameSession");
+
 		if (IsTutorialEncounterAlreadyCleared())
 		{
 			_introCompleted = true;
 			_enemyDialogCompleted = true;
-			_isDialogActive = false;
+			_showingDialog = false;
 			_enemy?.QueueFree();
 		}
 
 		SyncFollowPointLight();
 
-		bool resumedFromBattle = ApplyPendingResumeContext();
-		_globalSession?.ConsumeLastBattleResult();
-
-		if (resumedFromBattle)
+		if (!_introCompleted)
 		{
-			_introCompleted = true;
-			_enemyDialogCompleted = true;
-			_isDialogActive = false;
-			if (_introPanel != null)
-			{
-				_introPanel.Visible = false;
-			}
+			PresentDialog(DialogFlow.Intro, ResolveDialogLines(IntroDialogLines));
+		}
+	}
 
-			SetPlayerInputEnabled(true);
+	public override void _Process(double delta)
+	{
+		SyncFollowPointLight();
+
+		if (!_introCompleted || _enemyDialogCompleted || _showingDialog || _player == null)
+		{
 			return;
 		}
 
-		if (_guideLabel != null)
+		if (!GodotObject.IsInstanceValid(_enemy))
 		{
-			_guideLabel.Visible = false;
-			_guideLabel.Text = string.Empty;
+			_enemy = ResolveEnemyNode();
+			if (!GodotObject.IsInstanceValid(_enemy))
+			{
+				return;
+			}
 		}
 
-		if (_introPanel == null || _introLabel == null)
+		if (!CanTriggerEnemyDialog())
 		{
-			GD.PushWarning("Scene01TutorialController: 缺少教程对话UI节点，跳过开场对话。 ");
-			_introCompleted = true;
-			ShowGuide("使用WASD进行移动\n按E和环境物品交互");
 			return;
 		}
 
-		_panelVisibleTop = _introPanel.OffsetTop;
-		_panelVisibleBottom = _introPanel.OffsetBottom;
-
-		// 先隐藏到屏幕外，再滑入。
-		_introPanel.OffsetTop = _panelVisibleTop + DialogSlideOffset;
-		_introPanel.OffsetBottom = _panelVisibleBottom + DialogSlideOffset;
-		_introPanel.Visible = true;
-
-		BeginDialog(DialogFlow.Intro, ResolveIntroDialogLines());
+		PresentDialog(DialogFlow.EnemySighted, ResolveDialogLines(EnemySightedLines));
 	}
 
-	private string[] ResolveIntroDialogLines()
+	private string[] ResolveDialogLines(string[] sourceLines)
 	{
-		if (IntroDialogLines == null || IntroDialogLines.Length == 0)
+		if (sourceLines == null)
 		{
-			return DefaultIntroDialogLines;
+			return Array.Empty<string>();
 		}
 
-		int validCount = 0;
-		foreach (string line in IntroDialogLines)
-		{
-			if (!string.IsNullOrWhiteSpace(line))
-			{
-				validCount++;
-			}
-		}
-
-		if (validCount == 0)
-		{
-			return DefaultIntroDialogLines;
-		}
-
-		string[] resolvedLines = new string[validCount];
-		int index = 0;
-		foreach (string line in IntroDialogLines)
-		{
-			if (!string.IsNullOrWhiteSpace(line))
-			{
-				resolvedLines[index] = line.Trim();
-				index++;
-			}
-		}
-
-		return resolvedLines;
+		return sourceLines
+			.Where(line => !string.IsNullOrWhiteSpace(line))
+			.Select(line => line.Trim())
+			.ToArray();
 	}
 
-	private bool ApplyPendingResumeContext()
+	private void PresentDialog(DialogFlow flow, string[] lines)
 	{
-		if (_globalSession == null)
+		if (DialoguePanelScene?.Instantiate() is not DialogueSequencePanel panel || lines.Length == 0)
 		{
-			return false;
+			HandleDialogFinished(flow);
+			return;
 		}
 
-		MapResumeContext resumeContext = _globalSession.PeekPendingMapResumeContext();
-		if (resumeContext == null)
+		Node currentScene = GetTree().CurrentScene ?? this;
+		currentScene.AddChild(panel);
+		_showingDialog = true;
+		SetPlayerInputEnabled(false);
+		panel.Present(
+			lines.Select(BuildDialoguePage).ToArray(),
+			onCompleted: () => HandleDialogFinished(flow),
+			onClosed: () => HandleDialogFinished(flow));
+	}
+
+	private static DialoguePage BuildDialoguePage(string line)
+	{
+		DialoguePage page = new();
+		int separatorIndex = line.IndexOf('\uFF1A');
+		if (separatorIndex < 0)
 		{
-			return false;
+			separatorIndex = line.IndexOf(':');
 		}
 
-		string currentScenePath = GetTree().CurrentScene?.SceneFilePath ?? SceneFilePath;
-		if (!string.Equals(currentScenePath, resumeContext.ScenePath, System.StringComparison.OrdinalIgnoreCase))
+		if (separatorIndex > 0)
 		{
-			return false;
+			page.Speaker = line[..separatorIndex].Trim();
+			page.Content = line[(separatorIndex + 1)..].Trim();
+		}
+		else
+		{
+			page.Speaker = "\u65C1\u767D";
+			page.Content = line.Trim();
 		}
 
-		if (_player != null)
+		return page;
+	}
+
+	private void HandleDialogFinished(DialogFlow flow)
+	{
+		_showingDialog = false;
+		switch (flow)
 		{
-			_player.GlobalPosition = resumeContext.PlayerGlobalPosition;
+			case DialogFlow.Intro:
+				_introCompleted = true;
+				break;
+			case DialogFlow.EnemySighted:
+				_enemyDialogCompleted = true;
+				break;
 		}
 
-		Node sceneRoot = GetTree().CurrentScene ?? this;
-		MapRuntimeSnapshotHelper.ApplyToScene(sceneRoot, resumeContext.MapRuntimeSnapshot);
-		_globalSession.ConsumePendingMapResumeContext();
-		return true;
+		SetPlayerInputEnabled(true);
 	}
 
 	private bool IsTutorialEncounterAlreadyCleared()
@@ -204,44 +178,11 @@ public partial class Scene01TutorialController : Node
 			&& _globalSession.ClearedEncounters.Contains(new StringName(TutorialEncounterId));
 	}
 
-	public override void _Process(double delta)
-	{
-		SyncFollowPointLight();
-
-		if (!_introCompleted || _enemyDialogCompleted || _isDialogActive)
-		{
-			return;
-		}
-
-		if (!IsInstanceValid(_enemy))
-		{
-			_enemy = EnemyNodePath.IsEmpty ? GetNodeOrNull<Node2D>("Enemy") : GetNodeOrNull<Node2D>(EnemyNodePath);
-			if (!IsInstanceValid(_enemy))
-			{
-				return;
-			}
-		}
-
-		if (_player == null)
-		{
-			return;
-		}
-
-		if (!CanTriggerEnemyDialog())
-		{
-			return;
-		}
-
-		BeginDialog(DialogFlow.EnemySighted, _enemySightedLines);
-	}
-
 	private void SyncFollowPointLight()
 	{
 		if (!GodotObject.IsInstanceValid(_player))
 		{
-			_player = PlayerCharacterPath.IsEmpty
-				? GetNodeOrNull<CharacterBody2D>("MainPlayer/Player")
-				: GetNodeOrNull<CharacterBody2D>(PlayerCharacterPath);
+			_player = ResolvePlayerNode();
 		}
 
 		if (!GodotObject.IsInstanceValid(_followPointLight) && !FollowPointLightPath.IsEmpty)
@@ -254,14 +195,18 @@ public partial class Scene01TutorialController : Node
 			return;
 		}
 
-		_followPointLight.GlobalPosition = _player.GlobalPosition + FollowPointLightOffset;
+		_followPointLight!.GlobalPosition = _player!.GlobalPosition + FollowPointLightOffset;
 	}
 
 	private bool CanTriggerEnemyDialog()
 	{
+		if (_player == null || _enemy == null)
+		{
+			return false;
+		}
+
 		float distanceThreshold = ResolveEnemySightDistance();
 		float worldDistance = _player.GlobalPosition.DistanceTo(_enemy.GlobalPosition);
-
 		if (!TriggerEnemyDialogByVisionMask)
 		{
 			return worldDistance <= distanceThreshold;
@@ -287,13 +232,11 @@ public partial class Scene01TutorialController : Node
 
 		Vector2 playerScreen = GetViewport().GetCanvasTransform() * _player.GlobalPosition;
 		Vector2 enemyScreen = GetViewport().GetCanvasTransform() * _enemy.GlobalPosition;
-		bool insideVisionRadius = playerScreen.DistanceTo(enemyScreen) <= visionRadiusPixels;
-
-		// 允许二选一：进入可视圈或进入配置好的地砖触发距离。
-		return insideVisionRadius || worldDistance <= distanceThreshold;
+		return playerScreen.DistanceTo(enemyScreen) <= visionRadiusPixels
+			|| worldDistance <= distanceThreshold;
 	}
 
-	private CharacterBody2D ResolvePlayerNode()
+	private CharacterBody2D? ResolvePlayerNode()
 	{
 		if (!PlayerCharacterPath.IsEmpty && GetNodeOrNull<CharacterBody2D>(PlayerCharacterPath) is CharacterBody2D playerFromPath)
 		{
@@ -304,7 +247,7 @@ public partial class Scene01TutorialController : Node
 			?? GetNodeOrNull<CharacterBody2D>("Player");
 	}
 
-	private Node2D ResolveEnemyNode()
+	private Node2D? ResolveEnemyNode()
 	{
 		if (!EnemyNodePath.IsEmpty && GetNodeOrNull<Node2D>(EnemyNodePath) is Node2D enemyFromPath)
 		{
@@ -328,157 +271,6 @@ public partial class Scene01TutorialController : Node
 		}
 
 		return Mathf.Max(1, EnemySightTiles) * tileSize;
-	}
-
-	public override void _Input(InputEvent @event)
-	{
-		HandleDialogAdvanceInput(@event);
-	}
-
-	public override void _UnhandledInput(InputEvent @event)
-	{
-		HandleDialogAdvanceInput(@event);
-	}
-
-	private void HandleDialogAdvanceInput(InputEvent @event)
-	{
-		if (!_isDialogActive)
-		{
-			return;
-		}
-
-		if (!@event.IsActionPressed("interact"))
-		{
-			return;
-		}
-
-		_lineIndex++;
-		if (_activeDialogLines != null && _lineIndex < _activeDialogLines.Length)
-		{
-			_introLabel.Text = _activeDialogLines[_lineIndex];
-			GetViewport().SetInputAsHandled();
-			return;
-		}
-
-		_isDialogActive = false;
-		SlideDialogOutAndHide();
-		HandleDialogFinished();
-		GetViewport().SetInputAsHandled();
-	}
-
-	private void BeginDialog(DialogFlow flow, string[] lines)
-	{
-		if (_introPanel == null || _introLabel == null || lines == null || lines.Length == 0)
-		{
-			return;
-		}
-
-		_currentDialogFlow = flow;
-		_activeDialogLines = lines;
-		_lineIndex = 0;
-		_isDialogActive = true;
-		_introLabel.Text = _activeDialogLines[_lineIndex];
-
-		_introPanel.OffsetTop = _panelVisibleTop + DialogSlideOffset;
-		_introPanel.OffsetBottom = _panelVisibleBottom + DialogSlideOffset;
-		_introPanel.Visible = true;
-
-		SetPlayerInputEnabled(false);
-		SlideDialogIn();
-	}
-
-	private void HandleDialogFinished()
-	{
-		switch (_currentDialogFlow)
-		{
-			case DialogFlow.Intro:
-				_introCompleted = true;
-				SetPlayerInputEnabled(true);
-				ShowGuide("使用WASD进行移动\n按E和环境物品交互");
-				break;
-
-			case DialogFlow.EnemySighted:
-				_enemyDialogCompleted = true;
-				SetPlayerInputEnabled(true);
-				ShowGuide("靠近怪物按下e进入战斗");
-				break;
-
-			default:
-				SetPlayerInputEnabled(true);
-				break;
-		}
-
-		_currentDialogFlow = DialogFlow.None;
-		_activeDialogLines = null;
-	}
-
-	private void ShowGuide(string text)
-	{
-		if (!GodotObject.IsInstanceValid(_guideLabel))
-		{
-			return;
-		}
-
-		Label guideLabel = _guideLabel;
-		guideLabel.Text = text;
-		guideLabel.Visible = true;
-
-		_guideTicket++;
-		ulong currentTicket = _guideTicket;
-		SceneTreeTimer timer = GetTree().CreateTimer(Mathf.Max(GuideVisibleSeconds, 0.1f));
-		timer.Timeout += () =>
-		{
-			if (!GodotObject.IsInstanceValid(this) || currentTicket != _guideTicket)
-			{
-				return;
-			}
-
-			if (!GodotObject.IsInstanceValid(_guideLabel))
-			{
-				return;
-			}
-
-			_guideLabel.Visible = false;
-			_guideLabel.Text = string.Empty;
-		};
-	}
-
-	private void SlideDialogIn()
-	{
-		if (_introPanel == null)
-		{
-			return;
-		}
-
-		Tween tween = CreateTween();
-		tween.SetEase(Tween.EaseType.Out);
-		tween.SetTrans(Tween.TransitionType.Cubic);
-		tween.TweenProperty(_introPanel, "offset_top", _panelVisibleTop, 0.20f);
-		tween.TweenProperty(_introPanel, "offset_bottom", _panelVisibleBottom, 0.20f);
-	}
-
-	private void SlideDialogOutAndHide()
-	{
-		if (_introPanel == null)
-		{
-			return;
-		}
-
-		float hiddenTop = _panelVisibleTop + DialogSlideOffset;
-		float hiddenBottom = _panelVisibleBottom + DialogSlideOffset;
-
-		Tween tween = CreateTween();
-		tween.SetEase(Tween.EaseType.In);
-		tween.SetTrans(Tween.TransitionType.Cubic);
-		tween.TweenProperty(_introPanel, "offset_top", hiddenTop, 0.18f);
-		tween.TweenProperty(_introPanel, "offset_bottom", hiddenBottom, 0.18f);
-		tween.Finished += () =>
-		{
-			if (GodotObject.IsInstanceValid(_introPanel))
-			{
-				_introPanel.Visible = false;
-			}
-		};
 	}
 
 	private void SetPlayerInputEnabled(bool enabled)

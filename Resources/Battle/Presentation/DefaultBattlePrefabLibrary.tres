@@ -5,6 +5,7 @@
 [ext_resource type="PackedScene" uid="uid://dydvrvbhiocuj" path="res://Scene/Battle/Tiles/BattlePlayerToken.tscn" id="3_player"]
 [ext_resource type="PackedScene" path="res://Scene/Battle/Tiles/BattleEnemyToken.tscn" id="4_enemy"]
 [ext_resource type="PackedScene" path="res://Scene/Battle/Tiles/BattleObstacleToken.tscn" id="5_obstacle"]
+[ext_resource type="PackedScene" path="res://Scene/Battle/Tiles/BattleBossRustCaptainToken.tscn" id="6_boss_enemy"]
 
 [sub_resource type="Resource" id="Entry_Player"]
 script = ExtResource("2_entry")
@@ -28,7 +29,7 @@ DefaultMovePointsPerTurn = 3
 [sub_resource type="Resource" id="Entry_Scene01_Tutorial_Enemy"]
 script = ExtResource("2_entry")
 DefinitionId = "scene01_tutorial_enemy"
-DisplayName = "教程拾荒兵"
+DisplayName = "教程搭船客"
 PrefabScene = ExtResource("4_enemy")
 DefaultMaxHp = 6
 DefaultCurrentHp = 6
@@ -111,7 +112,7 @@ DefaultAttackRange = 2
 script = ExtResource("2_entry")
 DefinitionId = "boss_rust_captain"
 DisplayName = "锈船长"
-PrefabScene = ExtResource("4_enemy")
+PrefabScene = ExtResource("6_boss_enemy")
 DefaultMaxHp = 16
 DefaultCurrentHp = 16
 DefaultMovePointsPerTurn = 3

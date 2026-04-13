@@ -7,9 +7,11 @@ namespace CardChessDemo.Battle.Presentation;
 
 public partial class BattleAnimatedViewBase : Node2D
 {
-	private static readonly Shader KillShatterShader = GD.Load<Shader>("res://Shaders/Battle/KillShatter.gdshader");
-	private static readonly Shader ActiveTurnOutlineShader = GD.Load<Shader>("res://Shaders/Battle/ActiveTurnOutline.gdshader");
+private static readonly Shader KillShatterShader = GD.Load<Shader>("res://Shaders/Battle/KillShatter.gdshader");
+private static readonly Shader ActiveTurnOutlineShader = GD.Load<Shader>("res://Shaders/Battle/ActiveTurnOutline.gdshader");
+private static readonly FontFile TelegraphFont = GD.Load<FontFile>("res://Assets/Fonts/unifont_t-17.0.04.otf");
 	private AnimatedSprite2D? _animatedSprite;
+	private Label? _telegraphLabel;
 	// 有些调用会在节点 _Ready 前发生，所以先缓存“想播什么动画”。
 	private string _pendingAnimation = "idle";
 	private int _horizontalFacing = 1;
@@ -44,6 +46,8 @@ public partial class BattleAnimatedViewBase : Node2D
 		{
 			_animatedSprite.AnimationFinished += OnAnimationFinished;
 		}
+
+		EnsureTelegraphLabel();
 
 		if (State == null)
 		{
@@ -290,6 +294,17 @@ public partial class BattleAnimatedViewBase : Node2D
 		PlayMotionOffset(new Vector2(0.0f, -1.5f), 0.04d, 0.12d);
 	}
 
+	public void SetTelegraphWarning(bool active)
+	{
+		EnsureTelegraphLabel();
+		if (_telegraphLabel == null)
+		{
+			return;
+		}
+
+		_telegraphLabel.Visible = active;
+	}
+
 	public void SetActiveTurnHighlight(bool active, Color color)
 	{
 		if (_animatedSprite == null)
@@ -465,6 +480,30 @@ public partial class BattleAnimatedViewBase : Node2D
 		};
 		_activeTurnOutlineMaterial.SetShaderParameter("outline_color", new Color(1.0f, 0.22f, 0.22f, 0.95f));
 		_activeTurnOutlineMaterial.SetShaderParameter("outline_size", 1.0f);
+	}
+
+	private void EnsureTelegraphLabel()
+	{
+		if (_telegraphLabel != null)
+		{
+			return;
+		}
+
+		_telegraphLabel = new Label
+		{
+			Name = "TelegraphLabel",
+			Text = "!",
+			Visible = false,
+			MouseFilter = Control.MouseFilterEnum.Ignore,
+			ZIndex = 25,
+			Position = new Vector2(-4.0f, -38.0f),
+		};
+		_telegraphLabel.AddThemeFontOverride("font", TelegraphFont);
+		_telegraphLabel.AddThemeFontSizeOverride("font_size", 16);
+		_telegraphLabel.AddThemeColorOverride("font_color", new Color(1.0f, 0.95f, 0.68f, 1.0f));
+		_telegraphLabel.AddThemeColorOverride("font_outline_color", Colors.Black);
+		_telegraphLabel.AddThemeConstantOverride("outline_size", 2);
+		AddChild(_telegraphLabel);
 	}
 
 	private void OnAnimationFinished()

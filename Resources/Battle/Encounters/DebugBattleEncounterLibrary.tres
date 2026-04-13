@@ -75,6 +75,14 @@ PrimaryEnemyDefinitionId = "sewer_gatekeeper"
 EnemyTypeIds = PackedStringArray("sewer_gatekeeper")
 PreferredRoomPoolId = "sewer_gatekeeper"
 
+[sub_resource type="Resource" id="Encounter_boss_rust_captain"]
+script = ExtResource("2_profile")
+EncounterId = "boss_rust_captain"
+DisplayName = "Rust Captain Boss Encounter"
+PrimaryEnemyDefinitionId = "boss_rust_captain"
+EnemyTypeIds = PackedStringArray("boss_rust_captain")
+PreferredRoomPoolId = "boss_rust_captain"
+
 [sub_resource type="Resource" id="Encounter_grunt_debug"]
 script = ExtResource("2_profile")
 EncounterId = "grunt_debug"
@@ -85,4 +93,4 @@ PreferredRoomPoolId = "scene01_tutorial"
 
 [resource]
 script = ExtResource("1_lib")
-Entries = [SubResource("Encounter_scene01_tutorial"), SubResource("Encounter_pirate_blocker"), SubResource("Encounter_pirate_scout"), SubResource("Encounter_pirate_shocker"), SubResource("Encounter_pirate_gunner"), SubResource("Encounter_pirate_pipe_bomber"), SubResource("Encounter_pirate_brute_elite"), SubResource("Encounter_scrap_medic_elite"), SubResource("Encounter_sewer_gatekeeper"), SubResource("Encounter_grunt_debug")]
+Entries = [SubResource("Encounter_scene01_tutorial"), SubResource("Encounter_pirate_blocker"), SubResource("Encounter_pirate_scout"), SubResource("Encounter_pirate_shocker"), SubResource("Encounter_pirate_gunner"), SubResource("Encounter_pirate_pipe_bomber"), SubResource("Encounter_pirate_brute_elite"), SubResource("Encounter_scrap_medic_elite"), SubResource("Encounter_sewer_gatekeeper"), SubResource("Encounter_boss_rust_captain"), SubResource("Encounter_grunt_debug")]

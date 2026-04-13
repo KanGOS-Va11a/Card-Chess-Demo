@@ -59,6 +59,7 @@ public partial class BattleRoomTemplate : Node2D
 	[Export] public int PirateBruteEliteMarkerTileId { get; set; } = 17;
 	[Export] public int ScrapMedicEliteMarkerTileId { get; set; } = 18;
 	[Export] public int SewerGatekeeperMarkerTileId { get; set; } = 19;
+	[Export] public int BossRustCaptainMarkerTileId { get; set; } = 20;
 
 	private TileMapLayer _floorLayer = null!;
 	private TileMapLayer _markerLayer = null!;
@@ -354,6 +355,7 @@ public partial class BattleRoomTemplate : Node2D
 		PackedScene pirateBruteEliteScene = GD.Load<PackedScene>("res://Scene/Battle/Tiles/Markers/MarkerEnemy_PirateBruteElite.tscn");
 		PackedScene scrapMedicEliteScene = GD.Load<PackedScene>("res://Scene/Battle/Tiles/Markers/MarkerEnemy_ScrapMedicElite.tscn");
 		PackedScene sewerGatekeeperScene = GD.Load<PackedScene>("res://Scene/Battle/Tiles/Markers/MarkerEnemy_SewerGatekeeper.tscn");
+		PackedScene bossRustCaptainScene = GD.Load<PackedScene>("res://Scene/Battle/Tiles/Markers/MarkerEnemy_BossRustCaptain.tscn");
 		PackedScene obstacleWallScene = GD.Load<PackedScene>("res://Scene/Battle/Tiles/Markers/MarkerObstacle_Wall.tscn");
 		PackedScene obstacleSlowScene = GD.Load<PackedScene>("res://Scene/Battle/Tiles/Markers/MarkerObstacle_Slow.tscn");
 
@@ -377,6 +379,7 @@ public partial class BattleRoomTemplate : Node2D
 			pirateBruteEliteScene,
 			scrapMedicEliteScene,
 			sewerGatekeeperScene,
+			bossRustCaptainScene,
 			obstacleWallScene,
 			obstacleSlowScene,
 			CellSizePixels);
@@ -530,6 +533,7 @@ public partial class BattleRoomTemplate : Node2D
 			var value when value == PirateBruteEliteMarkerTileId => "pirate_brute_elite",
 			var value when value == ScrapMedicEliteMarkerTileId => "scrap_medic_elite",
 			var value when value == SewerGatekeeperMarkerTileId => "sewer_gatekeeper",
+			var value when value == BossRustCaptainMarkerTileId => "boss_rust_captain",
 			_ => string.Empty,
 		};
 
@@ -565,6 +569,7 @@ public partial class BattleRoomTemplate : Node2D
 			"pirate_brute_elite" => PirateBruteEliteMarkerTileId,
 			"scrap_medic_elite" => ScrapMedicEliteMarkerTileId,
 			"sewer_gatekeeper" => SewerGatekeeperMarkerTileId,
+			"boss_rust_captain" => BossRustCaptainMarkerTileId,
 			_ => EnemyMarkerTileId,
 		};
 	}
@@ -622,7 +627,9 @@ public partial class BattleRoomTemplate : Node2D
 		if (enemyLibrary?.FindEntry(definitionId) is BattleEnemyDefinition enemyDefinition)
 		{
 			return new EnemySpawnProfile(
-				string.IsNullOrWhiteSpace(enemyDefinition.AiId) ? "melee_basic" : enemyDefinition.AiId,
+				string.IsNullOrWhiteSpace(enemyDefinition.AiId)
+					? (definitionId == "boss_rust_captain" ? "boss_rust_captain" : "melee_basic")
+					: enemyDefinition.AiId,
 				Math.Max(1, enemyDefinition.MaxHp),
 				Math.Max(0, enemyDefinition.StartingShield));
 		}
@@ -637,7 +644,7 @@ public partial class BattleRoomTemplate : Node2D
 			"pirate_pipe_bomber" => new EnemySpawnProfile("obstacle_bomber", 5, 0),
 			"pirate_brute_elite" => new EnemySpawnProfile("elite_brute", 10, 3),
 			"scrap_medic_elite" => new EnemySpawnProfile("support_healer", 8, 2),
-			"boss_rust_captain" => new EnemySpawnProfile("melee_basic", 16, 4),
+			"boss_rust_captain" => new EnemySpawnProfile("boss_rust_captain", 16, 4),
 			"sewer_gatekeeper" => new EnemySpawnProfile("gatekeeper_guard", 8, 3),
 			_ => new EnemySpawnProfile("melee_basic", 6, 2),
 		};

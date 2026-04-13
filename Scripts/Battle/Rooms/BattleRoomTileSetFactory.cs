@@ -26,6 +26,7 @@ public static class BattleRoomTileSetFactory
 	public const int PirateBruteEliteEnemySceneTileId = 17;
 	public const int ScrapMedicEliteEnemySceneTileId = 18;
 	public const int SewerGatekeeperEnemySceneTileId = 19;
+	public const int BossRustCaptainEnemySceneTileId = 20;
 
 	public static TileSet CreateTileSet(
 		Texture2D floorTexture,
@@ -47,6 +48,7 @@ public static class BattleRoomTileSetFactory
 		PackedScene pirateBruteEliteScene,
 		PackedScene scrapMedicEliteScene,
 		PackedScene sewerGatekeeperScene,
+		PackedScene bossRustCaptainScene,
 		PackedScene obstacleWallScene,
 		PackedScene obstacleSlowScene,
 		int cellSizePixels)
@@ -93,6 +95,7 @@ public static class BattleRoomTileSetFactory
 		sceneSource.CreateSceneTile(pirateBruteEliteScene, PirateBruteEliteEnemySceneTileId);
 		sceneSource.CreateSceneTile(scrapMedicEliteScene, ScrapMedicEliteEnemySceneTileId);
 		sceneSource.CreateSceneTile(sewerGatekeeperScene, SewerGatekeeperEnemySceneTileId);
+		sceneSource.CreateSceneTile(bossRustCaptainScene, BossRustCaptainEnemySceneTileId);
 		sceneSource.CreateSceneTile(obstacleWallScene, IndestructibleObstacleSceneTileId);
 		sceneSource.CreateSceneTile(obstacleSlowScene, SlowObstacleSceneTileId);
 		tileSet.AddSource(sceneSource, SceneSourceId);

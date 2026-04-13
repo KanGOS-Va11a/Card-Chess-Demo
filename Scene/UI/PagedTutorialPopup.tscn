@@ -1,0 +1,140 @@
+[gd_scene format=3]
+
+[ext_resource type="Script" path="res://Scripts/UI/PagedTutorialPopup.cs" id="1_popup"]
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_panel"]
+bg_color = Color(0.06, 0.08, 0.12, 0.96)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.88, 0.9, 0.92, 1)
+corner_radius_top_left = 4
+corner_radius_top_right = 4
+corner_radius_bottom_right = 4
+corner_radius_bottom_left = 4
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_button"]
+bg_color = Color(0.16, 0.2, 0.28, 1)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.95, 0.96, 0.9, 1)
+corner_radius_top_left = 3
+corner_radius_top_right = 3
+corner_radius_bottom_right = 3
+corner_radius_bottom_left = 3
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_button_hover"]
+bg_color = Color(0.25, 0.3, 0.42, 1)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(1, 0.94, 0.74, 1)
+corner_radius_top_left = 3
+corner_radius_top_right = 3
+corner_radius_bottom_right = 3
+corner_radius_bottom_left = 3
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_button_disabled"]
+bg_color = Color(0.08, 0.1, 0.14, 0.92)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.42, 0.44, 0.48, 1)
+corner_radius_top_left = 3
+corner_radius_top_right = 3
+corner_radius_bottom_right = 3
+corner_radius_bottom_left = 3
+
+[node name="PagedTutorialPopup" type="CanvasLayer"]
+script = ExtResource("1_popup")
+
+[node name="Root" type="Control" parent="."]
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 1
+
+[node name="Dim" type="ColorRect" parent="Root"]
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 1
+color = Color(0, 0, 0, 0.28)
+
+[node name="Panel" type="Panel" parent="Root"]
+offset_left = 14.0
+offset_top = 56.0
+offset_right = 306.0
+offset_bottom = 178.0
+theme_override_styles/panel = SubResource("StyleBoxFlat_panel")
+
+[node name="Margin" type="MarginContainer" parent="Root/Panel"]
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_constants/margin_left = 10
+theme_override_constants/margin_top = 8
+theme_override_constants/margin_right = 10
+theme_override_constants/margin_bottom = 8
+
+[node name="Content" type="VBoxContainer" parent="Root/Panel/Margin"]
+theme_override_constants/separation = 6
+
+[node name="Header" type="HBoxContainer" parent="Root/Panel/Margin/Content"]
+theme_override_constants/separation = 6
+
+[node name="Title" type="Label" parent="Root/Panel/Margin/Content/Header"]
+size_flags_horizontal = 3
+theme_override_font_sizes/font_size = 16
+text = "教程"
+
+[node name="CloseButton" type="Button" parent="Root/Panel/Margin/Content/Header"]
+custom_minimum_size = Vector2(22, 18)
+theme_override_font_sizes/font_size = 16
+theme_override_styles/normal = SubResource("StyleBoxFlat_button")
+theme_override_styles/hover = SubResource("StyleBoxFlat_button_hover")
+theme_override_styles/pressed = SubResource("StyleBoxFlat_button_hover")
+theme_override_styles/disabled = SubResource("StyleBoxFlat_button_disabled")
+text = "X"
+
+[node name="Body" type="RichTextLabel" parent="Root/Panel/Margin/Content"]
+custom_minimum_size = Vector2(0, 72)
+bbcode_enabled = false
+fit_content = false
+scroll_active = false
+theme_override_font_sizes/normal_font_size = 16
+
+[node name="Footer" type="HBoxContainer" parent="Root/Panel/Margin/Content"]
+theme_override_constants/separation = 6
+
+[node name="PrevButton" type="Button" parent="Root/Panel/Margin/Content/Footer"]
+custom_minimum_size = Vector2(70, 20)
+theme_override_font_sizes/font_size = 16
+theme_override_styles/normal = SubResource("StyleBoxFlat_button")
+theme_override_styles/hover = SubResource("StyleBoxFlat_button_hover")
+theme_override_styles/pressed = SubResource("StyleBoxFlat_button_hover")
+theme_override_styles/disabled = SubResource("StyleBoxFlat_button_disabled")
+text = "上一页"
+
+[node name="Spacer" type="Control" parent="Root/Panel/Margin/Content/Footer"]
+size_flags_horizontal = 3
+
+[node name="NextButton" type="Button" parent="Root/Panel/Margin/Content/Footer"]
+custom_minimum_size = Vector2(70, 20)
+theme_override_font_sizes/font_size = 16
+theme_override_styles/normal = SubResource("StyleBoxFlat_button")
+theme_override_styles/hover = SubResource("StyleBoxFlat_button_hover")
+theme_override_styles/pressed = SubResource("StyleBoxFlat_button_hover")
+theme_override_styles/disabled = SubResource("StyleBoxFlat_button_disabled")
+text = "下一页"

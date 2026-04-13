@@ -1,34 +1,31 @@
-[gd_scene format=3 uid="uid://dmkxodopr7rea"]
+[gd_scene format=3]
 
-[ext_resource type="Script" uid="uid://dwl8j7ry3s8r1" path="res://Scripts/Map/Interaction/HealStation.cs" id="1_pqxix"]
-[ext_resource type="Texture2D" uid="uid://cqccafampgoje" path="res://icon.svg" id="1_tqhqu"]
+[ext_resource type="Script" path="res://Scripts/Map/Interaction/HealStation.cs" id="1_station"]
 
-[sub_resource type="CircleShape2D" id="CircleShape2D_pqxix"]
-radius = 94.04786
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_body"]
+size = Vector2(16, 16)
 
-[sub_resource type="CircleShape2D" id="CircleShape2D_4x77d"]
-radius = 262.27466
+[sub_resource type="CircleShape2D" id="CircleShape2D_detect"]
+radius = 24.0
 
-[node name="HealingStation" type="Node2D" unique_id=836515479]
+[node name="HealingStationRoot" type="Node2D"]
 y_sort_enabled = true
-y_sort_origin = 16
+y_sort_origin = 8
 
-[node name="HealingStation" type="StaticBody2D" parent="." unique_id=1395213242]
-y_sort_origin = 16
+[node name="HealingStation" type="StaticBody2D" parent="."]
+y_sort_origin = 8
 collision_layer = 2
 collision_mask = 0
-script = ExtResource("1_pqxix")
+script = ExtResource("1_station")
 
-[node name="bodyshape" type="CollisionShape2D" parent="HealingStation" unique_id=1294295401]
-position = Vector2(-1, 0)
-shape = SubResource("CircleShape2D_pqxix")
+[node name="AnimatedSprite2D" type="AnimatedSprite2D" parent="HealingStation"]
 
-[node name="Sprite2D" type="Sprite2D" parent="HealingStation" unique_id=186002051]
-texture = ExtResource("1_tqhqu")
+[node name="BodyShape" type="CollisionShape2D" parent="HealingStation"]
+shape = SubResource("RectangleShape2D_body")
 
-[node name="InteractionArea" type="Area2D" parent="HealingStation" unique_id=1014631408]
+[node name="InteractionArea" type="Area2D" parent="HealingStation"]
 collision_layer = 8
 collision_mask = 0
 
-[node name="Detectshape" type="CollisionShape2D" parent="HealingStation/InteractionArea" unique_id=1879984347]
-shape = SubResource("CircleShape2D_4x77d")
+[node name="DetectShape" type="CollisionShape2D" parent="HealingStation/InteractionArea"]
+shape = SubResource("CircleShape2D_detect")

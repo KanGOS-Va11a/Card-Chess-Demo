@@ -25,6 +25,7 @@ public partial class BattleFloatingTextLayer : Node2D
     [Export] public Color ShieldDamageColor { get; set; } = new(0.76f, 0.78f, 0.84f, 1.0f);
     [Export] public Color HealthHealColor { get; set; } = new(0.34f, 0.96f, 0.42f, 1.0f);
     [Export] public Color ShieldGainColor { get; set; } = new(0.42f, 0.84f, 1.0f, 1.0f);
+    [Export] public Color AlertTextColor { get; set; } = new(1.0f, 0.94f, 0.58f, 1.0f);
     [Export] public Color OutlineColor { get; set; } = new(0.10f, 0.08f, 0.08f, 0.92f);
 
     private readonly List<FloatingTextEntry> _entries = new();
@@ -62,7 +63,8 @@ public partial class BattleFloatingTextLayer : Node2D
             _entries.Add(new FloatingTextEntry(
                 anchorKey,
                 localPosition + new Vector2(horizontalOffset, -laneOffset) + jitter,
-                impact,
+                impact.Amount.ToString(),
+                ResolveTextColor(impact.ImpactType),
                 GetNowSeconds() + startOffsetSeconds));
 
             startOffsetSeconds += ImpactStaggerSeconds;
@@ -73,6 +75,29 @@ public partial class BattleFloatingTextLayer : Node2D
 
             previousImpactType = impact.ImpactType;
         }
+
+        QueueRedraw();
+    }
+
+    public void ShowText(string anchorKey, Vector2 localPosition, string text, Color? color = null)
+    {
+        if (string.IsNullOrWhiteSpace(text))
+        {
+            return;
+        }
+
+        int activeBurstCount = _entries.Count(entry => string.Equals(entry.AnchorKey, anchorKey, StringComparison.Ordinal));
+        float laneOffset = activeBurstCount * BurstLaneOffsetPixels;
+        Vector2 jitter = new(
+            _rng.RandfRange(-RandomJitterPixels, RandomJitterPixels),
+            _rng.RandfRange(-RandomJitterPixels * 0.4f, RandomJitterPixels * 0.4f));
+
+        _entries.Add(new FloatingTextEntry(
+            anchorKey,
+            localPosition + new Vector2(0.0f, -laneOffset) + jitter,
+            text,
+            color ?? AlertTextColor,
+            GetNowSeconds()));
 
         QueueRedraw();
     }
@@ -131,10 +156,10 @@ public partial class BattleFloatingTextLayer : Node2D
 
             float eased = EaseOutCubic(progress);
             Vector2 drawPosition = entry.BasePosition + new Vector2(0.0f, -RiseDistancePixels * eased);
-            Color textColor = ResolveTextColor(entry.Impact.ImpactType);
+            Color textColor = entry.TextColor;
             textColor.A *= 1.0f - progress;
 
-            string text = entry.Impact.Amount.ToString();
+            string text = entry.Text;
             Vector2 stringSize = font.GetStringSize(text, HorizontalAlignment.Left, -1, FontSize);
             float scale = ResolveScale(progress);
 
@@ -206,6 +231,7 @@ public partial class BattleFloatingTextLayer : Node2D
     private readonly record struct FloatingTextEntry(
         string AnchorKey,
         Vector2 BasePosition,
-        CombatImpact Impact,
+        string Text,
+        Color TextColor,
         double StartTimeSeconds);
 }

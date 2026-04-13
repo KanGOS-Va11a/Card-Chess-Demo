@@ -12,6 +12,7 @@ public sealed class ObstacleBomberEnemyAiStrategy : IEnemyAiStrategy
     public EnemyAiDecision Decide(EnemyAiContext context)
     {
         BoardObject? nearestOpponent = EnemyAiTactics.FindNearestOpponentUnit(context);
+        BoardObject? obstacleTarget = FindNearestDestructibleObstacle(context);
         if (nearestOpponent != null)
         {
             BoardObject? playerAttackTarget = EnemyAiTactics.FindOpponentAttackTargetInRange(context);
@@ -30,19 +31,12 @@ public sealed class ObstacleBomberEnemyAiStrategy : IEnemyAiStrategy
             {
                 return EnemyAiDecision.Move(playerApproachCell.Value);
             }
-        }
 
-        BoardObject? obstacleTarget = FindNearestDestructibleObstacle(context);
-        if (obstacleTarget != null
-            && GetManhattanDistance(context.Self.Cell, obstacleTarget.Cell) <= context.SelfState.AttackRange)
-        {
-            return EnemyAiDecision.Attack(obstacleTarget.ObjectId);
-        }
-
-        BoardObject? attackTarget = EnemyAiTactics.FindPreferredAttackTarget(context);
-        if (attackTarget != null)
-        {
-            return EnemyAiDecision.Attack(attackTarget.ObjectId);
+            if (obstacleTarget != null
+                && GetManhattanDistance(context.Self.Cell, obstacleTarget.Cell) <= context.SelfState.AttackRange)
+            {
+                return EnemyAiDecision.Attack(obstacleTarget.ObjectId);
+            }
         }
 
         BoardObject? moveTarget = nearestOpponent ?? obstacleTarget;

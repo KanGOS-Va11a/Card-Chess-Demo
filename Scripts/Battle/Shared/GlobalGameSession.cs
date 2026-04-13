@@ -59,10 +59,12 @@ public partial class GlobalGameSession : Node
 	[Export] public int ScanRisk { get; set; } = 0;
 	[Export] public bool ShouldRestorePlayerPosition { get; set; } = false;
 	[Export] public Vector2 PendingRestorePlayerPosition { get; set; } = Vector2.Zero;
+	[Export] public string PendingSceneTransferScenePath { get; set; } = string.Empty;
+	[Export] public string PendingSceneTransferSpawnId { get; set; } = string.Empty;
 
 	public BattleRequest? PendingBattleRequest { get; private set; }
 	public BattleResult? LastBattleResult { get; private set; }
-	public MapResumeContext? PendingMapResumeContext { get; private set; }
+	public MapResumeContext? PendingBattleReturnContext { get; private set; }
 	public string PendingBattleEncounterId { get; private set; } = string.Empty;
 	public PartyRuntimeState PartyState { get; } = new();
 	public ProgressionRuntimeState ProgressionState { get; } = new();
@@ -148,6 +150,27 @@ public partial class GlobalGameSession : Node
 	{
 		ShouldRestorePlayerPosition = false;
 		PendingRestorePlayerPosition = Vector2.Zero;
+	}
+
+	public void SetPendingSceneTransfer(string scenePath, string spawnId = "")
+	{
+		PendingSceneTransferScenePath = scenePath?.Trim() ?? string.Empty;
+		PendingSceneTransferSpawnId = spawnId?.Trim() ?? string.Empty;
+	}
+
+	public bool TryConsumePendingSceneTransfer(string currentScenePath, out string spawnId)
+	{
+		spawnId = string.Empty;
+		if (string.IsNullOrWhiteSpace(PendingSceneTransferScenePath)
+			|| !string.Equals(PendingSceneTransferScenePath, currentScenePath ?? string.Empty, StringComparison.OrdinalIgnoreCase))
+		{
+			return false;
+		}
+
+		spawnId = PendingSceneTransferSpawnId;
+		PendingSceneTransferScenePath = string.Empty;
+		PendingSceneTransferSpawnId = string.Empty;
+		return true;
 	}
 
 	public void ApplyResourceDelta(StringName resourceKey, int delta, int? clampMin = null, int? clampMax = null)
@@ -413,24 +436,37 @@ public partial class GlobalGameSession : Node
 	{
 		PendingBattleRequest = null;
 		PendingBattleEncounterId = string.Empty;
-		PendingMapResumeContext = null;
+		PendingBattleReturnContext = null;
 	}
 
-	public void SetPendingMapResumeContext(MapResumeContext? resumeContext)
+	public void SetPendingBattleReturnContext(MapResumeContext? resumeContext)
 	{
-		PendingMapResumeContext = resumeContext;
+		PendingBattleReturnContext = resumeContext;
 	}
 
-	public MapResumeContext? PeekPendingMapResumeContext()
+	public MapResumeContext? PeekPendingBattleReturnContext()
 	{
-		return PendingMapResumeContext;
+		return PendingBattleReturnContext;
 	}
 
-	public MapResumeContext? ConsumePendingMapResumeContext()
+	public void ClearPendingBattleReturnContext()
 	{
-		MapResumeContext? resumeContext = PendingMapResumeContext;
-		PendingMapResumeContext = null;
-		return resumeContext;
+		PendingBattleReturnContext = null;
+	}
+
+	public bool TryConsumePendingBattleReturn(string currentScenePath, out MapResumeContext? resumeContext)
+	{
+		resumeContext = null;
+		if (PendingBattleReturnContext == null
+			|| string.IsNullOrWhiteSpace(PendingBattleReturnContext.ScenePath)
+			|| !string.Equals(PendingBattleReturnContext.ScenePath, currentScenePath ?? string.Empty, StringComparison.OrdinalIgnoreCase))
+		{
+			return false;
+		}
+
+		resumeContext = PendingBattleReturnContext;
+		PendingBattleReturnContext = null;
+		return true;
 	}
 
 	public void SetPendingBattleEncounterId(string encounterId)
@@ -477,9 +513,9 @@ public partial class GlobalGameSession : Node
 			MarkEncounterCleared(new StringName(resolutionPlan.ClearedEncounterId));
 		}
 
-		if (result.Outcome == BattleOutcome.Victory && PendingMapResumeContext != null)
+		if (result.Outcome == BattleOutcome.Victory && PendingBattleReturnContext != null)
 		{
-			ApplyBattleVictoryToPendingMapResume(PendingMapResumeContext);
+			ApplyBattleVictoryToPendingMapResume(PendingBattleReturnContext);
 		}
 
 		BattleResult resolvedResult = new(

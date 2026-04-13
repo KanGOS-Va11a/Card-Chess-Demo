@@ -1,32 +1,35 @@
-[gd_scene format=3 uid="uid://c1y5omimv043g"]
+[gd_scene format=3]
 
-[ext_resource type="Script" uid="uid://dqnsnaq4nynjb" path="res://Scripts/Map/Interaction/Chest.cs" id="1_chest_script"]
-[ext_resource type="Texture2D" uid="uid://l18ol0bdsc7c" path="res://ArtResource/resource/Farm RPG FREE 16x16 - Tiny Asset Pack/Objects/chest.png" id="2_chest_sheet"]
+[ext_resource type="Script" path="res://Scripts/Map/Interaction/Chest.cs" id="1_chest"]
+[ext_resource type="Script" path="res://Scripts/Map/Interaction/InteractableContainerConfig.cs" id="2_cfg"]
+[ext_resource type="Texture2D" path="res://ArtResource/resource/Farm RPG FREE 16x16 - Tiny Asset Pack/Objects/chest.png" id="3_sheet"]
 
 [sub_resource type="CircleShape2D" id="CircleShape2D_detect"]
-radius = 15.033297
+radius = 15.0
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_body"]
 size = Vector2(16, 16)
 
-[node name="Chest" type="Node2D" unique_id=1901356621]
+[node name="ChestRoot" type="Node2D"]
+script = ExtResource("2_cfg")
+TargetNodePath = NodePath("Chest")
 
-[node name="Chest" type="StaticBody2D" parent="." unique_id=710946809]
+[node name="Chest" type="StaticBody2D" parent="."]
 collision_layer = 2
 collision_mask = 0
-script = ExtResource("1_chest_script")
+script = ExtResource("1_chest")
 
-[node name="InteractionArea" type="Area2D" parent="Chest" unique_id=1571794554]
+[node name="InteractionArea" type="Area2D" parent="Chest"]
 collision_layer = 8
 collision_mask = 0
 
-[node name="Detectshape" type="CollisionShape2D" parent="Chest/InteractionArea" unique_id=582541236]
+[node name="DetectShape" type="CollisionShape2D" parent="Chest/InteractionArea"]
 shape = SubResource("CircleShape2D_detect")
 
-[node name="Bodyshape" type="CollisionShape2D" parent="Chest" unique_id=665425918]
+[node name="BodyShape" type="CollisionShape2D" parent="Chest"]
 shape = SubResource("RectangleShape2D_body")
 
-[node name="Sprite2D" type="Sprite2D" parent="Chest" unique_id=2026755444]
-texture = ExtResource("2_chest_sheet")
+[node name="Sprite2D" type="Sprite2D" parent="Chest"]
+texture = ExtResource("3_sheet")
 region_enabled = true
 region_rect = Rect2(8, 0, 16, 16)

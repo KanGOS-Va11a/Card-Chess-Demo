@@ -102,7 +102,7 @@ public sealed class BattleActionService
         }
 
         SyncPresentation();
-        _pieceViewManager.PlayMove(objectId);
+        _pieceViewManager.PlayMoveOnce(objectId, MovePresentationDurationSeconds);
         PublishActionLog($"{ResolveObjectDisplayName(objectId)}->({targetCell.X},{targetCell.Y}) \u79FB\u52A8");
         return true;
     }
@@ -418,6 +418,56 @@ public sealed class BattleActionService
     public async Task<bool> TryCreateArcTerrainAsync(Vector2I centerCell)
     {
         bool created = TryCreateArcTerrain(centerCell, out _);
+        if (!created)
+        {
+            return false;
+        }
+
+        await WaitSeconds(UtilityPresentationDurationSeconds);
+        return true;
+    }
+
+    public bool TryCreateFireTerrain(IEnumerable<Vector2I> cells, out string failureReason)
+    {
+        failureReason = string.Empty;
+        bool changedAnyCell = false;
+        foreach (Vector2I cell in cells.Distinct())
+        {
+            if (!_boardState.ContainsCell(cell))
+            {
+                continue;
+            }
+
+            if (_queryService.GetObjectsAtCell(cell).Any(boardObject =>
+                    boardObject.ObjectType == BoardObjectType.Obstacle
+                    && (boardObject.BlocksLineOfSight || (boardObject.BlocksMovement && !boardObject.StackableWithUnit))))
+            {
+                continue;
+            }
+
+            BoardCellState cellState = _boardState.GetCell(cell);
+            if (string.Equals(cellState.TerrainId, FireTerrainId, StringComparison.Ordinal))
+            {
+                continue;
+            }
+
+            _boardState.SetTerrain(cell, FireTerrainId);
+            changedAnyCell = true;
+        }
+
+        if (!changedAnyCell)
+        {
+            failureReason = "No cells were changed.";
+            return false;
+        }
+
+        SyncPresentation();
+        return true;
+    }
+
+    public async Task<bool> TryCreateFireTerrainAsync(IEnumerable<Vector2I> cells)
+    {
+        bool created = TryCreateFireTerrain(cells, out _);
         if (!created)
         {
             return false;

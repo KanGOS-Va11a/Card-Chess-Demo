@@ -9,7 +9,9 @@ namespace CardChessDemo.Battle.Visual;
 public partial class BattleBoardOverlay : Node2D
 {
     private const string ArcTerrainSpriteSheetPath = "res://Assets/Tilemap/Battle/terrain/electiric_terrain.png";
+    private const string OverlayFontPath = "res://Assets/Fonts/unifont_t-17.0.04.otf";
     private static readonly Texture2D? ArcTerrainSpriteSheet = ResourceLoader.Load<Texture2D>(ArcTerrainSpriteSheetPath);
+    private static readonly FontFile? OverlayFont = ResourceLoader.Load<FontFile>(OverlayFontPath);
 
     [Export] public Color HoverColor { get; set; } = new(0.2f, 0.85f, 1.0f, 0.28f);
     [Export] public Color ReachableColor { get; set; } = new(0.42f, 0.98f, 0.22f, 0.18f);
@@ -17,6 +19,7 @@ public partial class BattleBoardOverlay : Node2D
     [Export] public Color SupportTargetColor { get; set; } = new(0.16f, 0.92f, 0.86f, 0.22f);
     [Export] public Color ArcTerrainColor { get; set; } = new(0.34f, 0.46f, 1.0f, 0.22f);
     [Export] public Color FireTerrainColor { get; set; } = new(1.0f, 0.55f, 0.14f, 0.20f);
+    [Export] public Color TelegraphColor { get; set; } = new(1.0f, 0.88f, 0.16f, 0.26f);
     [Export] public Color EscapeCellColor { get; set; } = new(0.18f, 0.72f, 0.28f, 0.28f);
     [Export] public Color EscapeArrowColor { get; set; } = new(0.94f, 1.0f, 0.74f, 0.95f);
     [Export] public Color PathColor { get; set; } = new(1.0f, 0.9f, 0.3f, 0.82f);
@@ -33,6 +36,7 @@ public partial class BattleBoardOverlay : Node2D
     private readonly AnimatedCellLayer _supportTargetCells = new();
     private readonly List<Vector2I> _arcTerrainCells = new();
     private readonly List<Vector2I> _fireTerrainCells = new();
+    private readonly List<Vector2I> _telegraphCells = new();
     private readonly List<Vector2I> _escapeCells = new();
     private readonly List<Vector2I> _previewPath = new();
     private double _previewPathAnimationStartTimeSeconds;
@@ -118,6 +122,24 @@ public partial class BattleBoardOverlay : Node2D
         QueueRedraw();
     }
 
+    public void SetTelegraphCells(IEnumerable<Vector2I> cells)
+    {
+        Vector2I[] orderedCells = cells
+            .Distinct()
+            .OrderBy(cell => cell.Y)
+            .ThenBy(cell => cell.X)
+            .ToArray();
+
+        if (_telegraphCells.SequenceEqual(orderedCells))
+        {
+            return;
+        }
+
+        _telegraphCells.Clear();
+        _telegraphCells.AddRange(orderedCells);
+        QueueRedraw();
+    }
+
     public void SetPreviewPath(IEnumerable<Vector2I> cells)
     {
         Vector2I[] orderedCells = cells.ToArray();
@@ -162,6 +184,7 @@ public partial class BattleBoardOverlay : Node2D
         DrawAnimatedCells(_supportTargetCells, SupportTargetColor);
         DrawArcTerrainCells();
         DrawFireTerrainCells();
+        DrawTelegraphCells();
         DrawEscapeCells();
 
         if (_previewPath.Count > 1)
@@ -376,6 +399,41 @@ public partial class BattleBoardOverlay : Node2D
             DrawRect(cellRect, FireTerrainColor, true);
             DrawRect(cellRect.Grow(-1.0f), borderColor, false, 2.0f);
         }
+    }
+
+    private void DrawTelegraphCells()
+    {
+        if (_room == null)
+        {
+            return;
+        }
+
+        Color borderColor = BuildCellBorderColor(TelegraphColor);
+        foreach (Vector2I cell in _telegraphCells)
+        {
+            Rect2 cellRect = _room.GetCellRect(cell);
+            DrawRect(cellRect, TelegraphColor, true);
+            DrawRect(cellRect.Grow(-1.0f), borderColor, false, 2.0f);
+            DrawTelegraphMarker(cellRect);
+        }
+    }
+
+    private void DrawTelegraphMarker(Rect2 cellRect)
+    {
+        if (OverlayFont == null)
+        {
+            return;
+        }
+
+        const string markerText = "!";
+        const int fontSize = 16;
+        Vector2 textSize = OverlayFont.GetStringSize(markerText, HorizontalAlignment.Left, -1.0f, fontSize);
+        Vector2 baseline = new(
+            cellRect.GetCenter().X - textSize.X * 0.5f,
+            cellRect.GetCenter().Y + textSize.Y * 0.35f);
+
+        DrawStringOutline(OverlayFont, baseline, markerText, HorizontalAlignment.Left, -1.0f, fontSize, 2, Colors.Black);
+        DrawString(OverlayFont, baseline, markerText, HorizontalAlignment.Left, -1.0f, fontSize, new Color(1.0f, 0.96f, 0.88f, 1.0f));
     }
 
     private void DrawEscapeArrow(Rect2 cellRect, Vector2 direction)

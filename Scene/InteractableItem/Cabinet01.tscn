@@ -1,36 +1,40 @@
-[gd_scene format=3 uid="uid://wieso1d1388c"]
+[gd_scene format=3]
 
-[ext_resource type="Texture2D" uid="uid://k5r6c1on221x" path="res://ArtResource/resource/地图/CosmicLegacy_PetricakeGamesPNG.png" id="1_vb6m1"]
+[ext_resource type="Texture2D" path="res://ArtResource/resource/地图/CosmicLegacy_PetricakeGamesPNG.png" id="1_texture"]
 [ext_resource type="Script" path="res://Scripts/Map/Interaction/Cabinet.cs" id="2_cabinet"]
+[ext_resource type="Script" path="res://Scripts/Map/Interaction/InteractableContainerConfig.cs" id="3_cfg"]
 
-[sub_resource type="RectangleShape2D" id="RectangleShape2D_0k5v2"]
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_body"]
 size = Vector2(13, 14)
 
-[sub_resource type="CircleShape2D" id="CircleShape2D_qkav3"]
+[sub_resource type="CircleShape2D" id="CircleShape2D_detect"]
 radius = 19.0
 
-[node name="Cabinet" type="Node2D" unique_id=1138089208]
+[node name="CabinetRoot" type="Node2D"]
 y_sort_enabled = true
 y_sort_origin = 16
+script = ExtResource("3_cfg")
+TargetNodePath = NodePath("StaticBody2D")
 
-[node name="StaticBody2D" type="StaticBody2D" parent="." unique_id=528683181]
+[node name="StaticBody2D" type="StaticBody2D" parent="."]
+position = Vector2(0, -8)
 y_sort_origin = 16
 collision_layer = 2
 collision_mask = 0
 script = ExtResource("2_cabinet")
 
-[node name="Sprite2D" type="Sprite2D" parent="StaticBody2D" unique_id=1990874927]
-texture = ExtResource("1_vb6m1")
+[node name="Sprite2D" type="Sprite2D" parent="StaticBody2D"]
+texture = ExtResource("1_texture")
 region_enabled = true
 region_rect = Rect2(240, 16, 16, 32)
 
-[node name="CollisionShape2D" type="CollisionShape2D" parent="StaticBody2D" unique_id=439183829]
+[node name="CollisionShape2D" type="CollisionShape2D" parent="StaticBody2D"]
 position = Vector2(0, 7)
-shape = SubResource("RectangleShape2D_0k5v2")
+shape = SubResource("RectangleShape2D_body")
 
-[node name="Area2D" type="Area2D" parent="StaticBody2D" unique_id=1532780083]
+[node name="Area2D" type="Area2D" parent="StaticBody2D"]
 collision_layer = 8
 collision_mask = 0
 
-[node name="CollisionShape2D" type="CollisionShape2D" parent="StaticBody2D/Area2D" unique_id=1287302927]
-shape = SubResource("CircleShape2D_qkav3")
+[node name="DetectShape" type="CollisionShape2D" parent="StaticBody2D/Area2D"]
+shape = SubResource("CircleShape2D_detect")

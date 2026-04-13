@@ -6,6 +6,8 @@ namespace CardChessDemo.UI;
 
 public partial class EscapeSettingsOverlay : CanvasLayer
 {
+	public static EscapeSettingsOverlay? Instance { get; private set; }
+
 	private ColorRect _dim = null!;
 	private Panel _panel = null!;
 	private Label _titleLabel = null!;
@@ -25,12 +27,21 @@ public partial class EscapeSettingsOverlay : CanvasLayer
 
 	public override void _Ready()
 	{
+		Instance = this;
 		ProcessMode = ProcessModeEnum.Always;
 		Layer = 500;
 		SetProcessUnhandledInput(true);
 		Visible = true;
 		BuildUi();
 		SetMenuVisible(false, playSound: false);
+	}
+
+	public override void _ExitTree()
+	{
+		if (Instance == this)
+		{
+			Instance = null;
+		}
 	}
 
 	public override void _UnhandledInput(InputEvent @event)
@@ -247,6 +258,21 @@ public partial class EscapeSettingsOverlay : CanvasLayer
 		{
 			GameAudio.Instance?.PlayUiCancel();
 		}
+	}
+
+	public void ShowMenu(bool playSound = true)
+	{
+		SetMenuVisible(true, playSound);
+	}
+
+	public void HideMenu(bool playSound = true)
+	{
+		SetMenuVisible(false, playSound);
+	}
+
+	public bool IsMenuOpen()
+	{
+		return _isOpen;
 	}
 
 	private void RefreshFromAudio()

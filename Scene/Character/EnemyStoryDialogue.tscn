@@ -1,0 +1,26 @@
+[gd_scene format=3]
+
+[ext_resource type="PackedScene" path="res://Scene/Character/Enemy.tscn" id="1_base"]
+[ext_resource type="Script" path="res://Scripts/Map/Interaction/StoryDialogueEnemy.cs" id="2_script"]
+[ext_resource type="PackedScene" path="res://Scene/UI/DialogueSequencePanel.tscn" id="3_dialogue"]
+[ext_resource type="Script" path="res://Scripts/UI/Dialogue/DialoguePage.cs" id="4_page_script"]
+
+[sub_resource type="Resource" id="DialoguePage_1"]
+script = ExtResource("4_page_script")
+Speaker = "荒川"
+Content = "前面那个家伙堵住了通路。先别急着动手，先记住最基础的操作。"
+
+[sub_resource type="Resource" id="DialoguePage_2"]
+script = ExtResource("4_page_script")
+Speaker = "荒川"
+Content = "进战斗后你会靠手牌来移动、攻击和防御。先把这一场当成练习。"
+
+[sub_resource type="Resource" id="DialoguePage_3"]
+script = ExtResource("4_page_script")
+Speaker = "主角"
+Content = "明白了。先把它解决掉，再继续往前。"
+
+[node name="EnemyStoryDialogue" instance=ExtResource("1_base")]
+script = ExtResource("2_script")
+DialoguePanelScene = ExtResource("3_dialogue")
+DialoguePages = Array[ExtResource("4_page_script")]([SubResource("DialoguePage_1"), SubResource("DialoguePage_2"), SubResource("DialoguePage_3")])

@@ -8,6 +8,32 @@ namespace CardChessDemo.Battle.AI;
 
 internal static class EnemyAiTactics
 {
+    public static bool TryFindStraightLineTarget(
+        EnemyAiContext context,
+        int maxRange,
+        out BoardObject? target,
+        out Vector2I direction,
+        out Vector2I[] traversedCells)
+    {
+        target = null;
+        direction = Vector2I.Zero;
+        traversedCells = Array.Empty<Vector2I>();
+
+        foreach (Vector2I candidateDirection in BoardTopology.CardinalDirections)
+        {
+            if (context.TargetingService.TryFindFirstEnemyInDirection(context.Self.ObjectId, candidateDirection, maxRange, out BoardObject? candidateTarget, out IReadOnlyList<Vector2I> cells)
+                && candidateTarget != null)
+            {
+                target = candidateTarget;
+                direction = candidateDirection;
+                traversedCells = cells.ToArray();
+                return true;
+            }
+        }
+
+        return false;
+    }
+
     public static BoardObject? FindNearestOpponentUnit(EnemyAiContext context)
     {
         return context.Registry.AllObjects
@@ -44,6 +70,28 @@ internal static class EnemyAiTactics
             .Where(target => target.ObjectType == BoardObjectType.Unit)
             .OrderBy(target => GetManhattanDistance(context.Self.Cell, target.Cell))
             .ThenBy(target => target.ObjectId, StringComparer.Ordinal)
+            .FirstOrDefault();
+    }
+
+    public static BoardObject? FindBestSupportTargetInRange(EnemyAiContext context, int maxRange)
+    {
+        return context.Registry.AllObjects
+            .Where(boardObject => boardObject.ObjectId != context.Self.ObjectId)
+            .Where(boardObject => boardObject.Faction == context.Self.Faction)
+            .Where(boardObject => boardObject.ObjectType == BoardObjectType.Unit || boardObject.ObjectType == BoardObjectType.Obstacle)
+            .Select(boardObject => new
+            {
+                Object = boardObject,
+                State = context.StateManager.Get(boardObject.ObjectId),
+                Distance = GetManhattanDistance(context.Self.Cell, boardObject.Cell),
+            })
+            .Where(candidate => candidate.State != null)
+            .Where(candidate => candidate.Distance <= maxRange)
+            .Where(candidate => candidate.State!.CurrentHp < candidate.State.MaxHp || candidate.State.CurrentShield < candidate.State.MaxShield)
+            .OrderBy(candidate => candidate.Distance)
+            .ThenBy(candidate => candidate.State!.CurrentHp)
+            .ThenBy(candidate => candidate.State!.CurrentShield)
+            .Select(candidate => candidate.Object)
             .FirstOrDefault();
     }
 

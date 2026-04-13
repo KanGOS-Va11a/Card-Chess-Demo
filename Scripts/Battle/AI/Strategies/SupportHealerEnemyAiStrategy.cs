@@ -7,10 +7,32 @@ namespace CardChessDemo.Battle.AI.Strategies;
 
 public sealed class SupportHealerEnemyAiStrategy : IEnemyAiStrategy
 {
+    private const string EmergencyRepairSkillId = "emergency_repair";
+    private const int EmergencyRepairRange = 2;
+
     public string AiId => "support_healer";
 
     public EnemyAiDecision Decide(EnemyAiContext context)
     {
+        if (string.Equals(context.SelfState.PendingSpecialSkillId, EmergencyRepairSkillId, StringComparison.Ordinal))
+        {
+            return EnemyAiDecision.Special(
+                EmergencyRepairSkillId,
+                context.SelfState.PendingSpecialTargetObjectId,
+                context.SelfState.PendingSpecialTargetCell,
+                context.SelfState.PendingSpecialCells);
+        }
+
+        BoardObject? emergencyRepairTarget = EnemyAiTactics.FindBestSupportTargetInRange(context, EmergencyRepairRange);
+        if (emergencyRepairTarget != null && context.SelfState.GetSpecialSkillCooldown(EmergencyRepairSkillId) <= 0)
+        {
+            return EnemyAiDecision.Telegraph(
+                EmergencyRepairSkillId,
+                emergencyRepairTarget.ObjectId,
+                emergencyRepairTarget.Cell,
+                new[] { emergencyRepairTarget.Cell });
+        }
+
         BoardObject? supportTarget = FindBestSupportTarget(context);
         if (supportTarget != null && GetManhattanDistance(context.Self.Cell, supportTarget.Cell) <= 2)
         {

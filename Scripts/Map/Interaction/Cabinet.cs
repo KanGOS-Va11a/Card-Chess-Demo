@@ -1,24 +1,41 @@
-using Godot;
+using System.Collections.Generic;
+using CardChessDemo.Audio;
 using CardChessDemo.Battle.Boundary;
 using CardChessDemo.Battle.Shared;
+using Godot;
 
 namespace CardChessDemo.Map;
 
-public partial class Cabinet : InteractableTemplate
+public partial class Cabinet : InteractableTemplate, IConfigurableLootInteractable
 {
-	[Export] public string CabinetName = "\u50A8\u7269\u67DC";
-	[Export] public string ItemDescription = "\u627E\u5230\u4E86\u4E00\u4E9B\u53EF\u7528\u7269\u8D44\u3002";
-	[Export] public string EmptyDescription = "\u8FD9\u4E2A\u67DC\u5B50\u5DF2\u7ECF\u88AB\u641C\u7A7A\u4E86\u3002";
-	[Export] public string LootItemId = "steel_scrap";
-	[Export(PropertyHint.Range, "1,99,1")] public int LootAmount = 1;
-	[Export] public string InteractableSessionKey = string.Empty;
-	[Export] public Color OpenedTint = new(0.72f, 0.72f, 0.72f, 1.0f);
+	[Export] public string CabinetName { get; set; } = "储物柜";
+	[Export] public string ItemDescription { get; set; } = "找到了可用物资。";
+	[Export] public string EmptyDescription { get; set; } = "这个柜子已经被搜空了。";
+	[Export] public string LootItemId { get; set; } = "steel_scrap";
+	[Export(PropertyHint.Range, "1,99,1")] public int LootAmount { get; set; } = 1;
+	[Export] public string InteractableSessionKey { get; set; } = string.Empty;
+	[Export] public string[] InteractionTexts { get; set; } = System.Array.Empty<string>();
+	[Export] public Godot.Collections.Array<InteractableItemGrant> GrantedItems { get; set; } = new();
+	[Export] public Color OpenedTint { get; set; } = new(0.72f, 0.72f, 0.72f, 1.0f);
 
 	private bool _isOpened;
 	private bool _isSearching;
+	private int _interactionCount;
 	private Sprite2D? _sprite;
 	private Color _defaultTint = Colors.White;
 	private GlobalGameSession? _session;
+
+	string IConfigurableLootInteractable.DisplayName
+	{
+		get => CabinetName;
+		set => CabinetName = value;
+	}
+
+	string IConfigurableLootInteractable.PromptText
+	{
+		get => PromptText;
+		set => PromptText = value;
+	}
 
 	public override void _Ready()
 	{
@@ -33,6 +50,7 @@ public partial class Cabinet : InteractableTemplate
 		{
 			_isOpened = true;
 			LootAmount = 0;
+			_interactionCount = System.Math.Max(_interactionCount, 1);
 		}
 
 		ApplyVisualState();
@@ -42,15 +60,15 @@ public partial class Cabinet : InteractableTemplate
 	{
 		if (_isSearching)
 		{
-			return "\u641C\u7D22\u4E2D...";
+			return "搜索中...";
 		}
 
-		if (_isOpened || LootAmount <= 0 || string.IsNullOrWhiteSpace(LootItemId))
+		if (_isOpened)
 		{
-			return "\u67DC\u5B50\u5DF2\u88AB\u641C\u7D22";
+			return "检查柜子";
 		}
 
-		return string.IsNullOrWhiteSpace(PromptText) ? "\u641C\u7D22\u67DC\u5B50" : PromptText;
+		return string.IsNullOrWhiteSpace(PromptText) ? "搜索柜子" : PromptText;
 	}
 
 	public override bool CanInteract(Player player)
@@ -60,20 +78,18 @@ public partial class Cabinet : InteractableTemplate
 
 	protected override void OnInteract(Player player)
 	{
-		if (_isOpened || LootAmount <= 0 || string.IsNullOrWhiteSpace(LootItemId))
+		_isSearching = true;
+		bool grantedLoot = false;
+		if (!_isOpened)
 		{
-			ShowText(EmptyDescription);
-			PlayInteractionPulse();
-			return;
+			grantedLoot = TryGrantLoot();
 		}
 
-		_isSearching = true;
-		int grantedAmount = LootAmount;
-		bool granted = TryGrantLoot();
-		string message = granted ? BuildGainMessage(grantedAmount) : EmptyDescription;
-		ShowText(message);
+		SceneTextOverlay.Show(this, ResolveInteractionMessage(grantedLoot));
 		PlayInteractionPulse();
+		GameAudio.Instance?.PlayUiConfirm();
 		_isSearching = false;
+		_interactionCount++;
 	}
 
 	public override Godot.Collections.Dictionary BuildRuntimeSnapshot()
@@ -81,6 +97,7 @@ public partial class Cabinet : InteractableTemplate
 		Godot.Collections.Dictionary snapshot = base.BuildRuntimeSnapshot();
 		snapshot["is_opened"] = _isOpened;
 		snapshot["loot_amount"] = LootAmount;
+		snapshot["interaction_count"] = _interactionCount;
 		return snapshot;
 	}
 
@@ -98,10 +115,16 @@ public partial class Cabinet : InteractableTemplate
 			LootAmount = lootAmount.AsInt32();
 		}
 
+		if (snapshot.TryGetValue("interaction_count", out Variant interactionCount))
+		{
+			_interactionCount = interactionCount.AsInt32();
+		}
+
 		if (WasAlreadyOpenedInSession())
 		{
 			_isOpened = true;
 			LootAmount = 0;
+			_interactionCount = System.Math.Max(_interactionCount, 1);
 		}
 
 		_isSearching = false;
@@ -136,7 +159,7 @@ public partial class Cabinet : InteractableTemplate
 
 	private bool TryGrantLoot()
 	{
-		if (_session == null || string.IsNullOrWhiteSpace(LootItemId) || LootAmount <= 0)
+		if (_session == null)
 		{
 			return false;
 		}
@@ -151,28 +174,72 @@ public partial class Cabinet : InteractableTemplate
 		}
 
 		InventoryDelta delta = new();
-		delta.ItemDeltas[LootItemId.Trim()] = LootAmount;
-		_session.ApplyInventoryDelta(delta);
+		foreach ((string itemId, int amount) in EnumerateGrantedItems())
+		{
+			delta.ItemDeltas[itemId] = delta.ItemDeltas.TryGetValue(itemId, out int currentAmount)
+				? currentAmount + amount
+				: amount;
+		}
+
+		if (delta.ItemDeltas.Count > 0)
+		{
+			_session.ApplyInventoryDelta(delta);
+		}
 
 		_isOpened = true;
 		LootAmount = 0;
 		_session.MarkInteractableUsed(interactableId);
 		ApplyVisualState();
-		return true;
+		return delta.ItemDeltas.Count > 0;
 	}
 
-	private string BuildGainMessage(int amount)
+	private string ResolveInteractionMessage(bool granted)
 	{
-		if (!string.IsNullOrWhiteSpace(ItemDescription))
+		if (InteractionTexts.Length > 0)
 		{
-			return ItemDescription;
+			int index = Mathf.Clamp(_interactionCount, 0, InteractionTexts.Length - 1);
+			string configured = InteractionTexts[index]?.Trim() ?? string.Empty;
+			if (!string.IsNullOrWhiteSpace(configured))
+			{
+				return configured;
+			}
 		}
 
-		return $"\u83B7\u5F97 {LootItemId} x{amount}";
+		if (granted)
+		{
+			if (!string.IsNullOrWhiteSpace(ItemDescription))
+			{
+				return ItemDescription;
+			}
+
+			return InteractableItemTextResolver.BuildLootSummary(_session, EnumerateGrantedItems());
+		}
+
+		return string.IsNullOrWhiteSpace(EmptyDescription) ? "这个柜子已经被搜空了。" : EmptyDescription;
 	}
 
-	private void ShowText(string message)
+	private IEnumerable<(string ItemId, int Amount)> EnumerateGrantedItems()
 	{
-		SceneTextOverlay.Show(this, message);
+		HashSet<string> yielded = new(System.StringComparer.Ordinal);
+		foreach (InteractableItemGrant? entry in GrantedItems)
+		{
+			if (entry == null || string.IsNullOrWhiteSpace(entry.ItemId) || entry.Amount <= 0)
+			{
+				continue;
+			}
+
+			string itemId = entry.ItemId.Trim();
+			yielded.Add(itemId);
+			yield return (itemId, entry.Amount);
+		}
+
+		if (!string.IsNullOrWhiteSpace(LootItemId) && LootAmount > 0)
+		{
+			string legacyItemId = LootItemId.Trim();
+			if (!yielded.Contains(legacyItemId))
+			{
+				yield return (legacyItemId, LootAmount);
+			}
+		}
 	}
 }

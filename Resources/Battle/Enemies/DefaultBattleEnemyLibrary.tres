@@ -138,6 +138,7 @@ script = ExtResource("2_definition")
 DefinitionId = "boss_rust_captain"
 DisplayName = "锈船长"
 PrefabScene = ExtResource("3_enemy_scene")
+AiId = "boss_rust_captain"
 MaxHp = 16
 StartingShield = 4
 AttackDamage = 5

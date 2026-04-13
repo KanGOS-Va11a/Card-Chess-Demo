@@ -1,4 +1,4 @@
-[gd_scene format=4 uid="uid://vhgy3shyhelk"]
+[gd_scene format=4 uid="uid://b82s0mfw7ok8d"]
 
 [ext_resource type="Script" uid="uid://bacvjmwtxs21k" path="res://Scripts/Map/Controllers/MapSceneController.cs" id="1_mapctl"]
 [ext_resource type="Texture2D" uid="uid://c4hbgup3bropd" path="res://bcg1@0,25x.png" id="1_ngnax"]
@@ -27,15 +27,14 @@
 [ext_resource type="Texture2D" uid="uid://c3bfxj4we8ub1" path="res://ArtResource/resource/Farm RPG FREE 16x16 - Tiny Asset Pack/Objects/Interior.png" id="18_fxfwc"]
 [ext_resource type="Texture2D" uid="uid://dht6orfy32qfv" path="res://ArtResource/resource/Farm RPG FREE 16x16 - Tiny Asset Pack/Objects/Maple Tree.png" id="19_tibw3"]
 [ext_resource type="Texture2D" uid="uid://cwfbil2aaan73" path="res://ArtResource/resource/Farm RPG FREE 16x16 - Tiny Asset Pack/Objects/Road copiar.png" id="20_o228q"]
-[ext_resource type="PackedScene" uid="uid://cygseefr5cx8a" path="res://Scene/Character/MainPlayer.tscn" id="21_5536c"]
-[ext_resource type="PackedScene" uid="uid://c1y5omimv043g" path="res://Scene/InteractableItem/Chest03.tscn" id="22_g4x7r"]
 [ext_resource type="PackedScene" path="res://Scene/UI/SystemFeatureOverlay.tscn" id="24_overlay"]
-[ext_resource type="PackedScene" uid="uid://nwbs50t7q10d" path="res://Scene/Character/Npc01.tscn" id="24_wfmiq"]
-[ext_resource type="PackedScene" path="res://Scene/Character/Npc05.tscn" id="25_wfmiq"]
+[ext_resource type="PackedScene" uid="uid://nwbs50t7q10d" path="res://Scene/Character/Npc.tscn" id="24_wfmiq"]
+[ext_resource type="PackedScene" uid="uid://dnuhrg8qr5ogd" path="res://Scene/Character/Npc05.tscn" id="25_wfmiq"]
 [ext_resource type="PackedScene" uid="uid://b2v4qgn2ybgxd" path="res://Scene/Decor/Bed01.tscn" id="26_mttts"]
-[ext_resource type="PackedScene" uid="uid://ps2feuyl3u5d" path="res://Scene/InteractableItem/Door01.tscn" id="27_door01"]
 [ext_resource type="PackedScene" path="res://Scene/Decor/Shelf01.tscn" id="28_730yq"]
 [ext_resource type="PackedScene" path="res://Scene/Decor/Shelf02.tscn" id="29_g4x7r"]
+[ext_resource type="TileSet" uid="uid://bk2oy8wp4bh0a" path="res://Resources/Map/PlayerSpawnTileSet.tres" id="99_player_spawn_tiles"]
+[ext_resource type="TileSet" uid="uid://dvsv43jlor71o" path="res://Resources/Map/InteractionTileSet.tres" id="interaction_tiles"]
 
 [sub_resource type="TileMapPattern" id="TileMapPattern_prmxd"]
 tile_data = PackedInt32Array(0, 851981, 3, 1, 917517, 3)
@@ -6848,8 +6847,15 @@ tile_set = SubResource("TileSet_hbujl")
 [node name="WorldObjects" type="Node2D" parent="." unique_id=505394760]
 y_sort_enabled = true
 
-[node name="MainPlayer" parent="WorldObjects" unique_id=375524829 instance=ExtResource("21_5536c")]
-position = Vector2(-45, 100)
+[node name="PlayerSpawnLayer" type="TileMapLayer" parent="WorldObjects" unique_id=1879092624]
+y_sort_enabled = true
+tile_map_data = PackedByteArray("AAD1////AQAAAAAAAQA=")
+tile_set = ExtResource("99_player_spawn_tiles")
+
+[node name="InteractionLayer" type="TileMapLayer" parent="WorldObjects" unique_id=556176365]
+y_sort_enabled = true
+tile_map_data = PackedByteArray("AAASAA4AAQAAAAAABQA=")
+tile_set = ExtResource("interaction_tiles")
 
 [node name="Door03" parent="WorldObjects" unique_id=224728664 instance=ExtResource("16_revv4")]
 position = Vector2(584, -248)
@@ -6857,19 +6863,6 @@ position = Vector2(584, -248)
 [node name="Sprite2D" parent="WorldObjects/Door03/StaticBody2D" parent_id_path=PackedInt32Array(224728664, 1132181480) index="0" unique_id=1523155758]
 position = Vector2(0.5000076, 0.99999726)
 scale = Vector2(1.562499, 1.6250002)
-
-[node name="DoorToScene07" parent="WorldObjects" unique_id=634604703 instance=ExtResource("27_door01")]
-position = Vector2(296, 216)
-NextScenePath = "res://Scene/Maps/Scene07.tscn"
-PromptText = "前往 Scene07"
-
-[node name="DoorToScene08" parent="WorldObjects" unique_id=2024074485 instance=ExtResource("27_door01")]
-position = Vector2(312, -168)
-NextScenePath = "res://Scene/Maps/Scene08.tscn"
-PromptText = "前往 Scene08"
-
-[node name="Chest" parent="WorldObjects" unique_id=1901356621 instance=ExtResource("22_g4x7r")]
-position = Vector2(296, 232)
 
 [node name="NpcScene" parent="WorldObjects" unique_id=1266535779 instance=ExtResource("24_wfmiq")]
 position = Vector2(352, -396)
@@ -6896,7 +6889,7 @@ tile_set = SubResource("TileSet_2wd8n")
 
 [node name="DecorationLayer" type="TileMapLayer" parent="." unique_id=281728661]
 z_index = -1
-tile_map_data = PackedByteArray("AAAFAPT/AwAIAAYAAAAFAPX/AwAIAAcAAAAGAPT/AwAJAAYAAAAGAPX/AwAJAAcAAAAHAPT/AwAKAAYAAAAHAPX/AwAKAAcAAAAJAPT/AwAIAAYAAAAJAPX/AwAIAAcAAAAKAPT/AwAJAAYAAAAKAPX/AwAJAAcAAAALAPT/AwAKAAYAAAALAPX/AwAKAAcAAAANAPT/AwAIAAYAAAANAPX/AwAIAAcAAAAOAPT/AwAJAAYAAAAOAPX/AwAJAAcAAAAPAPT/AwAKAAYAAAAPAPX/AwAKAAcAAAD7/wcABQAPAAQAAFD8/wcABQAPAAMAAFD7/wkABQAPAAQAAFD8/wkABQAPAAMAAFD7/wsABQAPAAQAAFD8/wsABQAPAAMAAFD7/w0ABQAPAAQAAFD8/w0ABQAPAAMAAFD+/wsABQAPAAQAAAD+/woABQAPAAMAAAAAAAsABQAPAAQAAAAAAAoABQAPAAMAAAAEAAsABQAPAAQAAAAEAAoABQAPAAMAAAAIAAsABQAPAAQAAAAIAAoABQAPAAMAAAAKAAsABQAPAAQAAAAKAAoABQAPAAMAAAAPAA4ABQAPAAQAAAAPAA0ABQAPAAMAAAA=")
+tile_map_data = PackedByteArray("AAAFAPT/AwAIAAYAAAAFAPX/AwAIAAcAAAAGAPT/AwAJAAYAAAAGAPX/AwAJAAcAAAAHAPT/AwAKAAYAAAAHAPX/AwAKAAcAAAAJAPT/AwAIAAYAAAAJAPX/AwAIAAcAAAAKAPT/AwAJAAYAAAAKAPX/AwAJAAcAAAALAPT/AwAKAAYAAAALAPX/AwAKAAcAAAANAPT/AwAIAAYAAAANAPX/AwAIAAcAAAAOAPT/AwAJAAYAAAAOAPX/AwAJAAcAAAAPAPT/AwAKAAYAAAAPAPX/AwAKAAcAAAAAAAsABQAPAAQAAAAAAAoABQAPAAMAAAAEAAsABQAPAAQAAAAEAAoABQAPAAMAAAAIAAsABQAPAAQAAAAIAAoABQAPAAMAAAAKAAsABQAPAAQAAAAKAAoABQAPAAMAAAA=")
 tile_set = SubResource("TileSet_wtitb")
 
 [node name="Bed01" parent="DecorationLayer" unique_id=550302643 instance=ExtResource("26_mttts")]
@@ -6952,12 +6945,13 @@ color = Color(0.74084616, 0.66729, 0.5514632, 1)
 
 [node name="MapSceneController" type="Node2D" parent="." unique_id=1563663499]
 script = ExtResource("1_mapctl")
-PlayerPath = NodePath("../WorldObjects/MainPlayer/Player")
+PlayerPath = NodePath("")
 
 [node name="MapResolutionController" type="Node" parent="." unique_id=1783708580]
 script = ExtResource("1_resctl")
 
 [node name="SystemFeatureOverlay" parent="." unique_id=234224749 instance=ExtResource("24_overlay")]
+PlayerPath = NodePath("")
 
 [editable path="WorldObjects/Door03"]
 [editable path="WorldObjects/NpcScene"]

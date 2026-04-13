@@ -19,6 +19,7 @@ public partial class GameAudio : Node
 	public const string LearningCardCueId = "sfx_card_learning";
 	public const string EnemyHitCueId = "sfx_enemy_hit";
 	public const string UnitDeathCueId = "sfx_unit_death";
+	public const string HealingCueId = "sfx_healing";
 	public const string UiConfirmCueId = "sfx_ui_confirm";
 	public const string UiCancelCueId = "sfx_ui_cancel";
 	public const string UiToggleOnCueId = "sfx_ui_toggle_on";
@@ -47,6 +48,7 @@ public partial class GameAudio : Node
 			[LearningCardCueId] = -1.5f,
 			[EnemyHitCueId] = -3.5f,
 			[UnitDeathCueId] = -1.0f,
+			[HealingCueId] = -3.0f,
 			[UiConfirmCueId] = -6.0f,
 			[UiCancelCueId] = -6.0f,
 			[UiToggleOnCueId] = -5.0f,
@@ -65,6 +67,7 @@ public partial class GameAudio : Node
 			[LearningCardCueId] = new[] { "res://Assets/Audio/SFX/card_learning.wav" },
 			[EnemyHitCueId] = new[] { "res://Assets/Audio/SFX/attack_metal.wav" },
 			[UnitDeathCueId] = new[] { "res://Assets/Audio/SFX/something_died.wav" },
+			[HealingCueId] = new[] { "res://Assets/Audio/SFX/healing.wav" },
 			[UiConfirmCueId] = new[] { "res://Assets/Audio/SFX/UI_clicked.wav" },
 			[UiCancelCueId] = new[] { "res://Assets/Audio/SFX/UI_clicked.wav" },
 			[UiToggleOnCueId] = new[] { "res://Assets/Audio/SFX/ui_on.wav" },
@@ -218,6 +221,7 @@ public partial class GameAudio : Node
 	public double PlayLearningCardUse() => PlaySfx(LearningCardCueId, SfxBusName, minimumIntervalSeconds: 0.03f);
 	public double PlayEnemyHit() => PlaySfx(EnemyHitCueId, SfxBusName, minimumIntervalSeconds: 0.04f);
 	public double PlayUnitDeath() => PlaySfx(UnitDeathCueId, SfxBusName, minimumIntervalSeconds: 0.05f);
+	public double PlayHealing() => PlaySfx(HealingCueId, SfxBusName, minimumIntervalSeconds: 0.05f);
 	public double PlayUiConfirm() => PlaySfx(UiConfirmCueId, UiBusName, minimumIntervalSeconds: 0.03f);
 	public double PlayUiCancel() => PlaySfx(UiCancelCueId, UiBusName, minimumIntervalSeconds: 0.03f);
 	public double PlayUiToggleOn() => PlaySfx(UiToggleOnCueId, MasterBusName, minimumIntervalSeconds: 0.03f);

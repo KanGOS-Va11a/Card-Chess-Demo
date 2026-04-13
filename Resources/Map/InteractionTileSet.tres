@@ -1,0 +1,25 @@
+[gd_resource type="TileSet" format=3 uid="uid://dvsv43jlor71o"]
+
+[ext_resource type="PackedScene" path="res://Scene/InteractableItem/Cabinet01.tscn" id="1_cabinet_01"]
+[ext_resource type="PackedScene" path="res://Scene/InteractableItem/Cabinet02.tscn" id="2_cabinet_02"]
+[ext_resource type="PackedScene" path="res://Scene/InteractableItem/Chest.tscn" id="3_chest_01"]
+[ext_resource type="PackedScene" path="res://Scene/InteractableItem/Chest01.tscn" id="4_chest_02"]
+[ext_resource type="PackedScene" path="res://Scene/InteractableItem/Chest03.tscn" id="5_chest_03"]
+[ext_resource type="PackedScene" path="res://Scene/InteractableItem/HealingStation.tscn" id="6_heal_station"]
+[ext_resource type="PackedScene" uid="uid://nwbs50t7q10d" path="res://Scene/Character/Npc.tscn" id="7_npc"]
+[ext_resource type="PackedScene" uid="uid://b8watq8311s7k" path="res://Scene/Character/Npc01.tscn" id="8_npc_01"]
+[ext_resource type="PackedScene" uid="uid://dnuhrg8qr5ogd" path="res://Scene/Character/Npc05.tscn" id="9_npc_05"]
+
+[sub_resource type="TileSetScenesCollectionSource" id="TileSetScenesCollectionSource_map_interaction"]
+scenes/1/scene = ExtResource("1_cabinet_01")
+scenes/2/scene = ExtResource("2_cabinet_02")
+scenes/3/scene = ExtResource("3_chest_01")
+scenes/4/scene = ExtResource("4_chest_02")
+scenes/5/scene = ExtResource("5_chest_03")
+scenes/6/scene = ExtResource("6_heal_station")
+scenes/7/scene = ExtResource("7_npc")
+scenes/8/scene = ExtResource("8_npc_01")
+scenes/9/scene = ExtResource("9_npc_05")
+
+[resource]
+sources/1 = SubResource("TileSetScenesCollectionSource_map_interaction")

@@ -31,18 +31,15 @@
 [ext_resource type="PackedScene" path="res://Scene/Battle/Rooms/Authoring/pirate_brute_elite/room_01.tscn" id="29_brute_01"]
 [ext_resource type="PackedScene" path="res://Scene/Battle/Rooms/Authoring/pirate_brute_elite/room_02.tscn" id="30_brute_02"]
 [ext_resource type="PackedScene" path="res://Scene/Battle/Rooms/Authoring/pirate_brute_elite/room_03.tscn" id="31_brute_03"]
-[ext_resource type="PackedScene" path="res://Scene/Battle/Rooms/Authoring/pirate_brute_elite/room_04.tscn" id="32_brute_04"]
-[ext_resource type="PackedScene" path="res://Scene/Battle/Rooms/Authoring/pirate_brute_elite/room_05.tscn" id="33_brute_05"]
-[ext_resource type="PackedScene" path="res://Scene/Battle/Rooms/Authoring/scrap_medic_elite/room_01.tscn" id="34_medic_01"]
-[ext_resource type="PackedScene" path="res://Scene/Battle/Rooms/Authoring/scrap_medic_elite/room_02.tscn" id="35_medic_02"]
-[ext_resource type="PackedScene" path="res://Scene/Battle/Rooms/Authoring/scrap_medic_elite/room_03.tscn" id="36_medic_03"]
-[ext_resource type="PackedScene" path="res://Scene/Battle/Rooms/Authoring/scrap_medic_elite/room_04.tscn" id="37_medic_04"]
-[ext_resource type="PackedScene" path="res://Scene/Battle/Rooms/Authoring/scrap_medic_elite/room_05.tscn" id="38_medic_05"]
+[ext_resource type="PackedScene" uid="uid://d1c3ubcoq82yq" path="res://Scene/Battle/Rooms/Authoring/scrap_medic_elite/room_01.tscn" id="34_medic_01"]
+[ext_resource type="PackedScene" uid="uid://cq245cpxdlc27" path="res://Scene/Battle/Rooms/Authoring/scrap_medic_elite/room_02.tscn" id="35_medic_02"]
+[ext_resource type="PackedScene" uid="uid://k0k1i5nurkhi" path="res://Scene/Battle/Rooms/Authoring/scrap_medic_elite/room_03.tscn" id="36_medic_03"]
 [ext_resource type="PackedScene" path="res://Scene/Battle/Rooms/Authoring/sewer_gatekeeper/room_01.tscn" id="39_gate_01"]
 [ext_resource type="PackedScene" path="res://Scene/Battle/Rooms/Authoring/sewer_gatekeeper/room_02.tscn" id="40_gate_02"]
 [ext_resource type="PackedScene" path="res://Scene/Battle/Rooms/Authoring/sewer_gatekeeper/room_03.tscn" id="41_gate_03"]
 [ext_resource type="PackedScene" path="res://Scene/Battle/Rooms/Authoring/sewer_gatekeeper/room_04.tscn" id="42_gate_04"]
 [ext_resource type="PackedScene" path="res://Scene/Battle/Rooms/Authoring/sewer_gatekeeper/room_05.tscn" id="43_gate_05"]
+[ext_resource type="PackedScene" uid="uid://b7ms6tivpp65w" path="res://Scene/Battle/Rooms/Authoring/boss_rust_captain/room_01.tscn" id="44_boss_01"]
 
 [sub_resource type="Resource" id="Pool_scene01_tutorial"]
 script = ExtResource("2_u1q87")
@@ -84,13 +81,13 @@ RoomScenes = [ExtResource("24_pipe_01"), ExtResource("25_pipe_02"), ExtResource(
 script = ExtResource("2_u1q87")
 RoomPoolId = "pirate_brute_elite"
 EnemyTypeId = "pirate_brute_elite"
-RoomScenes = [ExtResource("29_brute_01"), ExtResource("30_brute_02"), ExtResource("31_brute_03"), ExtResource("32_brute_04"), ExtResource("33_brute_05")]
+RoomScenes = [ExtResource("29_brute_01"), ExtResource("30_brute_02"), ExtResource("31_brute_03")]
 
 [sub_resource type="Resource" id="Pool_scrap_medic_elite"]
 script = ExtResource("2_u1q87")
 RoomPoolId = "scrap_medic_elite"
 EnemyTypeId = "scrap_medic_elite"
-RoomScenes = [ExtResource("34_medic_01"), ExtResource("35_medic_02"), ExtResource("36_medic_03"), ExtResource("37_medic_04"), ExtResource("38_medic_05")]
+RoomScenes = [ExtResource("34_medic_01"), ExtResource("35_medic_02"), ExtResource("36_medic_03")]
 
 [sub_resource type="Resource" id="Pool_sewer_gatekeeper"]
 script = ExtResource("2_u1q87")
@@ -98,6 +95,12 @@ RoomPoolId = "sewer_gatekeeper"
 EnemyTypeId = "sewer_gatekeeper"
 RoomScenes = [ExtResource("39_gate_01"), ExtResource("40_gate_02"), ExtResource("41_gate_03"), ExtResource("42_gate_04"), ExtResource("43_gate_05")]
 
+[sub_resource type="Resource" id="Pool_boss_rust_captain"]
+script = ExtResource("2_u1q87")
+RoomPoolId = "boss_rust_captain"
+EnemyTypeId = "boss_rust_captain"
+RoomScenes = [ExtResource("44_boss_01")]
+
 [resource]
 script = ExtResource("1_3anlp")
-Entries = [SubResource("Pool_scene01_tutorial"), SubResource("Pool_pirate_blocker"), SubResource("Pool_pirate_scout"), SubResource("Pool_pirate_shocker"), SubResource("Pool_pirate_gunner"), SubResource("Pool_pirate_pipe_bomber"), SubResource("Pool_pirate_brute_elite"), SubResource("Pool_scrap_medic_elite"), SubResource("Pool_sewer_gatekeeper")]
+Entries = [SubResource("Pool_scene01_tutorial"), SubResource("Pool_pirate_blocker"), SubResource("Pool_pirate_scout"), SubResource("Pool_pirate_shocker"), SubResource("Pool_pirate_gunner"), SubResource("Pool_pirate_pipe_bomber"), SubResource("Pool_pirate_brute_elite"), SubResource("Pool_scrap_medic_elite"), SubResource("Pool_sewer_gatekeeper"), SubResource("Pool_boss_rust_captain")]

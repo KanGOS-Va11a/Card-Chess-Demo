@@ -16,6 +16,7 @@ public partial class Player : CharacterBody2D
 	[Export(PropertyHint.Range, "16,128,1")] public int SpriteFrameHeight = 64;
 	[Export(PropertyHint.Range, "1,24,1")] public int SpriteFps = 10;
 	[Export(PropertyHint.Range, "16,240,1")] public float InteractionRange = 96.0f;
+	[Export] public NodePath InteractionHintLabelPath = "../UI/InteractionHintLabel";
 	[Export(PropertyHint.Range, "10,89,1")] public float ViewConeHalfAngleDeg = 45.0f;
 	[Export] public bool RequireLineOfSight = false;
 	[Export] public uint InteractionObstacleMask = uint.MaxValue;
@@ -32,6 +33,7 @@ public partial class Player : CharacterBody2D
 	private ulong _lastInteractTimeMs;
 	private GlobalGameSession? _globalSession;
 	private AnimatedSprite2D? _animatedSprite;
+	private Label? _interactionHintLabel;
 	private string _activeAnimation = string.Empty;
 	private bool _isGridMoving;
 	private Vector2 _gridMoveTarget = Vector2.Zero;
@@ -43,6 +45,7 @@ public partial class Player : CharacterBody2D
 		_globalSession = GetNodeOrNull<GlobalGameSession>("/root/GlobalGameSession");
 		_interactionArea = GetNode<Area2D>("InteractionArea");
 		_animatedSprite = GetNodeOrNull<AnimatedSprite2D>(AnimatedSpritePath);
+		_interactionHintLabel = GetNodeOrNull<Label>(InteractionHintLabelPath);
 		if (SnapToGridOnReady)
 		{
 			GlobalPosition = SnapToGrid(GlobalPosition);
@@ -533,10 +536,13 @@ public partial class Player : CharacterBody2D
 	{
 		if (_interactionArea == null)
 		{
+			UpdateInteractionPrompt(null);
 			return;
 		}
 
 		HashSet<InteractableTemplate> currentInteractables = new();
+		InteractableTemplate? promptInteractable = null;
+		float promptDistanceSquared = float.PositiveInfinity;
 		foreach (Area2D area in _interactionArea.GetOverlappingAreas())
 		{
 			if (area.GetParent() is not InteractableTemplate interactable)
@@ -550,6 +556,12 @@ public partial class Player : CharacterBody2D
 			}
 
 			currentInteractables.Add(interactable);
+			float distanceSquared = GlobalPosition.DistanceSquaredTo(interactable.GlobalPosition);
+			if (distanceSquared < promptDistanceSquared)
+			{
+				promptDistanceSquared = distanceSquared;
+				promptInteractable = interactable;
+			}
 			if (_highlightedInteractables.Contains(interactable))
 			{
 				continue;
@@ -579,6 +591,8 @@ public partial class Player : CharacterBody2D
 		{
 			_highlightedInteractables.Add(interactable);
 		}
+
+		UpdateInteractionPrompt(promptInteractable);
 	}
 
 	private void ClearNearbyInteractableHighlights()
@@ -592,6 +606,33 @@ public partial class Player : CharacterBody2D
 		}
 
 		_highlightedInteractables.Clear();
+		UpdateInteractionPrompt(null);
+	}
+
+	private void UpdateInteractionPrompt(InteractableTemplate? interactable)
+	{
+		if (_interactionHintLabel == null)
+		{
+			return;
+		}
+
+		if (interactable == null || !GodotObject.IsInstanceValid(interactable))
+		{
+			_interactionHintLabel.Visible = false;
+			_interactionHintLabel.Text = string.Empty;
+			return;
+		}
+
+		string prompt = interactable.GetInteractText(this)?.Trim() ?? string.Empty;
+		if (string.IsNullOrWhiteSpace(prompt))
+		{
+			_interactionHintLabel.Visible = false;
+			_interactionHintLabel.Text = string.Empty;
+			return;
+		}
+
+		_interactionHintLabel.Text = $"E {prompt}";
+		_interactionHintLabel.Visible = true;
 	}
 
 	private float GetInteractionAreaRadius()

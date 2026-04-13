@@ -1,0 +1,9 @@
+[gd_resource type="TileSet" format=3 uid="uid://bk2oy8wp4bh0a"]
+
+[ext_resource type="PackedScene" path="res://Scene/Map/Markers/PlayerSpawnMarker.tscn" id="1_player_spawn_marker"]
+
+[sub_resource type="TileSetScenesCollectionSource" id="TileSetScenesCollectionSource_player_spawn"]
+scenes/1/scene = ExtResource("1_player_spawn_marker")
+
+[resource]
+sources/1 = SubResource("TileSetScenesCollectionSource_player_spawn")

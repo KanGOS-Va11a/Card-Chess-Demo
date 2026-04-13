@@ -1,4 +1,5 @@
 using Godot;
+using CardChessDemo.UI.Dialogue;
 
 namespace CardChessDemo.Map;
 
@@ -12,6 +13,11 @@ public static class MapTextBlocker
 		}
 
 		if (GalDialogueOverlay.IsVisible(context))
+		{
+			return true;
+		}
+
+		if (DialogueSequencePanel.IsVisible(context))
 		{
 			return true;
 		}

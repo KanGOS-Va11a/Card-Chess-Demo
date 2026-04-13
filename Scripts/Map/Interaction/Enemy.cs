@@ -39,20 +39,37 @@ public partial class Enemy : InteractableTemplate
 			&& (BattleScene != null || !string.IsNullOrWhiteSpace(BattleScenePath));
 	}
 
+	public bool TriggerEncounterDirect(Player player)
+	{
+		if (!CanInteract(player))
+		{
+			return false;
+		}
+
+		return TryStartEncounter(player);
+	}
+
 	protected override void OnInteract(Player player)
+	{
+		TryStartEncounter(player);
+	}
+
+	private bool TryStartEncounter(Player player)
 	{
 		_isTransitioning = true;
 		if (!MapBattleTransitionHelper.TryEnterBattle(this, player, BattleScene, BattleScenePath, EncounterId, out string failureReason, HandleDeferredBattleFailure))
 		{
 			_isTransitioning = false;
 			GD.PushError($"Enemy: {failureReason}");
-			return;
+			return false;
 		}
 
 		if (DisableAfterInteract)
 		{
 			IsDisabled = true;
 		}
+
+		return true;
 	}
 
 	private void HandleDeferredBattleFailure(string failureReason)
@@ -89,17 +106,12 @@ public partial class Enemy : InteractableTemplate
 
 	private void HideAndRemoveEncounterRoot()
 	{
-		Node rootToRemove = GetParent() ?? this;
-		if (rootToRemove is CanvasItem canvasItem)
+		if (this is CanvasItem canvasItem)
 		{
 			canvasItem.Visible = false;
 		}
 
 		IsDisabled = true;
 		CallDeferred(MethodName.QueueFree);
-		if (rootToRemove != this)
-		{
-			rootToRemove.CallDeferred(MethodName.QueueFree);
-		}
 	}
 }

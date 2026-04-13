@@ -20,6 +20,7 @@ public sealed class EnemyAiRegistry
         Register(new SupportHealerEnemyAiStrategy());
         Register(new ObstacleBomberEnemyAiStrategy());
         Register(new GatekeeperEnemyAiStrategy());
+        Register(new BossRustCaptainEnemyAiStrategy());
     }
 
     public void Register(IEnemyAiStrategy strategy)

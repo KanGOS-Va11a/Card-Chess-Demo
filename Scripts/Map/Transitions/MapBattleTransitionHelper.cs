@@ -48,9 +48,10 @@ public static class MapBattleTransitionHelper
             ? currentScene.GetPathTo(contextNode).ToString()
             : string.Empty;
         int battleSeed = BuildBattleSeed(battleEncounterId);
+        GD.Print($"MapBattleTransitionHelper: enter battle from '{currentScenePath}', encounter='{battleEncounterId}', playerPos={player.GlobalPosition}, source='{sourceInteractablePath}'");
         globalSession.BeginBattle(BattleRequest.FromSession(globalSession, battleEncounterId, battleSeed));
         globalSession.SetPendingBattleEncounterId(battleEncounterId);
-        globalSession.SetPendingMapResumeContext(new MapResumeContext(
+        globalSession.SetPendingBattleReturnContext(new MapResumeContext(
             currentScenePath,
             player.GlobalPosition,
             mapRuntimeSnapshot,

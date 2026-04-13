@@ -1,0 +1,27 @@
+[gd_resource type="TileSet" format=3 uid="uid://cee0umruk6at7"]
+
+[ext_resource type="PackedScene" path="res://Scene/Character/EnemyMazeScene01Tutorial.tscn" id="1_scene01_tutorial"]
+[ext_resource type="PackedScene" path="res://Scene/Character/EnemyMazePirateBlocker.tscn" id="2_pirate_blocker"]
+[ext_resource type="PackedScene" path="res://Scene/Character/EnemyMazePirateScout.tscn" id="3_pirate_scout"]
+[ext_resource type="PackedScene" path="res://Scene/Character/EnemyMazePirateShocker.tscn" id="4_pirate_shocker"]
+[ext_resource type="PackedScene" path="res://Scene/Character/EnemyMazePirateGunner.tscn" id="5_pirate_gunner"]
+[ext_resource type="PackedScene" path="res://Scene/Character/EnemyMazePiratePipeBomber.tscn" id="6_pirate_bomber"]
+[ext_resource type="PackedScene" path="res://Scene/Character/EnemyMazePirateBruteElite.tscn" id="7_pirate_brute"]
+[ext_resource type="PackedScene" path="res://Scene/Character/EnemyMazeScrapMedicElite.tscn" id="8_scrap_medic"]
+[ext_resource type="PackedScene" path="res://Scene/Character/EnemyMazeSewerGatekeeper.tscn" id="9_sewer_gatekeeper"]
+[ext_resource type="PackedScene" path="res://Scene/Character/EnemyMazeBossRustCaptain.tscn" id="10_boss_rust_captain"]
+
+[sub_resource type="TileSetScenesCollectionSource" id="TileSetScenesCollectionSource_map_enemy"]
+scenes/1/scene = ExtResource("1_scene01_tutorial")
+scenes/2/scene = ExtResource("2_pirate_blocker")
+scenes/3/scene = ExtResource("3_pirate_scout")
+scenes/4/scene = ExtResource("4_pirate_shocker")
+scenes/5/scene = ExtResource("5_pirate_gunner")
+scenes/6/scene = ExtResource("6_pirate_bomber")
+scenes/7/scene = ExtResource("7_pirate_brute")
+scenes/8/scene = ExtResource("8_scrap_medic")
+scenes/9/scene = ExtResource("9_sewer_gatekeeper")
+scenes/10/scene = ExtResource("10_boss_rust_captain")
+
+[resource]
+sources/1 = SubResource("TileSetScenesCollectionSource_map_enemy")

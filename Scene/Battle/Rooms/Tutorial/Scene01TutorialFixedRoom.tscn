@@ -1,7 +1,7 @@
 [gd_scene format=4 uid="uid://dchwol31ix112"]
 
 [ext_resource type="Script" uid="uid://ct05gdp6367dx" path="res://Scripts/Battle/Rooms/BattleRoomTemplate.cs" id="1_room"]
-[ext_resource type="Texture2D" uid="uid://cbnn0o0mufyk5" path="res://Assets/Tilemap/CosmicLegacy_PetricakeGamesPNG.png" id="2_g7p0r"]
+[ext_resource type="Texture2D" uid="uid://cbnn0o0mufyk5" path="res://Assets/Tilemap/CosmicLegacy_PetricakeGamesPNG.png" id="2_taupg"]
 [ext_resource type="PackedScene" path="res://Scene/Battle/Tiles/Markers/MarkerBase_Player.tscn" id="3_g7p0r"]
 [ext_resource type="PackedScene" path="res://Scene/Battle/Tiles/BattleFacingDownTile.tscn" id="4_taupg"]
 [ext_resource type="PackedScene" path="res://Scene/Battle/Tiles/Markers/MarkerEnemy_Scene01Tutorial.tscn" id="5_cxg8h"]
@@ -15,6 +15,7 @@
 [ext_resource type="PackedScene" path="res://Scene/Battle/Tiles/Markers/MarkerEnemy_SewerGatekeeper.tscn" id="13_mavmv"]
 [ext_resource type="PackedScene" path="res://Scene/Battle/Tiles/Markers/MarkerEnemy_Generic.tscn" id="14_p48xc"]
 [ext_resource type="PackedScene" path="res://Scene/Battle/Tiles/Markers/MarkerObstacle_Breakable.tscn" id="15_b7o1p"]
+[ext_resource type="PackedScene" path="res://Scene/Battle/Tiles/Markers/MarkerEnemy_BossRustCaptain.tscn" id="15_cxg8h"]
 [ext_resource type="PackedScene" path="res://Scene/Battle/Tiles/Markers/MarkerObstacle_Wall.tscn" id="16_8lscm"]
 [ext_resource type="PackedScene" path="res://Scene/Battle/Tiles/Markers/MarkerObstacle_Slow.tscn" id="17_0mgbg"]
 [ext_resource type="PackedScene" path="res://Scene/Battle/Tiles/BattleEscapeTile.tscn" id="18_yfjg2"]
@@ -23,8 +24,8 @@
 [ext_resource type="PackedScene" path="res://Scene/Battle/Tiles/BattleFacingRightTile.tscn" id="21_76tjn"]
 [ext_resource type="Texture2D" uid="uid://cfpdq1bxwcrde" path="res://Assets/Tilemap/地板片集合.png" id="22_taupg"]
 
-[sub_resource type="TileSetAtlasSource" id="TileSetAtlasSource_cxg8h"]
-texture = ExtResource("2_g7p0r")
+[sub_resource type="TileSetAtlasSource" id="TileSetAtlasSource_unfe4"]
+texture = ExtResource("2_taupg")
 0:0/0 = 0
 1:0/0 = 0
 2:0/0 = 0
@@ -162,7 +163,7 @@ texture = ExtResource("2_g7p0r")
 15:7/0 = 0
 16:7/0 = 0
 
-[sub_resource type="TileSetScenesCollectionSource" id="TileSetScenesCollectionSource_unfe4"]
+[sub_resource type="TileSetScenesCollectionSource" id="TileSetScenesCollectionSource_a1xnv"]
 scenes/1/scene = ExtResource("3_g7p0r")
 scenes/2/scene = ExtResource("14_p48xc")
 scenes/3/scene = ExtResource("15_b7o1p")
@@ -182,8 +183,9 @@ scenes/16/scene = ExtResource("10_8nthn")
 scenes/17/scene = ExtResource("11_54gct")
 scenes/18/scene = ExtResource("12_2oo08")
 scenes/19/scene = ExtResource("13_mavmv")
+scenes/20/scene = ExtResource("15_cxg8h")
 
-[sub_resource type="TileSetAtlasSource" id="TileSetAtlasSource_a1xnv"]
+[sub_resource type="TileSetAtlasSource" id="TileSetAtlasSource_4u3g5"]
 texture = ExtResource("22_taupg")
 0:0/0 = 0
 1:0/0 = 0
@@ -214,10 +216,10 @@ texture = ExtResource("22_taupg")
 5:3/0 = 0
 6:3/0 = 0
 
-[sub_resource type="TileSet" id="TileSet_4u3g5"]
-sources/0 = SubResource("TileSetAtlasSource_cxg8h")
-sources/2 = SubResource("TileSetAtlasSource_a1xnv")
-sources/1 = SubResource("TileSetScenesCollectionSource_unfe4")
+[sub_resource type="TileSet" id="TileSet_xbbvi"]
+sources/0 = SubResource("TileSetAtlasSource_unfe4")
+sources/2 = SubResource("TileSetAtlasSource_4u3g5")
+sources/1 = SubResource("TileSetScenesCollectionSource_a1xnv")
 
 [node name="Scene01TutorialFixedRoom" type="Node2D" unique_id=533210608]
 script = ExtResource("1_room")
@@ -231,15 +233,15 @@ DefaultSlowPassObstacleCells = Array[Vector2i]([])
 
 [node name="FloorLayer" type="TileMapLayer" parent="." unique_id=1986350583]
 tile_map_data = PackedByteArray("AAAAAAAAAgAEAAAAAAABAAAAAgAFAAAAAAACAAAAAgAEAAAAAAADAAAAAgAFAAAAAAAEAAAAAgAEAAAAAAAFAAAAAgAFAAAAAAAGAAAAAgAEAAAAAAAHAAAAAgAFAAAAAAAIAAAAAgAEAAAAAAAJAAAAAgAFAAAAAAAKAAAAAgAEAAAAAAALAAAAAgAFAAAAAAAMAAAAAgAEAAAAAAANAAAAAgAFAAAAAAAOAAAAAgAEAAAAAAAPAAAAAgAFAAAAAAAAAAEAAgAEAAAAAAABAAEAAgAFAAAAAAACAAEAAgAEAAAAAAADAAEAAgAFAAAAAAAEAAEAAgAEAAAAAAAFAAEAAgAFAAAAAAAGAAEAAgAEAAAAAAAHAAEAAgAFAAAAAAAIAAEAAgAEAAAAAAAJAAEAAgAFAAAAAAAKAAEAAgAEAAAAAAALAAEAAgAFAAAAAAAMAAEAAgAEAAAAAAANAAEAAgAFAAAAAAAOAAEAAgAEAAAAAAAPAAEAAgAFAAAAAAAAAAIAAgAEAAAAAAABAAIAAgAFAAAAAAACAAIAAgAEAAAAAAADAAIAAgAFAAAAAAAEAAIAAgAEAAAAAAAFAAIAAgAFAAAAAAAGAAIAAgAEAAAAAAAHAAIAAgAFAAMAAAAIAAIAAgAFAAMAAAAJAAIAAgAGAAIAAAAKAAIAAgAEAAAAAAALAAIAAgAFAAAAAAAMAAIAAgAEAAAAAAANAAIAAgAFAAAAAAAOAAIAAgAEAAAAAAAPAAIAAgAFAAAAAAAAAAMAAgAEAAAAAAABAAMAAgAFAAAAAAACAAMAAgAEAAAAAAADAAMAAgAFAAAAAAAEAAMAAgAEAAAAAAAFAAMAAgAFAAAAAAAGAAMAAgAEAAAAAAAHAAMAAgAFAAMAAAAIAAMAAgAEAAEAAAAJAAMAAgAGAAIAAAAKAAMAAgAEAAAAAAALAAMAAgAFAAAAAAAMAAMAAgAEAAAAAAANAAMAAgAFAAAAAAAOAAMAAgAEAAAAAAAPAAMAAgAFAAAAAAAAAAQAAgAEAAAAAAABAAQAAgAFAAAAAAACAAQAAgAEAAAAAAADAAQAAgAFAAAAAAAEAAQAAgAEAAAAAAAFAAQAAgAFAAAAAAAGAAQAAgAEAAAAAAAHAAQAAgAFAAMAAAAIAAQAAgAEAAEAAAAJAAQAAgAFAAMAAAAKAAQAAgAEAAAAAAALAAQAAgAFAAAAAAAMAAQAAgAEAAAAAAANAAQAAgAFAAAAAAAOAAQAAgAEAAAAAAAPAAQAAgAFAAAAAAAAAAUAAgAEAAAAAAABAAUAAgAFAAAAAAACAAUAAgAEAAAAAAADAAUAAgAFAAAAAAAEAAUAAgAEAAAAAAAFAAUAAgAFAAAAAAAGAAUAAgAEAAAAAAAHAAUAAgAFAAMAAAAIAAUAAgAFAAMAAAAJAAUAAgAFAAMAAAAKAAUAAgAEAAAAAAALAAUAAgAFAAAAAAAMAAUAAgAEAAAAAAANAAUAAgAFAAAAAAAOAAUAAgAEAAAAAAAPAAUAAgAFAAAAAAAAAAYAAgAEAAAAAAABAAYAAgAFAAAAAAACAAYAAgAEAAAAAAADAAYAAgAFAAAAAAAEAAYAAgAEAAAAAAAFAAYAAgAFAAAAAAAGAAYAAgAEAAAAAAAHAAYAAgAFAAAAAAAIAAYAAgAEAAAAAAAJAAYAAgAFAAAAAAAKAAYAAgAEAAAAAAALAAYAAgAFAAAAAAAMAAYAAgAEAAAAAAANAAYAAgAFAAAAAAAOAAYAAgAEAAAAAAAPAAYAAgAFAAAAAAAAAAcAAgAEAAAAAAABAAcAAgAFAAAAAAACAAcAAgAEAAAAAAADAAcAAgAFAAAAAAAEAAcAAgAEAAAAAAAFAAcAAgAFAAAAAAAGAAcAAgAEAAAAAAAHAAcAAgAFAAAAAAAIAAcAAgAEAAAAAAAJAAcAAgAFAAAAAAAKAAcAAgAEAAAAAAALAAcAAgAFAAAAAAAMAAcAAgAEAAAAAAANAAcAAgAFAAAAAAAOAAcAAgAEAAAAAAAPAAcAAgAFAAAAAAA=")
-tile_set = SubResource("TileSet_4u3g5")
+tile_set = SubResource("TileSet_xbbvi")
 
 [node name="MarkerLayer" type="TileMapLayer" parent="." unique_id=371698022]
-tile_map_data = PackedByteArray("AAACAAQAAQAAAAAAAQAIAAAAAQAAAAAACwALAAcAAQAAAAAACwAPAAMAAQAAAAAACwAHAAMAAQAAAAAABQAIAAMAAQAAAAAABQAJAAMAAQAAAAAABQAHAAUAAQAAAAAABQAIAAUAAQAAAAAABQAJAAUAAQAAAAAABQAHAAQAAQAAAAAABQAIAAQAAQAAAAAABQAJAAQAAQAAAAAABQAFAAYAAQAAAAAABAAGAAYAAQAAAAAABAAHAAYAAQAAAAAABAAIAAYAAQAAAAAABAAJAAYAAQAAAAAABAAKAAYAAQAAAAAABAALAAYAAQAAAAAABAAMAAYAAQAAAAAABAAFAAEAAQAAAAAABAAGAAEAAQAAAAAABAAHAAEAAQAAAAAABAAIAAEAAQAAAAAABAAJAAEAAQAAAAAABAAKAAEAAQAAAAAABAALAAEAAQAAAAAABAAMAAEAAQAAAAAABAAHAAIAAQAAAAAABQAIAAIAAQAAAAAABQAJAAIAAQAAAAAABQAEAAEAAQAAAAAABAAEAAYAAQAAAAAABAA=")
-tile_set = SubResource("TileSet_4u3g5")
+tile_map_data = PackedByteArray("AAACAAQAAQAAAAAAAQAIAAAAAQAAAAAACwALAAcAAQAAAAAACwAHAAMAAQAAAAAABQAIAAMAAQAAAAAABQAJAAMAAQAAAAAABQAHAAUAAQAAAAAABQAIAAUAAQAAAAAABQAJAAUAAQAAAAAABQAHAAQAAQAAAAAABQAIAAQAAQAAAAAABQAJAAQAAQAAAAAABQAFAAYAAQAAAAAABAAGAAYAAQAAAAAABAAHAAYAAQAAAAAABAAIAAYAAQAAAAAABAAJAAYAAQAAAAAABAAKAAYAAQAAAAAABAALAAYAAQAAAAAABAAMAAYAAQAAAAAABAAFAAEAAQAAAAAABAAGAAEAAQAAAAAABAAHAAEAAQAAAAAABAAIAAEAAQAAAAAABAAJAAEAAQAAAAAABAAKAAEAAQAAAAAABAALAAEAAQAAAAAABAAMAAEAAQAAAAAABAAHAAIAAQAAAAAABQAIAAIAAQAAAAAABQAJAAIAAQAAAAAABQAEAAEAAQAAAAAABAAEAAYAAQAAAAAABAA=")
+tile_set = SubResource("TileSet_xbbvi")
 
 [node name="EscapeLayer" type="TileMapLayer" parent="." unique_id=335948597]
-tile_set = SubResource("TileSet_4u3g5")
+tile_set = SubResource("TileSet_xbbvi")
 
 [node name="FacingLayer" type="TileMapLayer" parent="." unique_id=990874257]
-tile_map_data = PackedByteArray("AAACAAQAAQAAAAAACQALAAcAAQAAAAAABwAIAAAAAQAAAAAABwAPAAMAAQAAAAAABwA=")
-tile_set = SubResource("TileSet_4u3g5")
+tile_map_data = PackedByteArray("AAACAAQAAQAAAAAACQALAAcAAQAAAAAABwAIAAAAAQAAAAAABwA=")
+tile_set = SubResource("TileSet_xbbvi")

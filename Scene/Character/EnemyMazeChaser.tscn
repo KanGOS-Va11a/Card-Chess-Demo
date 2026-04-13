@@ -1,0 +1,18 @@
+[gd_scene format=3]
+
+[ext_resource type="PackedScene" path="res://Scene/Character/EnemyPirateBlocker.tscn" id="1_base"]
+[ext_resource type="Script" path="res://Scripts/Map/Interaction/MazeEnemyChaser.cs" id="2_script"]
+
+[node name="EnemyMazeChaser" instance=ExtResource("1_base")]
+script = ExtResource("2_script")
+VisionRangeTiles = 5
+ChaseRangeTiles = 8
+AutoBattleDistanceTiles = 1
+StepDurationSeconds = 0.5
+StepPauseSeconds = 0.2
+MaxChaseDurationSeconds = 6.0
+RequireLineOfSight = true
+
+[node name="AnimatedSprite2D" parent="." index="0"]
+position = Vector2(0, -4)
+scale = Vector2(1, 1)
