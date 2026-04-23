@@ -28,8 +28,8 @@ public partial class Player : CharacterBody2D
 	[Export] public Color GizmoForwardColor = new Color(1.0f, 0.85f, 0.25f, 0.95f);
 
 	private Vector2 _lastFacingDirection = Vector2.Down;
-	private Area2D _interactionArea = null!;
-	private Area2D? _lastInteractedArea;
+	private Area2D? _interactionArea;
+	private InteractableTemplate? _lastInteractedInteractable;
 	private ulong _lastInteractTimeMs;
 	private GlobalGameSession? _globalSession;
 	private AnimatedSprite2D? _animatedSprite;
@@ -40,10 +40,12 @@ public partial class Player : CharacterBody2D
 	private bool _preferHorizontalInput = true;
 	private readonly HashSet<InteractableTemplate> _highlightedInteractables = new();
 
+	public bool IsGridMoving => _isGridMoving;
+
 	public override void _Ready()
 	{
 		_globalSession = GetNodeOrNull<GlobalGameSession>("/root/GlobalGameSession");
-		_interactionArea = GetNode<Area2D>("InteractionArea");
+		_interactionArea = GetNodeOrNull<Area2D>("InteractionArea");
 		_animatedSprite = GetNodeOrNull<AnimatedSprite2D>(AnimatedSpritePath);
 		_interactionHintLabel = GetNodeOrNull<Label>(InteractionHintLabelPath);
 		if (SnapToGridOnReady)
@@ -126,9 +128,9 @@ public partial class Player : CharacterBody2D
 		DrawLine(Vector2.Zero, rightEdge, GizmoConeColor, 2.0f, true);
 		DrawLine(Vector2.Zero, forward, GizmoForwardColor, 2.5f, true);
 
-		if (IsInstanceValid(_lastInteractedArea))
+		if (GodotObject.IsInstanceValid(_lastInteractedInteractable))
 		{
-			Vector2 targetLocal = ToLocal(_lastInteractedArea!.GlobalPosition);
+			Vector2 targetLocal = ToLocal(_lastInteractedInteractable!.GlobalPosition);
 			DrawLine(Vector2.Zero, targetLocal, new Color(1.0f, 0.4f, 0.2f, 0.8f), 1.5f, true);
 		}
 	}
@@ -161,22 +163,22 @@ public partial class Player : CharacterBody2D
 			return;
 		}
 
-		if (!TryGetFacingTileTarget(out IInteractable? bestTarget, out Area2D? bestArea) || bestTarget == null || bestArea == null)
+		if (!TryGetFacingTileTarget(out IInteractable? bestTarget, out InteractableTemplate? bestInteractable) || bestTarget == null || bestInteractable == null)
 		{
 			return;
 		}
 
 		ulong nowMs = Time.GetTicksMsec();
-		_lastInteractedArea = bestArea;
+		_lastInteractedInteractable = bestInteractable;
 		_lastInteractTimeMs = nowMs;
 		bestTarget.Interact(this);
 		GetViewport()?.SetInputAsHandled();
 	}
 
-	private bool TryGetFacingTileTarget(out IInteractable? bestTarget, out Area2D? bestArea)
+	private bool TryGetFacingTileTarget(out IInteractable? bestTarget, out InteractableTemplate? bestInteractable)
 	{
 		bestTarget = null;
-		bestArea = null;
+		bestInteractable = null;
 
 		Vector2 facing = _lastFacingDirection;
 		if (facing == Vector2.Zero)
@@ -193,46 +195,29 @@ public partial class Player : CharacterBody2D
 			facing = new Vector2(0.0f, Mathf.Sign(facing.Y));
 		}
 
-		float tileSize = Mathf.Max(1.0f, GridTileSize);
-		Vector2 origin = SnapToGrid(GlobalPosition);
-		Vector2 side = new Vector2(-facing.Y, facing.X);
-		float bestScore = float.PositiveInfinity;
+		Vector2I targetCell = MapGridService.GetFacingCell(GlobalPosition, facing, GridTileSize);
+		Node? sceneRoot = GetTree().CurrentScene;
 
-		foreach (Area2D area in _interactionArea.GetOverlappingAreas())
+		foreach (InteractableTemplate interactable in MapGridService.EnumerateInteractables(sceneRoot))
 		{
-			if (area.GetParent() is not IInteractable item || !item.CanInteract(this))
+			if (!GodotObject.IsInstanceValid(interactable) || !interactable.CanInteract(this))
 			{
 				continue;
 			}
 
-			if (!HasLineOfSight(area))
+			if (!interactable.OccupiesInteractionCell(targetCell, GridTileSize))
 			{
 				continue;
 			}
 
-			Vector2 toTarget = area.GlobalPosition - origin;
-			float along = toTarget.Dot(facing);
-			float sideways = Mathf.Abs(toTarget.Dot(side));
-
-			if (along < tileSize * 0.35f || along > tileSize * 1.65f)
+			if (!HasLineOfSight(interactable))
 			{
 				continue;
 			}
 
-			if (sideways > tileSize * 0.55f)
-			{
-				continue;
-			}
-
-			float score = Mathf.Abs(along - tileSize) + sideways * 0.35f;
-			if (score >= bestScore)
-			{
-				continue;
-			}
-
-			bestScore = score;
-			bestTarget = item;
-			bestArea = area;
+			bestTarget = interactable;
+			bestInteractable = interactable;
+			break;
 		}
 
 		return bestTarget != null;
@@ -246,6 +231,21 @@ public partial class Player : CharacterBody2D
 		}
 
 		_globalSession.SetPlayerCurrentHp(_globalSession.PlayerCurrentHp + amount);
+	}
+
+	public Vector2 GetStableGridPosition()
+	{
+		return _isGridMoving ? _gridMoveTarget : SnapToGrid(GlobalPosition);
+	}
+
+	public void SettleToWorldPosition(Vector2 worldPosition, bool snapToGrid = true)
+	{
+		Vector2 settledPosition = snapToGrid ? SnapToGrid(worldPosition) : worldPosition;
+		GlobalPosition = settledPosition;
+		_gridMoveTarget = settledPosition;
+		_isGridMoving = false;
+		Velocity = Vector2.Zero;
+		UpdateMovementAnimation(Vector2.Zero);
 	}
 
 	private void SetupMainPlayerAnimations()
@@ -507,15 +507,31 @@ public partial class Player : CharacterBody2D
 
 	private bool HasLineOfSight(Area2D targetArea)
 	{
+		return HasLineOfSight(targetArea as Node2D);
+	}
+
+	private bool HasLineOfSight(Node2D? targetNode)
+	{
 		if (!RequireLineOfSight)
 		{
 			return true;
 		}
 
-		PhysicsRayQueryParameters2D query = PhysicsRayQueryParameters2D.Create(GlobalPosition, targetArea.GlobalPosition, InteractionObstacleMask);
+		if (targetNode == null)
+		{
+			return false;
+		}
+
+		PhysicsRayQueryParameters2D query = PhysicsRayQueryParameters2D.Create(GlobalPosition, targetNode.GlobalPosition, InteractionObstacleMask);
 		query.CollideWithAreas = true;
 		query.CollideWithBodies = true;
-		query.Exclude = new Godot.Collections.Array<Rid> { GetRid(), _interactionArea.GetRid() };
+		Godot.Collections.Array<Rid> exclude = new() { GetRid() };
+		if (_interactionArea != null)
+		{
+			exclude.Add(_interactionArea.GetRid());
+		}
+
+		query.Exclude = exclude;
 
 		Godot.Collections.Dictionary hit = GetWorld2D().DirectSpaceState.IntersectRay(query);
 		if (hit.Count == 0)
@@ -529,23 +545,19 @@ public partial class Player : CharacterBody2D
 		}
 
 		GodotObject collider = hit["collider"].AsGodotObject();
-		return collider == targetArea || collider == targetArea.GetParent();
+		return collider == targetNode || collider == targetNode.GetParent();
 	}
 
 	private void UpdateNearbyInteractableHighlights()
 	{
-		if (_interactionArea == null)
-		{
-			UpdateInteractionPrompt(null);
-			return;
-		}
-
 		HashSet<InteractableTemplate> currentInteractables = new();
 		InteractableTemplate? promptInteractable = null;
 		float promptDistanceSquared = float.PositiveInfinity;
-		foreach (Area2D area in _interactionArea.GetOverlappingAreas())
+		Vector2I playerCell = MapGridService.WorldToCell(GlobalPosition, GridTileSize);
+		Vector2I facingCell = MapGridService.GetFacingCell(GlobalPosition, _lastFacingDirection, GridTileSize);
+		foreach (InteractableTemplate interactable in MapGridService.EnumerateInteractables(GetTree().CurrentScene))
 		{
-			if (area.GetParent() is not InteractableTemplate interactable)
+			if (!GodotObject.IsInstanceValid(interactable))
 			{
 				continue;
 			}
@@ -555,9 +567,26 @@ public partial class Player : CharacterBody2D
 				continue;
 			}
 
+			if (!interactable.TryGetPrimaryInteractionCell(GridTileSize, out Vector2I interactableCell))
+			{
+				continue;
+			}
+
+			int distance = MapGridService.GetManhattanDistance(playerCell, interactableCell);
+			bool isFacingTarget = interactable.OccupiesInteractionCell(facingCell, GridTileSize);
+			if (distance > 1 && !isFacingTarget)
+			{
+				continue;
+			}
+
 			currentInteractables.Add(interactable);
 			float distanceSquared = GlobalPosition.DistanceSquaredTo(interactable.GlobalPosition);
-			if (distanceSquared < promptDistanceSquared)
+			if (isFacingTarget)
+			{
+				promptInteractable = interactable;
+				promptDistanceSquared = -1.0f;
+			}
+			else if (promptDistanceSquared >= 0.0f && distanceSquared < promptDistanceSquared)
 			{
 				promptDistanceSquared = distanceSquared;
 				promptInteractable = interactable;

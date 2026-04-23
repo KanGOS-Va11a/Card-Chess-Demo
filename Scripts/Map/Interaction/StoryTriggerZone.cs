@@ -7,8 +7,14 @@ using Godot;
 
 namespace CardChessDemo.Map;
 
+[Tool]
 public partial class StoryTriggerZone : InteractableTemplate
 {
+	[Export] public bool UseGridTriggerPlacement { get; set; }
+	[Export] public Vector2I OriginCell { get; set; } = Vector2I.Zero;
+	[Export] public Vector2I TriggerSizeCells { get; set; } = new(2, 2);
+	[Export] public Godot.Collections.Array<Vector2I> TriggerCellOffsets { get; set; } = new();
+	[Export(PropertyHint.Range, "8,128,1")] public int GridTileSize { get; set; } = 16;
 	[Export] public Vector2 TriggerSize { get; set; } = new(32.0f, 32.0f);
 	[Export] public bool TriggerOnce { get; set; } = true;
 	[Export] public bool DisableAfterTrigger { get; set; } = true;
@@ -36,6 +42,7 @@ public partial class StoryTriggerZone : InteractableTemplate
 	private bool _hasTriggered;
 	private bool _removeFromScene;
 	private Player? _pendingPlayer;
+	private bool _wasPlayerInsideGridZone;
 
 	private static readonly Dictionary<string, string[]> DialogueScripts = new(StringComparer.Ordinal)
 	{
@@ -99,20 +106,50 @@ public partial class StoryTriggerZone : InteractableTemplate
 		_collisionShape.Shape = _shape;
 		_triggerArea.BodyEntered += OnTriggerBodyEntered;
 		RefreshShape();
-		SetProcess(Engine.IsEditorHint());
+		if (UseGridTriggerPlacement)
+		{
+			ApplyGridPlacement();
+			_triggerArea.SetDeferred(Area2D.PropertyName.Monitoring, false);
+		}
+
+		SetProcess(true);
 		UpdateEditorVisual();
 	}
 
 	public override void _Process(double delta)
 	{
-		if (!Engine.IsEditorHint())
+		if (Engine.IsEditorHint())
 		{
-			SetProcess(false);
+			ApplyGridPlacement();
+			RefreshShape();
+			UpdateEditorVisual();
+			QueueRedraw();
 			return;
 		}
 
-		RefreshShape();
-		UpdateEditorVisual();
+		if (UseGridTriggerPlacement)
+		{
+			EvaluateGridTrigger();
+		}
+	}
+
+	public override void _Draw()
+	{
+		if (!Engine.IsEditorHint() || !UseGridTriggerPlacement)
+		{
+			return;
+		}
+
+		string labelText = TriggerCellOffsets.Count > 0
+			? $"Origin ({OriginCell.X},{OriginCell.Y})\nCells {TriggerCellOffsets.Count}"
+			: $"Origin ({OriginCell.X},{OriginCell.Y})\nSize {Mathf.Max(1, TriggerSizeCells.X)}x{Mathf.Max(1, TriggerSizeCells.Y)}";
+		MapEditorDrawHelper.DrawLabel(
+			this,
+			new Vector2(-18.0f, -20.0f),
+			labelText,
+			12,
+			new Color(1.0f, 0.96f, 0.78f, 1.0f),
+			new Color(0.12f, 0.09f, 0.03f, 0.9f));
 	}
 
 	public override bool CanInteract(Player player)
@@ -134,8 +171,9 @@ public partial class StoryTriggerZone : InteractableTemplate
 	{
 	}
 
-	protected override void OnInteract(Player player)
+	protected override async void OnInteract(Player player)
 	{
+		player.SettleToWorldPosition(player.GetStableGridPosition());
 		_pendingPlayer = player;
 		if (!HasDialogueContent() || (_hasTriggered && PlayDialogueOnlyOnce))
 		{
@@ -143,29 +181,33 @@ public partial class StoryTriggerZone : InteractableTemplate
 			return;
 		}
 
-		if (DialoguePanelScene?.Instantiate() is not DialogueSequencePanel panel)
-		{
-			return;
-		}
-
-		Node currentScene = GetTree().CurrentScene ?? this;
-		currentScene.AddChild(panel);
 		_showingDialogue = true;
 		_hasTriggered = true;
-		SetPlayerInputEnabled(false);
-		panel.Present(
-			BuildDialoguePages(),
-			onCompleted: HandleDialogueCompleted,
-			onClosed: () =>
+		MapDialogueResult result = await MapDialogueService.PresentAsync(
+			this,
+			new MapDialogueRequest
 			{
+				PanelScene = DialoguePanelScene,
+				Pages = BuildDialoguePages(),
+				LockPlayerInput = true,
+				RejectIfAnotherDialogueVisible = true,
+				SourceId = BuildRuntimeStateKey(),
+			},
+			player);
+
+		switch (result.Status)
+		{
+			case MapDialogueCompletionStatus.Completed:
+				HandleDialogueCompleted();
+				break;
+			case MapDialogueCompletionStatus.Closed:
+				HandleDialogueClosedWithoutAction();
+				break;
+			default:
 				_showingDialogue = false;
-				SetPlayerInputEnabled(true);
 				_pendingPlayer = null;
-				if (TriggerOnce && DisableAfterTrigger && !HasFollowUpAction())
-				{
-					IsDisabled = true;
-				}
-			});
+				break;
+		}
 	}
 
 	public override Godot.Collections.Dictionary BuildRuntimeSnapshot()
@@ -197,6 +239,11 @@ public partial class StoryTriggerZone : InteractableTemplate
 
 	private void OnTriggerBodyEntered(Node2D body)
 	{
+		if (UseGridTriggerPlacement)
+		{
+			return;
+		}
+
 		if (body is not Player player)
 		{
 			return;
@@ -209,21 +256,81 @@ public partial class StoryTriggerZone : InteractableTemplate
 	{
 		_showingDialogue = false;
 		Player? player = _pendingPlayer;
-		SetPlayerInputEnabled(true);
 		_pendingPlayer = null;
 
 		bool actionStarted = false;
 		if (player != null)
 		{
-			actionStarted = TryTriggerTargetInteractable(player)
-				|| TryStartConfiguredBattle(player)
-				|| TryStartConfiguredSceneTransition();
+			MapDialogueFollowUpAction? action = BuildPrimaryFollowUpAction();
+			if (action != null)
+			{
+				if (action.Kind == MapDialogueFollowUpKind.TriggerInteractable
+					&& TryResolveTriggerTargetNode(out Node? targetNode)
+					&& targetNode is InteractableTemplate targetInteractable
+					&& (targetNode is Enemy || targetNode is BattleEncounterEnemy))
+				{
+					RegisterRetreatCleanupIfNeeded(targetInteractable);
+				}
+
+				MapDialogueFollowUpResult followUpResult = MapDialogueService.ExecuteFollowUpActions(this, player, action);
+				actionStarted = followUpResult.Executed && followUpResult.Succeeded;
+				if (!followUpResult.Succeeded)
+				{
+					ClearRetreatCleanup();
+					GD.PushError($"StoryTriggerZone follow-up failed: {followUpResult.FailureReason}");
+				}
+			}
 		}
 
 		if (TriggerOnce && DisableAfterTrigger && (actionStarted || !HasFollowUpAction()))
 		{
 			IsDisabled = true;
 		}
+	}
+
+	private void HandleDialogueClosedWithoutAction()
+	{
+		_showingDialogue = false;
+		_pendingPlayer = null;
+		if (TriggerOnce && DisableAfterTrigger && !HasFollowUpAction())
+		{
+			IsDisabled = true;
+		}
+	}
+
+	private MapDialogueFollowUpAction? BuildPrimaryFollowUpAction()
+	{
+		if (!TriggerInteractablePath.IsEmpty)
+		{
+			return new MapDialogueFollowUpAction
+			{
+				Kind = MapDialogueFollowUpKind.TriggerInteractable,
+				TargetNodePath = TriggerInteractablePath,
+			};
+		}
+
+		if (StartBattleOnComplete)
+		{
+			return new MapDialogueFollowUpAction
+			{
+				Kind = MapDialogueFollowUpKind.StartBattle,
+				BattleEncounterId = BattleEncounterId,
+				BattleScene = BattleScene,
+				BattleScenePath = BattleScenePath,
+			};
+		}
+
+		if (!string.IsNullOrWhiteSpace(NextScenePath))
+		{
+			return new MapDialogueFollowUpAction
+			{
+				Kind = MapDialogueFollowUpKind.ChangeScene,
+				NextScenePath = NextScenePath,
+				NextSceneSpawnId = NextSceneSpawnId,
+			};
+		}
+
+		return null;
 	}
 
 	private bool TryTriggerTargetInteractable(Player player)
@@ -440,19 +547,6 @@ public partial class StoryTriggerZone : InteractableTemplate
 		};
 	}
 
-	private void SetPlayerInputEnabled(bool enabled)
-	{
-		if (_pendingPlayer == null || !GodotObject.IsInstanceValid(_pendingPlayer))
-		{
-			return;
-		}
-
-		_pendingPlayer.SetPhysicsProcess(enabled);
-		_pendingPlayer.SetProcess(enabled);
-		_pendingPlayer.SetProcessInput(enabled);
-		_pendingPlayer.SetProcessUnhandledInput(enabled);
-	}
-
 	private void HideAndRemoveTrigger()
 	{
 		_removeFromScene = true;
@@ -462,9 +556,121 @@ public partial class StoryTriggerZone : InteractableTemplate
 		CallDeferred(MethodName.QueueFree);
 	}
 
+	private void ApplyGridPlacement()
+	{
+		if (!UseGridTriggerPlacement)
+		{
+			return;
+		}
+
+		Vector2 localPosition = MapGridService.ResolveLocalPositionFromCell(this, OriginCell, GridTileSize);
+		if (Position != localPosition)
+		{
+			Position = localPosition;
+		}
+	}
+
+	private void EvaluateGridTrigger()
+	{
+		if (_showingDialogue || IsDisabled || _removeFromScene)
+		{
+			_wasPlayerInsideGridZone = false;
+			return;
+		}
+
+		Player? player = ResolveCurrentScenePlayer();
+		if (player == null)
+		{
+			_wasPlayerInsideGridZone = false;
+			return;
+		}
+
+		if (player.IsGridMoving)
+		{
+			return;
+		}
+
+		Vector2I playerCell = MapGridService.WorldToCell(player.GlobalPosition, GridTileSize);
+		bool isInside = ContainsCell(playerCell);
+		if (isInside && !_wasPlayerInsideGridZone)
+		{
+			Interact(player);
+		}
+
+		_wasPlayerInsideGridZone = isInside;
+	}
+
+	private bool ContainsCell(Vector2I playerCell)
+	{
+		if (TriggerCellOffsets.Count > 0)
+		{
+			foreach (Vector2I offset in TriggerCellOffsets)
+			{
+				if (playerCell == OriginCell + offset)
+				{
+					return true;
+				}
+			}
+
+			return false;
+		}
+
+		Vector2I safeSize = new(Math.Max(1, TriggerSizeCells.X), Math.Max(1, TriggerSizeCells.Y));
+		return playerCell.X >= OriginCell.X
+			&& playerCell.Y >= OriginCell.Y
+			&& playerCell.X < OriginCell.X + safeSize.X
+			&& playerCell.Y < OriginCell.Y + safeSize.Y;
+	}
+
+	private IEnumerable<Vector2I> EnumerateCoveredCells()
+	{
+		if (TriggerCellOffsets.Count > 0)
+		{
+			foreach (Vector2I offset in TriggerCellOffsets)
+			{
+				yield return OriginCell + offset;
+			}
+
+			yield break;
+		}
+
+		Vector2I safeSize = new(Math.Max(1, TriggerSizeCells.X), Math.Max(1, TriggerSizeCells.Y));
+		for (int y = 0; y < safeSize.Y; y++)
+		{
+			for (int x = 0; x < safeSize.X; x++)
+			{
+				yield return new Vector2I(OriginCell.X + x, OriginCell.Y + y);
+			}
+		}
+	}
+
+	private Player? ResolveCurrentScenePlayer()
+	{
+		return GetTree().CurrentScene?.FindChild("Player", true, false) as Player;
+	}
+
 	private void RefreshShape()
 	{
-		Vector2 safeSize = new(Mathf.Max(16.0f, TriggerSize.X), Mathf.Max(16.0f, TriggerSize.Y));
+		Vector2 safeSize;
+		if (UseGridTriggerPlacement)
+		{
+			float safeTileSize = Mathf.Max(1, GridTileSize);
+			if (TryGetCoveredCellBounds(out Vector2I minCell, out Vector2I maxCell))
+			{
+				safeSize = new Vector2(
+					(maxCell.X - minCell.X + 1) * safeTileSize,
+					(maxCell.Y - minCell.Y + 1) * safeTileSize);
+			}
+			else
+			{
+				safeSize = new Vector2(safeTileSize, safeTileSize);
+			}
+		}
+		else
+		{
+			safeSize = new Vector2(Mathf.Max(16.0f, TriggerSize.X), Mathf.Max(16.0f, TriggerSize.Y));
+		}
+
 		if (_shape.Size == safeSize)
 		{
 			return;
@@ -479,8 +685,41 @@ public partial class StoryTriggerZone : InteractableTemplate
 		_fillPolygon.Visible = visibleInEditor;
 		_outline.Visible = visibleInEditor;
 
+		if (!visibleInEditor)
+		{
+			return;
+		}
+
+		if (UseGridTriggerPlacement && TryGetCoveredCellBounds(out Vector2I minCell, out Vector2I maxCell))
+		{
+			float safeTileSize = Mathf.Max(1, GridTileSize);
+			Vector2I localMin = minCell - OriginCell;
+			Vector2I localMax = maxCell - OriginCell;
+			Vector2 topLeft = new(localMin.X * safeTileSize - safeTileSize * 0.5f, localMin.Y * safeTileSize - safeTileSize * 0.5f);
+			Vector2 topRight = new(localMax.X * safeTileSize + safeTileSize * 0.5f, localMin.Y * safeTileSize - safeTileSize * 0.5f);
+			Vector2 bottomRight = new(localMax.X * safeTileSize + safeTileSize * 0.5f, localMax.Y * safeTileSize + safeTileSize * 0.5f);
+			Vector2 bottomLeft = new(localMin.X * safeTileSize - safeTileSize * 0.5f, localMax.Y * safeTileSize + safeTileSize * 0.5f);
+			Vector2[] points =
+			{
+				topLeft,
+				topRight,
+				bottomRight,
+				bottomLeft,
+			};
+			_fillPolygon.Polygon = points;
+			_outline.Points = new[]
+			{
+				topLeft,
+				topRight,
+				bottomRight,
+				bottomLeft,
+				topLeft,
+			};
+			return;
+		}
+
 		Vector2 half = _shape.Size * 0.5f;
-		Vector2[] points =
+		Vector2[] legacyPoints =
 		{
 			new(-half.X, -half.Y),
 			new(half.X, -half.Y),
@@ -488,14 +727,36 @@ public partial class StoryTriggerZone : InteractableTemplate
 			new(-half.X, half.Y),
 		};
 
-		_fillPolygon.Polygon = points;
+		_fillPolygon.Polygon = legacyPoints;
 		_outline.Points = new[]
 		{
-			points[0],
-			points[1],
-			points[2],
-			points[3],
-			points[0],
+			legacyPoints[0],
+			legacyPoints[1],
+			legacyPoints[2],
+			legacyPoints[3],
+			legacyPoints[0],
 		};
+	}
+
+	private bool TryGetCoveredCellBounds(out Vector2I minCell, out Vector2I maxCell)
+	{
+		bool hasAny = false;
+		minCell = Vector2I.Zero;
+		maxCell = Vector2I.Zero;
+		foreach (Vector2I cell in EnumerateCoveredCells())
+		{
+			if (!hasAny)
+			{
+				minCell = cell;
+				maxCell = cell;
+				hasAny = true;
+				continue;
+			}
+
+			minCell = new Vector2I(Math.Min(minCell.X, cell.X), Math.Min(minCell.Y, cell.Y));
+			maxCell = new Vector2I(Math.Max(maxCell.X, cell.X), Math.Max(maxCell.Y, cell.Y));
+		}
+
+		return hasAny;
 	}
 }

@@ -26,7 +26,7 @@ public partial class StoryDialogueEnemy : Enemy
 		return !_showingDialogue && base.CanInteract(player);
 	}
 
-	protected override void OnInteract(Player player)
+	protected override async void OnInteract(Player player)
 	{
 		if (_showingDialogue || DialoguePages.Count == 0)
 		{
@@ -34,24 +34,35 @@ public partial class StoryDialogueEnemy : Enemy
 			return;
 		}
 
-		if (DialoguePanelScene?.Instantiate() is not DialogueSequencePanel panel)
+		if (DialoguePanelScene == null)
 		{
 			base.OnInteract(player);
 			return;
 		}
 
 		_showingDialogue = true;
-		(GetTree().CurrentScene ?? this).AddChild(panel);
-		panel.Present(
-			DialoguePages.ToArray(),
-			onCompleted: () =>
+		await MapDialogueService.PresentAsync(
+			this,
+			new MapDialogueRequest
 			{
-				_showingDialogue = false;
-				base.OnInteract(player);
+				PanelScene = DialoguePanelScene,
+				Pages = DialoguePages.ToArray(),
+				LockPlayerInput = true,
+				RejectIfAnotherDialogueVisible = true,
+				SourceId = BuildRuntimeStateKey(),
+				CompletedFollowUpActions = new[]
+				{
+					new MapDialogueFollowUpAction
+					{
+						Kind = MapDialogueFollowUpKind.StartBattle,
+						BattleEncounterId = EncounterId,
+						BattleScene = BattleScene,
+						BattleScenePath = BattleScenePath,
+					},
+				},
 			},
-			onClosed: () =>
-			{
-				_showingDialogue = false;
-			});
+			player);
+
+		_showingDialogue = false;
 	}
 }

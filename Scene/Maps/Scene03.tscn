@@ -20,6 +20,11 @@
 [ext_resource type="TileSet" uid="uid://cee0umruk6at7" path="res://Resources/Map/EnemySpawnTileSet.tres" id="23_enemy_spawn_tiles"]
 [ext_resource type="TileSet" uid="uid://dvsv43jlor71o" path="res://Resources/Map/InteractionTileSet.tres" id="24_interaction_tiles"]
 [ext_resource type="PackedScene" path="res://Scene/Map/Triggers/StoryTriggerZone.tscn" id="25_story_trigger"]
+[ext_resource type="PackedScene" path="res://Scene/InteractableItem/Cabinet01.tscn" id="26_cabinet01"]
+[ext_resource type="PackedScene" path="res://Scene/InteractableItem/Cabinet02.tscn" id="27_cabinet02"]
+[ext_resource type="PackedScene" path="res://Scene/InteractableItem/Chest.tscn" id="28_chest"]
+[ext_resource type="PackedScene" path="res://Scene/InteractableItem/HealingStation.tscn" id="29_healstation"]
+[ext_resource type="Script" uid="uid://baeu03tnsct7m" path="res://Scripts/Map/Grid/GridInteractableAnchor.cs" id="30_grid_anchor"]
 [ext_resource type="TileSet" uid="uid://bk2oy8wp4bh0a" path="res://Resources/Map/PlayerSpawnTileSet.tres" id="99_player_spawn_tiles"]
 
 [sub_resource type="TileSetAtlasSource" id="TileSetAtlasSource_i18ty"]
@@ -268,8 +273,58 @@ tile_set = ExtResource("99_player_spawn_tiles")
 
 [node name="InteractionLayer" type="TileMapLayer" parent="WorldObjects" unique_id=1624165136]
 y_sort_enabled = true
-tile_map_data = PackedByteArray("AAD8//z/AQAAAAAAAQD6/wAAAQAAAAAAAgAOAAoAAQAAAAAAAwD6//7/AQAAAAAAAwD6/wUAAQAAAAAAAwAZAPT/AQAAAAAAAwAMAAkAAQAAAAAAAQD9//7/AQAAAAAABgA=")
 tile_set = ExtResource("24_interaction_tiles")
+
+[node name="GridInteractables" type="Node2D" parent="WorldObjects" unique_id=149328001]
+y_sort_enabled = true
+
+[node name="Cabinet01A" parent="WorldObjects/GridInteractables" unique_id=149328002 instance=ExtResource("26_cabinet01")]
+position = Vector2(-56, -56)
+InteractionId = "scene03_cabinet_01"
+UseGridPlacement = true
+Cell = Vector2i(-4, -4)
+
+[node name="Cabinet02A" parent="WorldObjects/GridInteractables" unique_id=149328003 instance=ExtResource("27_cabinet02")]
+position = Vector2(-88, 8)
+InteractionId = "scene03_cabinet_02"
+UseGridPlacement = true
+Cell = Vector2i(-6, 0)
+
+[node name="Chest01" parent="WorldObjects/GridInteractables" unique_id=149328004 instance=ExtResource("28_chest")]
+position = Vector2(232, 168)
+InteractionId = "scene03_chest_01"
+UseGridPlacement = true
+Cell = Vector2i(14, 10)
+
+[node name="Chest02" parent="WorldObjects/GridInteractables" unique_id=149328005 instance=ExtResource("28_chest")]
+position = Vector2(-88, -24)
+InteractionId = "scene03_chest_02"
+UseGridPlacement = true
+Cell = Vector2i(-6, -2)
+
+[node name="Chest03" parent="WorldObjects/GridInteractables" unique_id=149328006 instance=ExtResource("28_chest")]
+position = Vector2(-88, 88)
+InteractionId = "scene03_chest_03"
+UseGridPlacement = true
+Cell = Vector2i(-6, 5)
+
+[node name="Chest04" parent="WorldObjects/GridInteractables" unique_id=149328007 instance=ExtResource("28_chest")]
+position = Vector2(408, -184)
+InteractionId = "scene03_chest_04"
+UseGridPlacement = true
+Cell = Vector2i(25, -12)
+
+[node name="Cabinet01B" parent="WorldObjects/GridInteractables" unique_id=149328008 instance=ExtResource("26_cabinet01")]
+position = Vector2(200, 152)
+InteractionId = "scene03_cabinet_03"
+UseGridPlacement = true
+Cell = Vector2i(12, 9)
+
+[node name="HealingStation" parent="WorldObjects/GridInteractables" unique_id=149328009 instance=ExtResource("29_healstation")]
+position = Vector2(-40, -24)
+InteractionId = "scene03_healstation_01"
+UseGridPlacement = true
+Cell = Vector2i(-3, -2)
 
 [node name="EnemySpawnLayer" type="TileMapLayer" parent="WorldObjects" unique_id=1689363866]
 y_sort_enabled = true
@@ -278,49 +333,71 @@ tile_set = ExtResource("23_enemy_spawn_tiles")
 [node name="Enemies" type="Node2D" parent="WorldObjects" unique_id=2063646039]
 y_sort_enabled = true
 
-[node name="Enemy2" parent="WorldObjects/Enemies" unique_id=1781789759 instance=ExtResource("18_3deog")]
+[node name="Enemy2Anchor" type="Node2D" parent="WorldObjects/Enemies" unique_id=149328401]
 position = Vector2(104, 8)
+script = ExtResource("30_grid_anchor")
+TargetNodePath = NodePath("Enemy2")
+InteractionId = "scene03_enemy_01"
+UseGridPlacement = true
+Cell = Vector2i(6, 0)
+
+[node name="Enemy2" parent="WorldObjects/Enemies/Enemy2Anchor" unique_id=1781789759 instance=ExtResource("18_3deog")]
 BattleScene = ExtResource("21_tutorial_battle")
 
-[node name="AnimatedSprite2D" parent="WorldObjects/Enemies/Enemy2" index="0" unique_id=1523731312]
+[node name="AnimatedSprite2D" parent="WorldObjects/Enemies/Enemy2Anchor/Enemy2" index="0" unique_id=1523731312]
 position = Vector2(0, -4)
 scale = Vector2(1, 1)
 metadata/_edit_lock_ = true
 
-[node name="InteractionArea" parent="WorldObjects/Enemies/Enemy2" index="1" unique_id=2063466717]
+[node name="InteractionArea" parent="WorldObjects/Enemies/Enemy2Anchor/Enemy2" index="1" unique_id=2063466717]
 collision_layer = 0
 metadata/_edit_lock_ = true
 
-[node name="CollisionShape2D" parent="WorldObjects/Enemies/Enemy2/InteractionArea" index="0" unique_id=371344235]
+[node name="CollisionShape2D" parent="WorldObjects/Enemies/Enemy2Anchor/Enemy2/InteractionArea" index="0" unique_id=371344235]
 metadata/_edit_lock_ = true
 
-[node name="BodyShape" parent="WorldObjects/Enemies/Enemy2" index="2" unique_id=1691834078]
+[node name="BodyShape" parent="WorldObjects/Enemies/Enemy2Anchor/Enemy2" index="2" unique_id=1691834078]
 metadata/_edit_lock_ = true
 
 [node name="Doors" type="Node2D" parent="WorldObjects" unique_id=92205131]
 y_sort_enabled = true
 
 [node name="Door02" parent="WorldObjects/Doors" unique_id=1311460087 instance=ExtResource("15_a0dq8")]
-position = Vector2(568, -7)
+position = Vector2(568, -8)
 rotation = 1.5707964
+InteractionId = "scene03_door_02"
+UseGridPlacement = true
+Cell = Vector2i(35, -1)
 
 [node name="Door03" parent="WorldObjects/Doors" unique_id=4572677 instance=ExtResource("15_a0dq8")]
 position = Vector2(568, 24)
 rotation = 1.5707964
+InteractionId = "scene03_door_03"
+UseGridPlacement = true
+Cell = Vector2i(35, 1)
 
 [node name="Door04" parent="WorldObjects/Doors" unique_id=1930959081 instance=ExtResource("15_a0dq8")]
-position = Vector2(568, 9)
+position = Vector2(568, 8)
 rotation = 1.5707964
+InteractionId = "scene03_door_04"
+UseGridPlacement = true
+Cell = Vector2i(35, 0)
 
 [node name="Door05" parent="WorldObjects/Doors" unique_id=1611862434 instance=ExtResource("15_a0dq8")]
-position = Vector2(568, -23)
+position = Vector2(568, -24)
 rotation = 1.5707964
+InteractionId = "scene03_door_05"
+UseGridPlacement = true
+Cell = Vector2i(35, -2)
 
 [node name="TutorialBasicTrigger" parent="WorldObjects" unique_id=430653029 instance=ExtResource("25_story_trigger")]
-position = Vector2(88, 8)
+position = Vector2(72, -40)
+UseGridTriggerPlacement = true
+OriginCell = Vector2i(4, -3)
+TriggerSizeCells = Vector2i(3, 5)
 TriggerSize = Vector2(48, 32)
 DialogueScriptId = "scene03_basic_story"
-TriggerInteractablePath = NodePath("WorldObjects/Enemies/Enemy2")
+TriggerInteractablePath = NodePath("WorldObjects/Enemies/Enemy2Anchor/Enemy2")
 
 [node name="CanvasModulate" type="CanvasModulate" parent="." unique_id=1626774945]
 color = Color(0.8745098, 0.83137256, 0.94509804, 1)
@@ -349,4 +426,4 @@ z_index = -1
 tile_map_data = PackedByteArray("AAD1//v/BQADAAAAAAD2//v/BQADAAAAAAD3//v/BQADAAAAAAD4//v/BQADAAAAAAD5//v/BQADAAAAAAD6//v/BQADAAAAAAD7//v/BQADAAAAAAD8//v/BQADAAAAAAD8//z/BQADAAAAAAD8//3/BQADAAAAAAD7//3/BQADAAAAAAD8//7/BQADAAAAAAD9//7/BQADAAAAAAD+//7/BQADAAAAAAD///7/BQADAAAAAAAAAP7/BQADAAAAAAABAP7/BQADAAAAAAACAP7/BQADAAAAAAADAP7/BQADAAAAAAADAP3/BQADAAAAAAADAPz/BQADAAAAAAADAPv/BQADAAAAAAACAPv/BQADAAAAAAACAPr/BQADAAAAAAACAPn/BQADAAAAAAADAPn/BQADAAAAAAAEAPn/BQADAAAAAAAFAPn/BQADAAAAAAAGAP7/BQADAAAAAAAHAP7/BQADAAAAAAAIAP7/BQADAAAAAAAJAP7/BQADAAAAAAAKAP7/BQADAAAAAAALAP7/BQADAAAAAAALAP//BQADAAAAAAAMAP//BQADAAAAAAANAP//BQADAAAAAAAOAP//BQADAAAAAAAPAP//BQADAAAAAAAQAP//BQADAAAAAAAQAP7/BQADAAAAAAARAP7/BQADAAAAAAASAP7/BQADAAAAAAAMAP7/BQADAAAAAAANAP7/BQADAAAAAAAOAP7/BQADAAAAAAAPAP7/BQADAAAAAAATAP7/BQADAAAAAAAUAP7/BQADAAAAAAAVAP7/BQADAAAAAAAWAP7/BQADAAAAAAAXAP7/BQADAAAAAAAYAP7/BQADAAAAAAAEAPv/BQADAAAAAAAEAPz/BQADAAAAAAAEAP3/BQADAAAAAAAEAP7/BQADAAAAAAAFAP7/BQADAAAAAAAFAPr/BQADAAAAAAAFAPv/BQADAAAAAAAEAPr/BQADAAAAAAADAPr/BQADAAAAAAAZAP7/BQADAAAAAAAaAP7/BQADAAAAAAAbAP7/BQADAAAAAAAbAP//BQADAAAAAAAbAAAABQADAAAAAAAbAAEABQADAAAAAAAZAAEABQADAAAAAAAYAAEABQADAAAAAAAaAAEABQADAAAAAAAaAAAABQADAAAAAAAaAP//BQADAAAAAAAZAP//BQADAAAAAAAYAP//BQADAAAAAAAYAAAABQADAAAAAAAZAAAABQADAAAAAAAXAP//BQADAAAAAAAXAAAABQADAAAAAAAWAAAABQADAAAAAAAWAAEABQADAAAAAAAXAAEABQADAAAAAAAVAAEABQADAAAAAAAUAAEABQADAAAAAAATAAEABQADAAAAAAASAAEABQADAAAAAAARAAEABQADAAAAAAAQAAEABQADAAAAAAAPAAEABQADAAAAAAAOAAEABQADAAAAAAANAAEABQADAAAAAAAMAAEABQADAAAAAAALAAEABQADAAAAAAALAAAABQADAAAAAAAMAAAABQADAAAAAAANAAAABQADAAAAAAAOAAAABQADAAAAAAAPAAAABQADAAAAAAAQAAAABQADAAAAAAARAAAABQADAAAAAAASAAAABQADAAAAAAATAAAABQADAAAAAAAUAAAABQADAAAAAAAVAAAABQADAAAAAAAWAP//BQADAAAAAAAVAP//BQADAAAAAAAUAP//BQADAAAAAAATAP//BQADAAAAAAASAP//BQADAAAAAAARAP//BQADAAAAAAAcAP7/BQADAAAAAAAcAP//BQADAAAAAAAcAAAABQADAAAAAAAcAAEABQADAAAAAAAdAAEABQADAAAAAAAdAAAABQADAAAAAAAdAP//BQADAAAAAAAdAP7/BQADAAAAAAAeAP7/BQADAAAAAAAeAP//BQADAAAAAAAeAAAABQADAAAAAAAeAAEABQADAAAAAAAfAAEABQADAAAAAAAfAAAABQADAAAAAAAfAP//BQADAAAAAAAfAP7/BQADAAAAAAAgAAAABQADAAAAAAAgAAEABQADAAAAAAD1//z/BQADAAAAAAD1//3/BQADAAAAAAD1//7/BQADAAAAAAD1////BQADAAAAAAD1/wAABQADAAAAAAD1/wEABQADAAAAAAD1/wIABQADAAAAAAD1/wMABQADAAAAAAD1/wQABQADAAAAAAD1/wUABQADAAAAAAD2/wUABQADAAAAAAD3/wUABQADAAAAAAD4/wUABQADAAAAAAD5/wUABQADAAAAAAD6/wUABQADAAAAAAD7/wUABQADAAAAAAD8/wUABQADAAAAAAD8/wQABQADAAAAAAD8/wMABQADAAAAAAD8/wIABQADAAAAAAD8/wEABQADAAAAAAD9/wEABQADAAAAAAD+/wEABQADAAAAAAD//wEABQADAAAAAAAAAAEABQADAAAAAAABAAEABQADAAAAAAACAAEABQADAAAAAAADAAEABQADAAAAAAAEAAEABQADAAAAAAAFAAEABQADAAAAAAAGAAEABQADAAAAAAAHAAEABQADAAAAAAAIAAEABQADAAAAAAAJAAEABQADAAAAAAAKAAEABQADAAAAAAD2//z/BQADAAAAAAD3//z/BQADAAAAAAD4//z/BQADAAAAAAD5//z/BQADAAAAAAD6//z/BQADAAAAAAD7//z/BQADAAAAAAD6//3/BQADAAAAAAD5//3/BQADAAAAAAD4//3/BQADAAAAAAD3//3/BQADAAAAAAD2//3/BQADAAAAAAD4//7/BQADAAAAAAD3//7/BQADAAAAAAD2//7/BQADAAAAAAD2////BQADAAAAAAD3////BQADAAAAAAD4////BQADAAAAAAD6////BQADAAAAAAD7////BQADAAAAAAD8////BQADAAAAAAD9////BQADAAAAAAD7//7/BQADAAAAAAD6//7/BQADAAAAAAD5//7/BQADAAAAAAD+////BQADAAAAAAD/////BQADAAAAAAAAAP//BQADAAAAAAABAP//BQADAAAAAAACAP//BQADAAAAAAADAP//BQADAAAAAAAEAP//BQADAAAAAAAFAP//BQADAAAAAAAGAP//BQADAAAAAAAHAP//BQADAAAAAAAIAP//BQADAAAAAAAJAP//BQADAAAAAAAKAP//BQADAAAAAAAEAAAABQADAAAAAAAFAAAABQADAAAAAAAGAAAABQADAAAAAAAHAAAABQADAAAAAAAIAAAABQADAAAAAAAJAAAABQADAAAAAAAKAAAABQADAAAAAAADAAAABQADAAAAAAACAAAABQADAAAAAAABAAAABQADAAAAAAAAAAAABQADAAAAAAD//wAABQADAAAAAAD+/wAABQADAAAAAAD9/wAABQADAAAAAAD8/wAABQADAAAAAAD7/wAABQADAAAAAAD6/wAABQADAAAAAAD4/wAABQADAAAAAAD3/wAABQADAAAAAAD2/wAABQADAAAAAAD3/wEABQADAAAAAAD4/wEABQADAAAAAAD6/wEABQADAAAAAAD7/wEABQADAAAAAAD2/wEABQADAAAAAAD2/wIABQADAAAAAAD3/wIABQADAAAAAAD4/wIABQADAAAAAAD4/wMABQADAAAAAAD6/wIABQADAAAAAAD7/wIABQADAAAAAAD6/wMABQADAAAAAAD7/wMABQADAAAAAAD6/wQABQADAAAAAAD7/wQABQADAAAAAAD3/wMABQADAAAAAAD4/wQABQADAAAAAAD3/wQABQADAAAAAAD2/wMABQADAAAAAAD2/wQABQADAAAAAAALAAIABQADAAAAAAAMAAIABQADAAAAAAANAAIABQADAAAAAAAOAAIABQADAAAAAAAOAAMABQADAAAAAAANAAMABQADAAAAAAAMAAMABQADAAAAAAALAAMABQADAAAAAAAMAAQABQADAAAAAAANAAQABQADAAAAAAAOAAQABQADAAAAAAAOAAUABQADAAAAAAAOAAYABQADAAAAAAAOAAcABQADAAAAAAAOAAgABQADAAAAAAAOAAkABQADAAAAAAAOAAoABQADAAAAAAANAAoABQADAAAAAAAMAAoABQADAAAAAAALAAoABQADAAAAAAALAAkABQADAAAAAAALAAgABQADAAAAAAALAAcABQADAAAAAAALAAYABQADAAAAAAALAAUABQADAAAAAAALAAQABQADAAAAAAAMAAUABQADAAAAAAANAAUABQADAAAAAAANAAYABQADAAAAAAAMAAYABQADAAAAAAAMAAcABQADAAAAAAANAAcABQADAAAAAAANAAgABQADAAAAAAAMAAgABQADAAAAAAAMAAkABQADAAAAAAANAAkABQADAAAAAAAFAPz/BQADAAAAAAAFAP3/BQADAAAAAAACAPz/BQADAAAAAAACAP3/BQADAAAAAAD5////BQADAAAAAAD5/wAABQADAAAAAAD5/wEABQADAAAAAAD5/wIABQADAAAAAAD5/wMABQADAAAAAAD5/wQABQADAAAAAAAZAP3/BQADAAAAAAAYAP3/BQADAAAAAAAXAP3/BQADAAAAAAAWAP3/BQADAAAAAAAWAPz/BQADAAAAAAAXAPz/BQADAAAAAAAYAPz/BQADAAAAAAAZAPz/BQADAAAAAAAZAPv/BQADAAAAAAAYAPv/BQADAAAAAAAXAPv/BQADAAAAAAAWAPv/BQADAAAAAAAWAPr/BQADAAAAAAAWAPn/BQADAAAAAAAXAPj/BQADAAAAAAAWAPj/BQADAAAAAAAWAPf/BQADAAAAAAAXAPf/BQADAAAAAAAYAPf/BQADAAAAAAAWAPb/BQADAAAAAAAXAPb/BQADAAAAAAAYAPb/BQADAAAAAAAZAPb/BQADAAAAAAAZAPf/BQADAAAAAAAYAPj/BQADAAAAAAAXAPn/BQADAAAAAAAZAPj/BQADAAAAAAAZAPn/BQADAAAAAAAYAPn/BQADAAAAAAAYAPr/BQADAAAAAAAXAPr/BQADAAAAAAAZAPr/BQADAAAAAAAgAP7/BQADAAAAAAAgAP//BQADAAAAAAAWAPX/BQADAAAAAAAXAPX/BQADAAAAAAAYAPX/BQADAAAAAAAZAPX/BQADAAAAAAAZAPT/BQADAAAAAAAYAPT/BQADAAAAAAAXAPT/BQADAAAAAAAWAPT/BQADAAAAAAAhAP7/BQADAAAAAAAhAP//BQADAAAAAAAhAAAABQADAAAAAAAhAAEABQADAAAAAAAiAAEABQADAAAAAAAiAAAABQADAAAAAAAiAP//BQADAAAAAAAiAP7/BQADAAAAAAA=")
 tile_set = SubResource("TileSet_hkdqt")
 
-[editable path="WorldObjects/Enemies/Enemy2"]
+[editable path="WorldObjects/Enemies/Enemy2Anchor/Enemy2"]

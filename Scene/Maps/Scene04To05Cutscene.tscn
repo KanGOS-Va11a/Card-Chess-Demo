@@ -390,7 +390,10 @@ y_sort_enabled = true
 tile_set = ExtResource("24_interaction_tiles")
 
 [node name="BoardingStoryTrigger" parent="WorldObjects" unique_id=1843059381 instance=ExtResource("25_story_trigger")]
-position = Vector2(240, 64)
+position = Vector2(-232, -168)
+UseGridTriggerPlacement = true
+OriginCell = Vector2i(-15, -11)
+TriggerSizeCells = Vector2i(60, 30)
 TriggerSize = Vector2(960, 480)
 DialogueScriptId = "scene04_boarding_story"
 NextScenePath = "res://Scene/Maps/Scene05.tscn"

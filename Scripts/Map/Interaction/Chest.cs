@@ -10,11 +10,14 @@ public partial class Chest : InteractableTemplate, IConfigurableLootInteractable
 {
 	[Export] public string ChestName { get; set; } = "宝箱";
 	[Export] public string GrantedItemId { get; set; } = string.Empty;
+	[Export] public string LootItemId { get; set; } = string.Empty;
+	[Export(PropertyHint.Range, "0,99,1")] public int LootAmount { get; set; } = 0;
 	[Export] public string ItemDescription { get; set; } = "获得了物品。";
 	[Export] public string EmptyDescription { get; set; } = "箱子是空的。";
 	[Export] public string InteractableSessionKey { get; set; } = string.Empty;
 	[Export] public string[] InteractionTexts { get; set; } = System.Array.Empty<string>();
 	[Export] public Godot.Collections.Array<InteractableItemGrant> GrantedItems { get; set; } = new();
+	[Export] public Color OpenedTint { get; set; } = new(0.72f, 0.72f, 0.72f, 1.0f);
 
 	private const string ClosedAnimationName = "closed";
 	private const string OpenAnimationName = "open";
@@ -23,6 +26,8 @@ public partial class Chest : InteractableTemplate, IConfigurableLootInteractable
 	private bool _isOpening;
 	private int _interactionCount;
 	private AnimatedSprite2D? _animatedSprite;
+	private Sprite2D? _staticSprite;
+	private Color _defaultTint = Colors.White;
 	private GlobalGameSession? _session;
 
 	string IConfigurableLootInteractable.DisplayName
@@ -41,6 +46,12 @@ public partial class Chest : InteractableTemplate, IConfigurableLootInteractable
 	{
 		_session = GetNodeOrNull<GlobalGameSession>("/root/GlobalGameSession");
 		_animatedSprite = GetNodeOrNull<AnimatedSprite2D>("AnimatedSprite2D");
+		_staticSprite = GetNodeOrNull<Sprite2D>("Sprite2D");
+		if (_staticSprite != null)
+		{
+			_defaultTint = _staticSprite.Modulate;
+		}
+
 		ApplyOpenedStateFromSession();
 		RefreshAnimationState();
 
@@ -126,24 +137,25 @@ public partial class Chest : InteractableTemplate, IConfigurableLootInteractable
 
 	private void RefreshAnimationState()
 	{
-		if (_animatedSprite == null || _animatedSprite.SpriteFrames == null)
+		if (_animatedSprite != null && _animatedSprite.SpriteFrames != null)
 		{
-			return;
+			if (_isOpened && _animatedSprite.SpriteFrames.HasAnimation(OpenAnimationName))
+			{
+				_animatedSprite.Play(OpenAnimationName);
+				int frameCount = _animatedSprite.SpriteFrames.GetFrameCount(OpenAnimationName);
+				_animatedSprite.Frame = Mathf.Max(0, frameCount - 1);
+				_animatedSprite.Stop();
+			}
+			else if (_animatedSprite.SpriteFrames.HasAnimation(ClosedAnimationName))
+			{
+				_animatedSprite.Play(ClosedAnimationName);
+				_animatedSprite.Stop();
+			}
 		}
 
-		if (_isOpened && _animatedSprite.SpriteFrames.HasAnimation(OpenAnimationName))
+		if (_staticSprite != null)
 		{
-			_animatedSprite.Play(OpenAnimationName);
-			int frameCount = _animatedSprite.SpriteFrames.GetFrameCount(OpenAnimationName);
-			_animatedSprite.Frame = Mathf.Max(0, frameCount - 1);
-			_animatedSprite.Stop();
-			return;
-		}
-
-		if (_animatedSprite.SpriteFrames.HasAnimation(ClosedAnimationName))
-		{
-			_animatedSprite.Play(ClosedAnimationName);
-			_animatedSprite.Stop();
+			_staticSprite.Modulate = _isOpened ? OpenedTint : _defaultTint;
 		}
 	}
 
@@ -190,6 +202,15 @@ public partial class Chest : InteractableTemplate, IConfigurableLootInteractable
 				yield return (legacyId, 1);
 			}
 		}
+
+		if (!string.IsNullOrWhiteSpace(LootItemId) && LootAmount > 0)
+		{
+			string legacyLootId = LootItemId.Trim();
+			if (!yielded.Contains(legacyLootId))
+			{
+				yield return (legacyLootId, LootAmount);
+			}
+		}
 	}
 
 	private string ResolveInteractionMessage(bool grantedLoot)
@@ -229,8 +250,7 @@ public partial class Chest : InteractableTemplate, IConfigurableLootInteractable
 			return new StringName(InteractableSessionKey.Trim());
 		}
 
-		string scenePath = GetTree().CurrentScene?.SceneFilePath ?? string.Empty;
-		return new StringName($"{scenePath}::{GetPath()}");
+		return new StringName(BuildRuntimeStateKey(GetTree().CurrentScene));
 	}
 
 	private void OnAnimatedChestFinished()

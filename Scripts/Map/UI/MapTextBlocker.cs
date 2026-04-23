@@ -1,5 +1,6 @@
 using Godot;
 using CardChessDemo.UI.Dialogue;
+using CardChessDemo.UI;
 
 namespace CardChessDemo.Map;
 
@@ -17,13 +18,12 @@ public static class MapTextBlocker
 			return true;
 		}
 
-		if (DialogueSequencePanel.IsVisible(context))
+		if (MapDialogueService.HasBlockingDialogue())
 		{
 			return true;
 		}
 
-		Node? currentScene = context.GetTree()?.CurrentScene;
-		if (currentScene is Scene01TutorialController tutorialController && tutorialController.IsDialogBlockingInput)
+		if (PagedTutorialPopup.IsVisible(context))
 		{
 			return true;
 		}

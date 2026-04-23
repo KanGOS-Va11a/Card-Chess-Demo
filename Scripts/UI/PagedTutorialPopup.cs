@@ -1,4 +1,5 @@
 using System;
+using System.Linq;
 using CardChessDemo.Audio;
 using Godot;
 
@@ -18,6 +19,25 @@ public partial class PagedTutorialPopup : CanvasLayer
 	private Action? _onClosed;
 	private bool _isClosing;
 	private bool _completed;
+
+	public static bool IsVisible(Node? context)
+	{
+		if (context == null)
+		{
+			return false;
+		}
+
+		Node? currentScene = context.GetTree()?.CurrentScene;
+		if (currentScene == null)
+		{
+			return false;
+		}
+
+		return currentScene
+			.GetChildren()
+			.OfType<PagedTutorialPopup>()
+			.Any(panel => GodotObject.IsInstanceValid(panel) && panel.Visible && !panel._isClosing);
+	}
 
 	public override void _Ready()
 	{

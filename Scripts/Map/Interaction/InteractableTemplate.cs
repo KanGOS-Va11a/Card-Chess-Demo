@@ -11,6 +11,8 @@ namespace CardChessDemo.Map;
 public abstract partial class InteractableTemplate : StaticBody2D, IInteractable
 {
 	private static readonly Shader InteractionOutlineShader = GD.Load<Shader>("res://Shaders/Battle/ActiveTurnOutline.gdshader");
+	private const int DefaultGridTileSize = 16;
+	[Export] public string InteractionId { get; set; } = string.Empty;
 	[Export] public string DisplayName = "交互物";
 	[Export] public string PromptText = "交互";
 	[Export] public float CooldownSeconds = 0.0f;
@@ -206,5 +208,46 @@ public abstract partial class InteractableTemplate : StaticBody2D, IInteractable
 		{
 			_nextAvailableTimeMs = (ulong)Math.Max(0L, nextAvailableValue.AsInt64());
 		}
+	}
+
+	public virtual bool TryGetPrimaryInteractionCell(int tileSize, out Vector2I cell)
+	{
+		if (GetParent() is GridPlacedNode2D gridParent)
+		{
+			cell = gridParent.ResolveCell();
+			return true;
+		}
+
+		cell = MapGridService.WorldToCell(GlobalPosition, tileSize <= 0 ? DefaultGridTileSize : tileSize);
+		return true;
+	}
+
+	public virtual bool OccupiesInteractionCell(Vector2I cell, int tileSize)
+	{
+		return TryGetPrimaryInteractionCell(tileSize, out Vector2I resolvedCell) && resolvedCell == cell;
+	}
+
+	public virtual string BuildRuntimeStateKey(Node? sceneRoot = null)
+	{
+		string scenePath = sceneRoot?.GetTree()?.CurrentScene?.SceneFilePath
+			?? GetTree()?.CurrentScene?.SceneFilePath
+			?? string.Empty;
+		if (!string.IsNullOrWhiteSpace(InteractionId))
+		{
+			return InteractionId.Trim();
+		}
+
+		if (GetParent() is GridInteractableNode2D gridParent)
+		{
+			return gridParent.ResolveInteractionId(scenePath);
+		}
+
+		if (TryGetPrimaryInteractionCell(DefaultGridTileSize, out Vector2I cell))
+		{
+			string normalizedScenePath = string.IsNullOrWhiteSpace(scenePath) ? "scene" : scenePath.Trim();
+			return $"{normalizedScenePath}::{GetType().Name}::{cell.X},{cell.Y}";
+		}
+
+		return sceneRoot == null ? GetPath().ToString() : sceneRoot.GetPathTo(this).ToString();
 	}
 }

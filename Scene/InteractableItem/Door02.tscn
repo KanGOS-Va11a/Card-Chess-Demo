@@ -1,7 +1,8 @@
 [gd_scene format=3 uid="uid://bk5e0eijairxv"]
 
 [ext_resource type="PackedScene" uid="uid://ps2feuyl3u5d" path="res://Scene/InteractableItem/Door01.tscn" id="1_c65y3"]
-[ext_resource type="Texture2D" uid="uid://k5r6c1on221x" path="res://ArtResource/resource/地图/CosmicLegacy_PetricakeGamesPNG.png" id="2_swk7h"]
+[ext_resource type="Texture2D" uid="uid://k5r6c1on221x" path="res://ArtResource/resource/鍦板浘/CosmicLegacy_PetricakeGamesPNG.png" id="2_swk7h"]
+[ext_resource type="Script" path="res://Scripts/Map/Grid/GridInteractableAnchor.cs" id="3_anchor"]
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_r3myt"]
 size = Vector2(16, 16)
@@ -12,6 +13,8 @@ radius = 12.0
 [node name="Door02" type="Node2D" unique_id=1311460087]
 y_sort_enabled = true
 y_sort_origin = 16
+script = ExtResource("3_anchor")
+TargetNodePath = NodePath("Door")
 
 [node name="Door" parent="." unique_id=2006372797 instance=ExtResource("1_c65y3")]
 

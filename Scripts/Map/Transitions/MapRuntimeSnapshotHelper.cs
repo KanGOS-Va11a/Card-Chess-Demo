@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using Godot;
 
 namespace CardChessDemo.Map;
@@ -23,16 +24,17 @@ public static class MapRuntimeSnapshotHelper
             return;
         }
 
+        Dictionary<string, InteractableTemplate> interactableLookup = BuildInteractableLookup(sceneRoot);
+
         foreach (Variant key in snapshot.Keys)
         {
-            string relativePath = key.AsString();
-            if (string.IsNullOrWhiteSpace(relativePath))
+            string stateKey = key.AsString();
+            if (string.IsNullOrWhiteSpace(stateKey))
             {
                 continue;
             }
 
-            InteractableTemplate? interactable = sceneRoot.GetNodeOrNull<InteractableTemplate>(relativePath);
-            if (interactable == null)
+            if (!interactableLookup.TryGetValue(stateKey, out InteractableTemplate? interactable) || interactable == null)
             {
                 continue;
             }
@@ -50,16 +52,40 @@ public static class MapRuntimeSnapshotHelper
     {
         if (current is InteractableTemplate interactable)
         {
-            string relativePath = sceneRoot.GetPathTo(interactable).ToString();
-            if (!string.IsNullOrWhiteSpace(relativePath))
+            string stateKey = interactable.BuildRuntimeStateKey(sceneRoot);
+            if (!string.IsNullOrWhiteSpace(stateKey))
             {
-                snapshot[relativePath] = interactable.BuildRuntimeSnapshot();
+                snapshot[stateKey] = interactable.BuildRuntimeSnapshot();
             }
         }
 
         foreach (Node child in current.GetChildren())
         {
             CaptureRecursive(child, sceneRoot, snapshot);
+        }
+    }
+
+    private static Dictionary<string, InteractableTemplate> BuildInteractableLookup(Node sceneRoot)
+    {
+        Dictionary<string, InteractableTemplate> lookup = new(System.StringComparer.Ordinal);
+        BuildInteractableLookupRecursive(sceneRoot, sceneRoot, lookup);
+        return lookup;
+    }
+
+    private static void BuildInteractableLookupRecursive(Node current, Node sceneRoot, Dictionary<string, InteractableTemplate> lookup)
+    {
+        if (current is InteractableTemplate interactable)
+        {
+            string stateKey = interactable.BuildRuntimeStateKey(sceneRoot);
+            if (!string.IsNullOrWhiteSpace(stateKey))
+            {
+                lookup[stateKey] = interactable;
+            }
+        }
+
+        foreach (Node child in current.GetChildren())
+        {
+            BuildInteractableLookupRecursive(child, sceneRoot, lookup);
         }
     }
 }

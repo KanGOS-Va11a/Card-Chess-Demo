@@ -2,7 +2,8 @@ using Godot;
 
 namespace CardChessDemo.Map;
 
-public partial class InteractableContainerConfig : Node2D
+[Tool]
+public partial class InteractableContainerConfig : GridInteractableNode2D
 {
 	[Export] public NodePath TargetNodePath { get; set; } = new("Chest");
 	[Export] public string DisplayName { get; set; } = string.Empty;
@@ -13,6 +14,7 @@ public partial class InteractableContainerConfig : Node2D
 
 	public override void _Ready()
 	{
+		base._Ready();
 		if (GetNodeOrNull(TargetNodePath) is not IConfigurableLootInteractable interactable)
 		{
 			return;
@@ -31,6 +33,10 @@ public partial class InteractableContainerConfig : Node2D
 		if (!string.IsNullOrWhiteSpace(InteractableSessionKey))
 		{
 			interactable.InteractableSessionKey = InteractableSessionKey;
+		}
+		else if (!string.IsNullOrWhiteSpace(InteractionId))
+		{
+			interactable.InteractableSessionKey = InteractionId.Trim();
 		}
 
 		if (InteractionTexts.Length > 0)

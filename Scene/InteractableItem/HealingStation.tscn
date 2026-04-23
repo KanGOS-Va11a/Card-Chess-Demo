@@ -1,6 +1,7 @@
 [gd_scene format=3]
 
 [ext_resource type="Script" path="res://Scripts/Map/Interaction/HealStation.cs" id="1_station"]
+[ext_resource type="Script" path="res://Scripts/Map/Grid/GridInteractableAnchor.cs" id="2_anchor"]
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_body"]
 size = Vector2(16, 16)
@@ -11,6 +12,8 @@ radius = 24.0
 [node name="HealingStationRoot" type="Node2D"]
 y_sort_enabled = true
 y_sort_origin = 8
+script = ExtResource("2_anchor")
+TargetNodePath = NodePath("HealingStation")
 
 [node name="HealingStation" type="StaticBody2D" parent="."]
 y_sort_origin = 8

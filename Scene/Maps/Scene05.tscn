@@ -35,6 +35,8 @@
 [ext_resource type="PackedScene" path="res://Scene/Decor/Shelf02.tscn" id="29_g4x7r"]
 [ext_resource type="PackedScene" path="res://Scene/Map/Triggers/StoryTriggerZone.tscn" id="30_story_trigger"]
 [ext_resource type="PackedScene" path="res://Scene/UI/AreaTitleOverlay.tscn" id="31_area_title"]
+[ext_resource type="PackedScene" path="res://Scene/InteractableItem/Chest03.tscn" id="32_chest03"]
+[ext_resource type="PackedScene" path="res://Scene/InteractableItem/HealingStation.tscn" id="33_healstation"]
 [ext_resource type="TileSet" uid="uid://bk2oy8wp4bh0a" path="res://Resources/Map/PlayerSpawnTileSet.tres" id="99_player_spawn_tiles"]
 [ext_resource type="TileSet" uid="uid://dvsv43jlor71o" path="res://Resources/Map/InteractionTileSet.tres" id="interaction_tiles"]
 
@@ -6858,11 +6860,29 @@ tile_set = ExtResource("99_player_spawn_tiles")
 
 [node name="InteractionLayer" type="TileMapLayer" parent="WorldObjects" unique_id=556176365]
 y_sort_enabled = true
-tile_map_data = PackedByteArray("AAASAA4AAQAAAAAABQAWAPz/AQAAAAAABgA=")
+tile_map_data = PackedByteArray()
 tile_set = ExtResource("interaction_tiles")
+
+[node name="GridInteractables" type="Node2D" parent="WorldObjects" unique_id=556176366]
+y_sort_enabled = true
+
+[node name="Chest03" parent="WorldObjects/GridInteractables" unique_id=556176367 instance=ExtResource("32_chest03")]
+position = Vector2(296, 232)
+UseGridPlacement = true
+Cell = Vector2i(18, 14)
+InteractionId = "scene05_chest_01"
+
+[node name="HealingStation" parent="WorldObjects/GridInteractables" unique_id=556176368 instance=ExtResource("33_healstation")]
+position = Vector2(360, -56)
+UseGridPlacement = true
+Cell = Vector2i(22, -4)
+InteractionId = "scene05_healstation_01"
 
 [node name="Door03" parent="WorldObjects" unique_id=224728664 instance=ExtResource("16_revv4")]
 position = Vector2(584, -248)
+UseGridPlacement = true
+Cell = Vector2i(36, -16)
+InteractionId = "scene05_door_03"
 
 [node name="Sprite2D" parent="WorldObjects/Door03/StaticBody2D" parent_id_path=PackedInt32Array(224728664, 1132181480) index="0" unique_id=1243056695]
 position = Vector2(0.5000076, 0.99999726)
@@ -6870,6 +6890,9 @@ scale = Vector2(1.562499, 1.6250002)
 
 [node name="NpcScene" parent="WorldObjects" unique_id=1266535779 instance=ExtResource("24_wfmiq")]
 position = Vector2(352, -396)
+UseGridPlacement = true
+Cell = Vector2i(22, -25)
+InteractionId = "scene05_npc_dock_hint_a"
 
 [node name="Sprite2D" parent="WorldObjects/NpcScene/Npc" parent_id_path=PackedInt32Array(1266535779, 2123701671) index="0" unique_id=2019183832]
 position = Vector2(0, -11)
@@ -6879,6 +6902,9 @@ position = Vector2(0, 4)
 
 [node name="NpcScene2" parent="WorldObjects" unique_id=520782294 instance=ExtResource("25_wfmiq")]
 position = Vector2(719, -94)
+UseGridPlacement = true
+Cell = Vector2i(44, -6)
+InteractionId = "scene05_npc_dock_hint_b"
 
 [node name="Sprite2D" parent="WorldObjects/NpcScene2/Npc" parent_id_path=PackedInt32Array(520782294, 2123701671) index="0" unique_id=2019183832]
 position = Vector2(0, -3)
@@ -6887,8 +6913,11 @@ position = Vector2(0, -3)
 position = Vector2(1, 19)
 
 [node name="ArrivalStoryTrigger" parent="WorldObjects" unique_id=806730415 instance=ExtResource("30_story_trigger")]
-position = Vector2(-143, -1.0000002)
-scale = Vector2(2.037599, 1.9278198)
+position = Vector2(-248, -88)
+scale = Vector2(1, 1)
+UseGridTriggerPlacement = true
+OriginCell = Vector2i(-16, -6)
+TriggerSizeCells = Vector2i(14, 12)
 TriggerSize = Vector2(112, 96)
 DialogueScriptId = "scene05_arrival_story"
 

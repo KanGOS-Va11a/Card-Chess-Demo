@@ -115,22 +115,34 @@ public partial class Scene01TutorialController : Node
 			.ToArray();
 	}
 
-	private void PresentDialog(DialogFlow flow, string[] lines)
+	private async void PresentDialog(DialogFlow flow, string[] lines)
 	{
-		if (DialoguePanelScene?.Instantiate() is not DialogueSequencePanel panel || lines.Length == 0)
+		DialoguePage[] pages = lines.Select(BuildDialoguePage).ToArray();
+		if (DialoguePanelScene == null || pages.Length == 0)
 		{
 			HandleDialogFinished(flow);
 			return;
 		}
 
-		Node currentScene = GetTree().CurrentScene ?? this;
-		currentScene.AddChild(panel);
 		_showingDialog = true;
-		SetPlayerInputEnabled(false);
-		panel.Present(
-			lines.Select(BuildDialoguePage).ToArray(),
-			onCompleted: () => HandleDialogFinished(flow),
-			onClosed: () => HandleDialogFinished(flow));
+		MapDialogueResult result = await MapDialogueService.PresentAsync(
+			this,
+			new MapDialogueRequest
+			{
+				PanelScene = DialoguePanelScene,
+				Pages = pages,
+				LockPlayerInput = true,
+				RejectIfAnotherDialogueVisible = false,
+				SourceId = $"scene01_tutorial_{flow}",
+				CompletedFollowUpActions = BuildCompletedFollowUpActions(flow),
+				ClosedFollowUpActions = BuildClosedFollowUpActions(flow),
+			},
+			_player as Player);
+
+		if (result.IsCompleted || result.IsClosed || result.IsFailed)
+		{
+			HandleDialogFinished(flow);
+		}
 	}
 
 	private static DialoguePage BuildDialoguePage(string line)
@@ -170,6 +182,26 @@ public partial class Scene01TutorialController : Node
 		}
 
 		SetPlayerInputEnabled(true);
+	}
+
+	private MapDialogueFollowUpAction[] BuildCompletedFollowUpActions(DialogFlow flow)
+	{
+		return flow switch
+		{
+			DialogFlow.Intro => Array.Empty<MapDialogueFollowUpAction>(),
+			DialogFlow.EnemySighted => Array.Empty<MapDialogueFollowUpAction>(),
+			_ => Array.Empty<MapDialogueFollowUpAction>(),
+		};
+	}
+
+	private MapDialogueFollowUpAction[] BuildClosedFollowUpActions(DialogFlow flow)
+	{
+		return flow switch
+		{
+			DialogFlow.Intro => Array.Empty<MapDialogueFollowUpAction>(),
+			DialogFlow.EnemySighted => Array.Empty<MapDialogueFollowUpAction>(),
+			_ => Array.Empty<MapDialogueFollowUpAction>(),
+		};
 	}
 
 	private bool IsTutorialEncounterAlreadyCleared()

@@ -45,10 +45,7 @@ public partial class MapSceneController : Node2D
 			consumedBattleResumeContext = resumeContext;
 			GD.Print($"MapSceneController: applying battle return for '{currentScenePath}', playerPos={resumeContext.PlayerGlobalPosition}");
 			MapRuntimeSnapshotHelper.ApplyToScene(GetTree().CurrentScene ?? this, resumeContext.MapRuntimeSnapshot);
-			if (player != null)
-			{
-				player.GlobalPosition = resumeContext.PlayerGlobalPosition;
-			}
+			PlacePlayer(player, resumeContext.PlayerGlobalPosition);
 		}
 		else
 		{
@@ -136,7 +133,7 @@ public partial class MapSceneController : Node2D
 			}
 		}
 
-		player.GlobalPosition = spawnPoint.WorldPosition;
+		PlacePlayer(player, spawnPoint.WorldPosition);
 		GD.Print($"MapSceneController: selected spawn '{spawnPoint.SpawnId}' at {spawnPoint.WorldPosition}");
 	}
 
@@ -147,9 +144,25 @@ public partial class MapSceneController : Node2D
 			return;
 		}
 
-		player.GlobalPosition = _globalSession.PendingRestorePlayerPosition;
+		PlacePlayer(player, _globalSession.PendingRestorePlayerPosition);
 		GD.Print($"MapSceneController: applied saved restore position {_globalSession.PendingRestorePlayerPosition}");
 		_globalSession.ClearPendingRestorePlayerPosition();
+	}
+
+	private static void PlacePlayer(Node2D? player, Vector2 worldPosition, bool snapToGrid = true)
+	{
+		if (player == null)
+		{
+			return;
+		}
+
+		if (player is Player gridPlayer)
+		{
+			gridPlayer.SettleToWorldPosition(worldPosition, snapToGrid);
+			return;
+		}
+
+		player.GlobalPosition = worldPosition;
 	}
 
 	private void HideAllSpawnMarkers()

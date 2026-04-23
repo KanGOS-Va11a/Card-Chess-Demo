@@ -108,27 +108,43 @@ public partial class SystemFeatureOverlayAdapter : Node
 			return;
 		}
 
-		Node? playerNode = _controller.PlayerPath.IsEmpty ? null : _controller.GetNodeOrNull(_controller.PlayerPath);
-		Area2D? interactionArea = playerNode?.GetNodeOrNull<Area2D>("InteractionArea");
-		if (interactionArea == null)
+		Player? player = _controller.PlayerPath.IsEmpty
+			? null
+			: _controller.GetNodeOrNull<Player>(_controller.PlayerPath);
+		if (player == null)
 		{
-			_statusLabel.Text = "Player interaction area was not found";
+			_statusLabel.Text = "Player node was not found";
 			return;
 		}
 
-		foreach (Area2D area in interactionArea.GetOverlappingAreas())
+		if (TryGetPlayerInteractionHint(player, out string interactionHint))
 		{
-			if (area.GetParent() is IInteractable interactable && area.GetParent() is Node ownerNode)
-			{
-				Player? player = playerNode as Player ?? _controller.GetNodeOrNull<Player>(_controller.PlayerPath);
-				_statusLabel.Text = $"Interactable: {ownerNode.Name} · {interactable.GetInteractText(player!)}";
-				return;
-			}
+			_statusLabel.Text = interactionHint;
+			return;
 		}
 
 		_statusLabel.Text = _panelRoot.Visible
 			? "System menu is open. Press C or Esc to close"
 			: "Approach an interactable target and press E. Press C for the system menu";
+	}
+
+	private static bool TryGetPlayerInteractionHint(Player player, out string hintText)
+	{
+		hintText = string.Empty;
+		Label? hintLabel = player.GetNodeOrNull<Label>(player.InteractionHintLabelPath);
+		if (hintLabel == null || !hintLabel.Visible)
+		{
+			return false;
+		}
+
+		string text = hintLabel.Text?.Trim() ?? string.Empty;
+		if (string.IsNullOrWhiteSpace(text))
+		{
+			return false;
+		}
+
+		hintText = text;
+		return true;
 	}
 
 	private void OnDimGuiInput(InputEvent @event)

@@ -1,6 +1,7 @@
 [gd_scene format=3 uid="uid://nwbs50t7q10d"]
 
 [ext_resource type="Script" uid="uid://d8g0q2l0h1q0q" path="res://Scripts/Map/Interaction/Npc.cs" id="1_i8ab3"]
+[ext_resource type="Script" path="res://Scripts/Map/Grid/GridInteractableAnchor.cs" id="2_anchor"]
 [ext_resource type="Texture2D" uid="uid://cbnn0o0mufyk5" path="res://CosmicLegacy_PetricakeGamesPNG.png" id="1_smt2w"]
 
 [sub_resource type="CircleShape2D" id="CircleShape2D_i8ab3"]
@@ -10,6 +11,8 @@ radius = 24.0
 size = Vector2(16, 16)
 
 [node name="NpcScene" type="Node2D" unique_id=1266535779]
+script = ExtResource("2_anchor")
+TargetNodePath = NodePath("Npc")
 
 [node name="Npc" type="StaticBody2D" parent="." unique_id=2123701671]
 collision_layer = 2

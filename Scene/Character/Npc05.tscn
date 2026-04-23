@@ -1,6 +1,7 @@
 [gd_scene format=3 uid="uid://dnuhrg8qr5ogd"]
 
 [ext_resource type="Script" uid="uid://ctlw371cuawbd" path="res://Scripts/Map/Interaction/Npc.cs" id="1_i8ab3"]
+[ext_resource type="Script" path="res://Scripts/Map/Grid/GridInteractableAnchor.cs" id="2_anchor"]
 [ext_resource type="Texture2D" uid="uid://lmey7ae04vdc" path="res://ArtResource/resource/人物/NPC/robot03.png" id="1_smt2w"]
 
 [sub_resource type="CircleShape2D" id="CircleShape2D_i8ab3"]
@@ -12,6 +13,8 @@ size = Vector2(29, 16)
 [node name="NpcScene" type="Node2D" unique_id=1266535779]
 y_sort_enabled = true
 y_sort_origin = 16
+script = ExtResource("2_anchor")
+TargetNodePath = NodePath("Npc")
 
 [node name="Npc" type="StaticBody2D" parent="." unique_id=2123701671]
 y_sort_origin = 16

@@ -1,7 +1,8 @@
 [gd_scene format=3 uid="uid://bhogk5l71kt6s"]
 
-[ext_resource type="Texture2D" uid="uid://c5thwoux5l8wr" path="res://ArtResource/resource/地图/墙/10.png" id="2_madvj"]
+[ext_resource type="Texture2D" uid="uid://c5thwoux5l8wr" path="res://ArtResource/resource/鍦板浘/澧?10.png" id="2_madvj"]
 [ext_resource type="Script" uid="uid://cr7slktahp8t7" path="res://Scripts/Map/Interaction/SceneDoor.cs" id="2_scenedoor"]
+[ext_resource type="Script" path="res://Scripts/Map/Grid/GridInteractableAnchor.cs" id="3_anchor"]
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_madvj"]
 
@@ -10,6 +11,8 @@ radius = 18.027756
 
 [node name="Door03" type="Node2D" unique_id=224728664]
 y_sort_enabled = true
+script = ExtResource("3_anchor")
+TargetNodePath = NodePath("StaticBody2D")
 
 [node name="StaticBody2D" type="StaticBody2D" parent="." unique_id=1132181480]
 collision_layer = 2

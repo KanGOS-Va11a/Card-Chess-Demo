@@ -163,14 +163,10 @@ public partial class SceneDoor : InteractableTemplate
 		}
 
 		Node2D? targetNode = ResolveTeleportTarget();
-		if (targetNode != null)
-		{
-			player.GlobalPosition = targetNode.GlobalPosition + TeleportOffset;
-		}
-		else
-		{
-			player.GlobalPosition += TeleportOffset;
-		}
+		Vector2 targetPosition = targetNode != null
+			? targetNode.GlobalPosition + TeleportOffset
+			: player.GlobalPosition + TeleportOffset;
+		player.SettleToWorldPosition(targetPosition);
 
 		await ToSignal(FadeOverlayTo(fadeRect, 0f, Mathf.Max(0.01f, FadeInSeconds)), Tween.SignalName.Finished);
 		fadeRect.Visible = false;

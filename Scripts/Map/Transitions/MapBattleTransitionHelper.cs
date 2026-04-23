@@ -49,7 +49,8 @@ public static class MapBattleTransitionHelper
             ? currentScene.GetPathTo(contextNode).ToString()
             : string.Empty;
         int battleSeed = BuildBattleSeed(battleEncounterId);
-        GD.Print($"MapBattleTransitionHelper: enter battle from '{currentScenePath}', encounter='{battleEncounterId}', playerPos={player.GlobalPosition}, source='{sourceInteractablePath}'");
+        Vector2 playerStablePosition = player.GetStableGridPosition();
+        GD.Print($"MapBattleTransitionHelper: enter battle from '{currentScenePath}', encounter='{battleEncounterId}', playerPos={playerStablePosition}, source='{sourceInteractablePath}'");
         BattleRequest request = BattleRequest.FromSession(globalSession, battleEncounterId, battleSeed);
         if (ShouldAllowRetreat(battleScene, battleScenePath))
         {
@@ -60,7 +61,7 @@ public static class MapBattleTransitionHelper
         globalSession.SetPendingBattleEncounterId(battleEncounterId);
         globalSession.SetPendingBattleReturnContext(new MapResumeContext(
             currentScenePath,
-            player.GlobalPosition,
+            playerStablePosition,
             mapRuntimeSnapshot,
             sourceInteractablePath,
             battleEncounterId));

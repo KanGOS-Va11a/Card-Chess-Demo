@@ -38,7 +38,7 @@ public partial class Npc : InteractableTemplate
 		return !_showingDialogue && base.CanInteract(player);
 	}
 
-	protected override void OnInteract(Player player)
+	protected override async void OnInteract(Player player)
 	{
 		if (_showingDialogue)
 		{
@@ -46,28 +46,49 @@ public partial class Npc : InteractableTemplate
 		}
 
 		DialoguePage[] pages = BuildDialoguePages();
-		if (pages.Length == 0 || DialoguePanelScene?.Instantiate() is not DialogueSequencePanel panel)
+		if (pages.Length == 0 || DialoguePanelScene == null)
 		{
 			SceneTextOverlay.Show(this, DialogueText);
 			PlayInteractionPulse();
 			return;
 		}
 
-		Node currentScene = GetTree().CurrentScene ?? this;
-		currentScene.AddChild(panel);
 		_showingDialogue = true;
-		SetPlayerInputEnabled(player, false);
-		panel.Present(
-			pages,
-			onCompleted: () => FinishDialogue(player),
-			onClosed: () => FinishDialogue(player));
+		MapDialogueResult result = await MapDialogueService.PresentAsync(
+			this,
+			new MapDialogueRequest
+			{
+				PanelScene = DialoguePanelScene,
+				Pages = pages,
+				LockPlayerInput = true,
+				RejectIfAnotherDialogueVisible = true,
+				SourceId = BuildRuntimeStateKey(),
+				CompletedFollowUpActions = BuildCompletedFollowUpActions(),
+				ClosedFollowUpActions = BuildClosedFollowUpActions(),
+			},
+			player);
+		if (result.IsFailed)
+		{
+			SceneTextOverlay.Show(this, DialogueText);
+		}
+
+		FinishDialogue();
 		PlayInteractionPulse();
 	}
 
-	private void FinishDialogue(Player player)
+	private void FinishDialogue()
 	{
 		_showingDialogue = false;
-		SetPlayerInputEnabled(player, true);
+	}
+
+	private MapDialogueFollowUpAction[] BuildCompletedFollowUpActions()
+	{
+		return Array.Empty<MapDialogueFollowUpAction>();
+	}
+
+	private MapDialogueFollowUpAction[] BuildClosedFollowUpActions()
+	{
+		return Array.Empty<MapDialogueFollowUpAction>();
 	}
 
 	private DialoguePage[] BuildDialoguePages()
@@ -127,14 +148,4 @@ public partial class Npc : InteractableTemplate
 		};
 	}
 
-	private static void SetPlayerInputEnabled(Player player, bool enabled)
-	{
-		if (player == null)
-		{
-			return;
-		}
-
-		player.SetPhysicsProcess(enabled);
-		player.SetProcessUnhandledInput(enabled);
-	}
 }

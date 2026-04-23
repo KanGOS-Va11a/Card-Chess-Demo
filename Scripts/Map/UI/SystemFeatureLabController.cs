@@ -497,7 +497,7 @@ public partial class SystemFeatureLabController : CanvasLayer
 		player.SetProcessUnhandledInput(enabled);
 	}
 
-	private void UpdateStatusHint()
+	private void LegacyUpdateStatusHint_DoNotUse()
 	{
 		{
 		Node? readablePlayerNode = PlayerPath.IsEmpty ? null : GetNodeOrNull(PlayerPath);
@@ -1084,7 +1084,7 @@ public partial class SystemFeatureLabController : CanvasLayer
 		_deckSaveButton.Text = "保存构筑";
 	}
 
-	private void ApplyReadableStatusHint()
+	private void LegacyApplyReadableStatusHint_DoNotUse()
 	{
 		{
 		Node? readablePlayerNode = PlayerPath.IsEmpty ? null : GetNodeOrNull(PlayerPath);

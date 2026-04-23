@@ -37,19 +37,51 @@ public partial class Scene04To05CutsceneController : Node
 		PresentCutscene();
 	}
 
-	private void PresentCutscene()
+	private async void PresentCutscene()
 	{
-		if (DialoguePanelScene?.Instantiate() is not DialogueSequencePanel panel)
+		DialoguePage[] pages = DialogueLines
+			.Where(line => !string.IsNullOrWhiteSpace(line))
+			.Select(ParseLine)
+			.ToArray();
+		if (DialoguePanelScene == null || pages.Length == 0)
 		{
 			GoToNextScene();
 			return;
 		}
 
-		(GetTree().CurrentScene ?? this).AddChild(panel);
-		panel.Present(
-			DialogueLines.Where(line => !string.IsNullOrWhiteSpace(line)).Select(ParseLine).ToArray(),
-			onCompleted: GoToNextScene,
-			onClosed: GoToNextScene);
+		MapDialogueResult result = await MapDialogueService.PresentAsync(
+			this,
+			new MapDialogueRequest
+			{
+				PanelScene = DialoguePanelScene,
+				Pages = pages,
+				LockPlayerInput = true,
+				RejectIfAnotherDialogueVisible = false,
+				SourceId = "scene04_to_05_cutscene",
+				CompletedFollowUpActions = new[]
+				{
+					new MapDialogueFollowUpAction
+					{
+						Kind = MapDialogueFollowUpKind.ChangeScene,
+						NextScenePath = NextScenePath,
+						NextSceneSpawnId = NextSpawnId,
+					},
+				},
+				ClosedFollowUpActions = new[]
+				{
+					new MapDialogueFollowUpAction
+					{
+						Kind = MapDialogueFollowUpKind.ChangeScene,
+						NextScenePath = NextScenePath,
+						NextSceneSpawnId = NextSpawnId,
+					},
+				},
+			});
+
+		if (result.IsFailed)
+		{
+			GoToNextScene();
+		}
 	}
 
 	private void GoToNextScene()

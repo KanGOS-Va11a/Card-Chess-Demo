@@ -21,6 +21,8 @@
 [ext_resource type="PackedScene" path="res://Scene/Map/Triggers/StoryTriggerZone.tscn" id="25_story_trigger"]
 [ext_resource type="PackedScene" path="res://Scene/UI/AreaTitleOverlay.tscn" id="26_area_title"]
 [ext_resource type="PackedScene" path="res://Scene/Character/BossStoryPreview.tscn" id="27_boss_preview"]
+[ext_resource type="PackedScene" path="res://Scene/InteractableItem/Cabinet01.tscn" id="28_cabinet01"]
+[ext_resource type="PackedScene" path="res://Scene/InteractableItem/HealingStation.tscn" id="29_healstation"]
 [ext_resource type="TileSet" uid="uid://bk2oy8wp4bh0a" path="res://Resources/Map/PlayerSpawnTileSet.tres" id="99_player_spawn_tiles"]
 
 [sub_resource type="TileSetAtlasSource" id="TileSetAtlasSource_s6_wall_8"]
@@ -451,8 +453,35 @@ tile_set = ExtResource("99_player_spawn_tiles")
 
 [node name="InteractionLayer" type="TileMapLayer" parent="WorldObjects" unique_id=595914859]
 y_sort_enabled = true
-tile_map_data = PackedByteArray("AAADACAAAQAAAAAAAQALABYAAQAAAAAAAQAAAAQAAQAAAAAAAQATABAAAQAAAAAABgA=")
+tile_map_data = PackedByteArray()
 tile_set = ExtResource("22_interaction_tiles")
+
+[node name="GridInteractables" type="Node2D" parent="WorldObjects" unique_id=149328101]
+y_sort_enabled = true
+
+[node name="Cabinet01A" parent="WorldObjects/GridInteractables" unique_id=149328102 instance=ExtResource("28_cabinet01")]
+position = Vector2(56, 520)
+UseGridPlacement = true
+Cell = Vector2i(3, 32)
+InteractionId = "scene06_cabinet_01"
+
+[node name="Cabinet01B" parent="WorldObjects/GridInteractables" unique_id=149328103 instance=ExtResource("28_cabinet01")]
+position = Vector2(184, 360)
+UseGridPlacement = true
+Cell = Vector2i(11, 22)
+InteractionId = "scene06_cabinet_02"
+
+[node name="Cabinet01C" parent="WorldObjects/GridInteractables" unique_id=149328104 instance=ExtResource("28_cabinet01")]
+position = Vector2(8, 72)
+UseGridPlacement = true
+Cell = Vector2i(0, 4)
+InteractionId = "scene06_cabinet_03"
+
+[node name="HealingStation" parent="WorldObjects/GridInteractables" unique_id=149328105 instance=ExtResource("29_healstation")]
+position = Vector2(312, 264)
+UseGridPlacement = true
+Cell = Vector2i(19, 16)
+InteractionId = "scene06_healstation_01"
 
 [node name="EnemySpawnLayer" type="TileMapLayer" parent="WorldObjects" unique_id=291149041]
 y_sort_enabled = true
@@ -461,13 +490,19 @@ tile_set = ExtResource("21_enemy_spawn_tiles")
 
 [node name="ReturnDoorToScene05" parent="WorldObjects" unique_id=179357676 instance=ExtResource("23_return_door")]
 position = Vector2(-8, 24)
+UseGridPlacement = true
+Cell = Vector2i(-1, 1)
+InteractionId = "scene06_door_return"
 
 [node name="BossStoryPreview" parent="WorldObjects" unique_id=1148392105 instance=ExtResource("27_boss_preview")]
 position = Vector2(73, 476)
 
 [node name="BossBattleTrigger" parent="WorldObjects" unique_id=1056471187 instance=ExtResource("25_story_trigger")]
-position = Vector2(118, 517)
-scale = Vector2(4.5111933, 2.1265152)
+position = Vector2(-168, 408)
+scale = Vector2(1, 1)
+UseGridTriggerPlacement = true
+OriginCell = Vector2i(-11, 25)
+TriggerSizeCells = Vector2i(36, 15)
 TriggerSize = Vector2(128, 112)
 DialogueScriptId = "scene06_boss_story"
 StartBattleOnComplete = true

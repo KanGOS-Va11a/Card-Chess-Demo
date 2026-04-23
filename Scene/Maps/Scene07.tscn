@@ -16,6 +16,8 @@
 [ext_resource type="TileSet" uid="uid://cee0umruk6at7" path="res://Resources/Map/EnemySpawnTileSet.tres" id="21_enemy_spawn_tiles"]
 [ext_resource type="TileSet" uid="uid://dvsv43jlor71o" path="res://Resources/Map/InteractionTileSet.tres" id="22_interaction_tiles"]
 [ext_resource type="Script" path="res://Scripts/Map/Controllers/MazeEnemySpawnController.cs" id="23_maze_spawnctl"]
+[ext_resource type="PackedScene" path="res://Scene/InteractableItem/Cabinet01.tscn" id="24_cabinet01"]
+[ext_resource type="PackedScene" path="res://Scene/InteractableItem/Chest03.tscn" id="25_chest03"]
 [ext_resource type="TileSet" uid="uid://bk2oy8wp4bh0a" path="res://Resources/Map/PlayerSpawnTileSet.tres" id="99_player_spawn_tiles"]
 
 [sub_resource type="TileSetAtlasSource" id="TileSetAtlasSource_s6_wall_8"]
@@ -424,8 +426,47 @@ tile_set = ExtResource("99_player_spawn_tiles")
 
 [node name="InteractionLayer" type="TileMapLayer" parent="WorldObjects" unique_id=15594157]
 y_sort_enabled = true
-tile_map_data = PackedByteArray("AAADACAAAQAAAAAAAQAAAAQAAQAAAAAAAQAIABYAAQAAAAAAAQAfAAcAAQAAAAAAAQAeABgAAQAAAAAABQAfABgAAQAAAAAABQA=")
+tile_map_data = PackedByteArray()
 tile_set = ExtResource("22_interaction_tiles")
+
+[node name="GridInteractables" type="Node2D" parent="WorldObjects" unique_id=149328201]
+y_sort_enabled = true
+
+[node name="Cabinet01A" parent="WorldObjects/GridInteractables" unique_id=149328202 instance=ExtResource("24_cabinet01")]
+position = Vector2(56, 520)
+UseGridPlacement = true
+Cell = Vector2i(3, 32)
+InteractionId = "scene07_cabinet_01"
+
+[node name="Cabinet01B" parent="WorldObjects/GridInteractables" unique_id=149328203 instance=ExtResource("24_cabinet01")]
+position = Vector2(8, 72)
+UseGridPlacement = true
+Cell = Vector2i(0, 4)
+InteractionId = "scene07_cabinet_02"
+
+[node name="Cabinet01C" parent="WorldObjects/GridInteractables" unique_id=149328204 instance=ExtResource("24_cabinet01")]
+position = Vector2(136, 360)
+UseGridPlacement = true
+Cell = Vector2i(8, 22)
+InteractionId = "scene07_cabinet_03"
+
+[node name="Cabinet01D" parent="WorldObjects/GridInteractables" unique_id=149328205 instance=ExtResource("24_cabinet01")]
+position = Vector2(504, 120)
+UseGridPlacement = true
+Cell = Vector2i(31, 7)
+InteractionId = "scene07_cabinet_04"
+
+[node name="Chest03A" parent="WorldObjects/GridInteractables" unique_id=149328206 instance=ExtResource("25_chest03")]
+position = Vector2(488, 392)
+UseGridPlacement = true
+Cell = Vector2i(30, 24)
+InteractionId = "scene07_chest_01"
+
+[node name="Chest03B" parent="WorldObjects/GridInteractables" unique_id=149328207 instance=ExtResource("25_chest03")]
+position = Vector2(504, 392)
+UseGridPlacement = true
+Cell = Vector2i(31, 24)
+InteractionId = "scene07_chest_02"
 
 [node name="EnemySpawnLayer" type="TileMapLayer" parent="WorldObjects" unique_id=1071227426]
 y_sort_enabled = true
