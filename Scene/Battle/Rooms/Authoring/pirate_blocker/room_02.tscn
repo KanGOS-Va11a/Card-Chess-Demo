@@ -1,7 +1,7 @@
-[gd_scene format=4 uid="uid://gvsbn7ssasck"]
+[gd_scene format=4 uid="uid://be7hrmlvkmrai"]
 
 [ext_resource type="Script" uid="uid://ct05gdp6367dx" path="res://Scripts/Battle/Rooms/BattleRoomTemplate.cs" id="1_room"]
-[ext_resource type="Texture2D" uid="uid://cbnn0o0mufyk5" path="res://Assets/Tilemap/CosmicLegacy_PetricakeGamesPNG.png" id="2_nrexq"]
+[ext_resource type="Texture2D" uid="uid://cbnn0o0mufyk5" path="res://Assets/Tilemap/CosmicLegacy_PetricakeGamesPNG.png" id="2_322h0"]
 [ext_resource type="PackedScene" path="res://Scene/Battle/Tiles/Markers/MarkerBase_Player.tscn" id="3_7h7ay"]
 [ext_resource type="PackedScene" path="res://Scene/Battle/Tiles/BattleFacingDownTile.tscn" id="4_322h0"]
 [ext_resource type="PackedScene" path="res://Scene/Battle/Tiles/Markers/MarkerEnemy_Scene01Tutorial.tscn" id="5_unh85"]
@@ -15,15 +15,17 @@
 [ext_resource type="PackedScene" path="res://Scene/Battle/Tiles/Markers/MarkerEnemy_SewerGatekeeper.tscn" id="13_eu5ho"]
 [ext_resource type="PackedScene" path="res://Scene/Battle/Tiles/Markers/MarkerEnemy_Generic.tscn" id="14_rcyda"]
 [ext_resource type="PackedScene" path="res://Scene/Battle/Tiles/Markers/MarkerObstacle_Breakable.tscn" id="15_bvsse"]
+[ext_resource type="PackedScene" path="res://Scene/Battle/Tiles/Markers/MarkerEnemy_BossRustCaptain.tscn" id="15_unh85"]
 [ext_resource type="PackedScene" path="res://Scene/Battle/Tiles/Markers/MarkerObstacle_Wall.tscn" id="16_sntvs"]
 [ext_resource type="PackedScene" path="res://Scene/Battle/Tiles/Markers/MarkerObstacle_Slow.tscn" id="17_t650b"]
 [ext_resource type="PackedScene" path="res://Scene/Battle/Tiles/BattleEscapeTile.tscn" id="18_guf8r"]
 [ext_resource type="PackedScene" path="res://Scene/Battle/Tiles/BattleFacingLeftTile.tscn" id="19_tjefu"]
 [ext_resource type="PackedScene" path="res://Scene/Battle/Tiles/BattleFacingUpTile.tscn" id="20_y5jaq"]
 [ext_resource type="PackedScene" path="res://Scene/Battle/Tiles/BattleFacingRightTile.tscn" id="21_r0824"]
+[ext_resource type="Texture2D" uid="uid://cfpdq1bxwcrde" path="res://Assets/Tilemap/地板片集合.png" id="23_asrif"]
 
-[sub_resource type="TileSetAtlasSource" id="TileSetAtlasSource_7h7ay"]
-texture = ExtResource("2_nrexq")
+[sub_resource type="TileSetAtlasSource" id="TileSetAtlasSource_64hp5"]
+texture = ExtResource("2_322h0")
 0:0/0 = 0
 1:0/0 = 0
 2:0/0 = 0
@@ -161,7 +163,7 @@ texture = ExtResource("2_nrexq")
 15:7/0 = 0
 16:7/0 = 0
 
-[sub_resource type="TileSetScenesCollectionSource" id="TileSetScenesCollectionSource_322h0"]
+[sub_resource type="TileSetScenesCollectionSource" id="TileSetScenesCollectionSource_um2wk"]
 scenes/1/scene = ExtResource("3_7h7ay")
 scenes/2/scene = ExtResource("14_rcyda")
 scenes/3/scene = ExtResource("15_bvsse")
@@ -181,10 +183,43 @@ scenes/16/scene = ExtResource("10_lpwfb")
 scenes/17/scene = ExtResource("11_pr66l")
 scenes/18/scene = ExtResource("12_0wwt3")
 scenes/19/scene = ExtResource("13_eu5ho")
+scenes/20/scene = ExtResource("15_unh85")
 
-[sub_resource type="TileSet" id="TileSet_unh85"]
-sources/0 = SubResource("TileSetAtlasSource_7h7ay")
-sources/1 = SubResource("TileSetScenesCollectionSource_322h0")
+[sub_resource type="TileSetAtlasSource" id="TileSetAtlasSource_734u3"]
+texture = ExtResource("23_asrif")
+0:0/0 = 0
+1:0/0 = 0
+2:0/0 = 0
+3:0/0 = 0
+4:0/0 = 0
+5:0/0 = 0
+6:0/0 = 0
+0:1/0 = 0
+1:1/0 = 0
+2:1/0 = 0
+3:1/0 = 0
+4:1/0 = 0
+5:1/0 = 0
+6:1/0 = 0
+0:2/0 = 0
+1:2/0 = 0
+2:2/0 = 0
+3:2/0 = 0
+4:2/0 = 0
+5:2/0 = 0
+6:2/0 = 0
+0:3/0 = 0
+1:3/0 = 0
+2:3/0 = 0
+3:3/0 = 0
+4:3/0 = 0
+5:3/0 = 0
+6:3/0 = 0
+
+[sub_resource type="TileSet" id="TileSet_lpwfb"]
+sources/0 = SubResource("TileSetAtlasSource_64hp5")
+sources/2 = SubResource("TileSetAtlasSource_734u3")
+sources/1 = SubResource("TileSetScenesCollectionSource_um2wk")
 
 [node name="pirate_blocker_room_02" type="Node2D" unique_id=1278371500]
 script = ExtResource("1_room")
@@ -198,16 +233,16 @@ DefaultSlowPassObstacleCells = Array[Vector2i]([])
 
 [node name="FloorLayer" type="TileMapLayer" parent="." unique_id=1628580571]
 tile_map_data = PackedByteArray("AAAAAAAAAAABAAEAAAABAAAAAAABAAEAAAACAAAAAAABAAEAAAADAAAAAAABAAEAAAAEAAAAAAABAAEAAAAFAAAAAAABAAEAAAAGAAAAAAABAAEAAAAHAAAAAAABAAEAAAAIAAAAAAABAAEAAAAJAAAAAAABAAEAAAAKAAAAAAABAAEAAAALAAAAAAABAAEAAAAMAAAAAAABAAEAAAANAAAAAAABAAEAAAAOAAAAAAABAAEAAAAPAAAAAAABAAEAAAAAAAEAAAABAAEAAAABAAEAAAABAAEAAAACAAEAAAABAAEAAAADAAEAAAABAAEAAAAEAAEAAAABAAEAAAAFAAEAAAABAAEAAAAGAAEAAAABAAEAAAAHAAEAAAABAAEAAAAIAAEAAAABAAEAAAAJAAEAAAABAAEAAAAKAAEAAAABAAEAAAALAAEAAAABAAEAAAAMAAEAAAABAAEAAAANAAEAAAABAAEAAAAOAAEAAAABAAEAAAAPAAEAAAABAAEAAAAAAAIAAAABAAEAAAABAAIAAAABAAEAAAACAAIAAAABAAEAAAADAAIAAAABAAEAAAAEAAIAAAABAAEAAAAFAAIAAAABAAEAAAAGAAIAAAABAAEAAAAHAAIAAAABAAEAAAAIAAIAAAABAAEAAAAJAAIAAAABAAEAAAAKAAIAAAABAAEAAAALAAIAAAABAAEAAAAMAAIAAAABAAEAAAANAAIAAAABAAEAAAAOAAIAAAABAAEAAAAPAAIAAAABAAEAAAAAAAMAAAABAAEAAAABAAMAAAABAAEAAAACAAMAAAABAAEAAAADAAMAAAABAAEAAAAEAAMAAAABAAEAAAAFAAMAAAABAAEAAAAGAAMAAAABAAEAAAAHAAMAAAABAAEAAAAIAAMAAAABAAEAAAAJAAMAAAABAAEAAAAKAAMAAAABAAEAAAALAAMAAAABAAEAAAAMAAMAAAABAAEAAAANAAMAAAABAAEAAAAOAAMAAAABAAEAAAAPAAMAAAABAAEAAAAAAAQAAAABAAEAAAABAAQAAAABAAEAAAACAAQAAAABAAEAAAADAAQAAAABAAEAAAAEAAQAAAABAAEAAAAFAAQAAAABAAEAAAAGAAQAAAABAAEAAAAHAAQAAAABAAEAAAAIAAQAAAABAAEAAAAJAAQAAAABAAEAAAAKAAQAAAABAAEAAAALAAQAAAABAAEAAAAMAAQAAAABAAEAAAANAAQAAAABAAEAAAAOAAQAAAABAAEAAAAPAAQAAAABAAEAAAAAAAUAAAABAAEAAAABAAUAAAABAAEAAAACAAUAAAABAAEAAAADAAUAAAABAAEAAAAEAAUAAAABAAEAAAAFAAUAAAABAAEAAAAGAAUAAAABAAEAAAAHAAUAAAABAAEAAAAIAAUAAAABAAEAAAAJAAUAAAABAAEAAAAKAAUAAAABAAEAAAALAAUAAAABAAEAAAAMAAUAAAABAAEAAAANAAUAAAABAAEAAAAOAAUAAAABAAEAAAAPAAUAAAABAAEAAAAAAAYAAAABAAEAAAABAAYAAAABAAEAAAACAAYAAAABAAEAAAADAAYAAAABAAEAAAAEAAYAAAABAAEAAAAFAAYAAAABAAEAAAAGAAYAAAABAAEAAAAHAAYAAAABAAEAAAAIAAYAAAABAAEAAAAJAAYAAAABAAEAAAAKAAYAAAABAAEAAAALAAYAAAABAAEAAAAMAAYAAAABAAEAAAANAAYAAAABAAEAAAAOAAYAAAABAAEAAAAPAAYAAAABAAEAAAAAAAcAAAABAAEAAAABAAcAAAABAAEAAAACAAcAAAABAAEAAAADAAcAAAABAAEAAAAEAAcAAAABAAEAAAAFAAcAAAABAAEAAAAGAAcAAAABAAEAAAAHAAcAAAABAAEAAAAIAAcAAAABAAEAAAAJAAcAAAABAAEAAAAKAAcAAAABAAEAAAALAAcAAAABAAEAAAAMAAcAAAABAAEAAAANAAcAAAABAAEAAAAOAAcAAAABAAEAAAAPAAcAAAABAAEAAAA=")
-tile_set = SubResource("TileSet_unh85")
+tile_set = SubResource("TileSet_lpwfb")
 
 [node name="MarkerLayer" type="TileMapLayer" parent="." unique_id=855092099]
 tile_map_data = PackedByteArray("AAAAAAQAAQAAAAAAAQADAAAAAQAAAAAABAADAAEAAQAAAAAABAADAAIAAQAAAAAABAADAAUAAQAAAAAABAADAAYAAQAAAAAABAADAAcAAQAAAAAABAAEAAIAAQAAAAAAAwAFAAIAAQAAAAAAAwAEAAUAAQAAAAAAAwAFAAUAAQAAAAAAAwAJAAEAAQAAAAAAAwAJAAIAAQAAAAAAAwAJAAUAAQAAAAAAAwAJAAYAAQAAAAAAAwAIAAIAAQAAAAAABAAIAAUAAQAAAAAABAAKAAIAAQAAAAAAAwALAAIAAQAAAAAAAwAKAAUAAQAAAAAAAwALAAUAAQAAAAAAAwAEAAYAAQAAAAAADAAEAAEAAQAAAAAADAAKAAYAAQAAAAAADAA=")
-tile_set = SubResource("TileSet_unh85")
+tile_set = SubResource("TileSet_lpwfb")
 
 [node name="EscapeLayer" type="TileMapLayer" parent="." unique_id=270707881]
 tile_map_data = PackedByteArray("AAAPAAIAAQAAAAAABgAPAAMAAQAAAAAABgAPAAQAAQAAAAAABgAPAAUAAQAAAAAABgA=")
-tile_set = SubResource("TileSet_unh85")
+tile_set = SubResource("TileSet_lpwfb")
 
 [node name="FacingLayer" type="TileMapLayer" parent="." unique_id=1943478087]
 tile_map_data = PackedByteArray("AAAAAAQAAQAAAAAACQAEAAYAAQAAAAAACQAEAAEAAQAAAAAACQAKAAYAAQAAAAAACQA=")
-tile_set = SubResource("TileSet_unh85")
+tile_set = SubResource("TileSet_lpwfb")

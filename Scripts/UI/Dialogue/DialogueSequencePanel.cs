@@ -50,6 +50,7 @@ public partial class DialogueSequencePanel : CanvasLayer
 		_panel = GetNode<Panel>("Panel");
 		_speakerLabel = GetNode<Label>("Panel/Margin/VBox/SpeakerLabel");
 		_contentLabel = GetNode<Label>("Panel/Margin/VBox/ContentLabel");
+		ConfigureLayout();
 		SetProcessUnhandledInput(true);
 	}
 
@@ -138,6 +139,22 @@ public partial class DialogueSequencePanel : CanvasLayer
 		float desiredHeight = Mathf.Clamp(contentSize.Y + speakerHeight + VerticalPadding, MinPanelHeight, MaxPanelHeight);
 		_panel.OffsetBottom = PanelBottom;
 		_panel.OffsetTop = PanelBottom - desiredHeight;
+	}
+
+	private void ConfigureLayout()
+	{
+		float contentWidth = Mathf.Max(32.0f, PanelWidth - HorizontalPadding);
+		_contentLabel.AutowrapMode = TextServer.AutowrapMode.WordSmart;
+		_contentLabel.SizeFlagsHorizontal = Control.SizeFlags.ExpandFill;
+		_contentLabel.CustomMinimumSize = new Vector2(contentWidth, 24.0f);
+		_contentLabel.ClipText = false;
+
+		if (GetNodeOrNull<Control>("Panel/Margin/VBox") is Control vbox)
+		{
+			vbox.SizeFlagsHorizontal = Control.SizeFlags.ExpandFill;
+			vbox.AnchorRight = 1.0f;
+			vbox.AnchorBottom = 1.0f;
+		}
 	}
 
 	private void Close(bool completed)

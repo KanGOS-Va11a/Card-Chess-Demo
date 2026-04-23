@@ -4,7 +4,7 @@ namespace CardChessDemo.Battle.Presentation;
 
 public partial class BattleEnemyView : BattleAnimatedViewBase
 {
-	private const string DefaultGruntFolderPath = "res://Assets/Character/Battle/Enemy/Grunt";
+	private static readonly Texture2D? DefaultGruntSpriteSheet = GD.Load<Texture2D>("res://Assets/Character/Battle/Enemy/Grunt/\u654C\u4EBA.png");
 
 	[Export] public Texture2D? IdleSpriteSheet { get; set; }
 	[Export(PropertyHint.Range, "1,256,1")] public int FrameWidth { get; set; } = 32;
@@ -52,20 +52,8 @@ public partial class BattleEnemyView : BattleAnimatedViewBase
 			return IdleSpriteSheet;
 		}
 
-		foreach (string fileName in DirAccess.GetFilesAt(DefaultGruntFolderPath))
-		{
-			if (!fileName.EndsWith(".png", System.StringComparison.OrdinalIgnoreCase))
-			{
-				continue;
-			}
-
-			IdleSpriteSheet = GD.Load<Texture2D>($"{DefaultGruntFolderPath}/{fileName}");
-			if (IdleSpriteSheet != null)
-			{
-				break;
-			}
-		}
-
+		// 导出后不要依赖目录枚举，直接使用明确引用的默认贴图。
+		IdleSpriteSheet = DefaultGruntSpriteSheet;
 		return IdleSpriteSheet;
 	}
 

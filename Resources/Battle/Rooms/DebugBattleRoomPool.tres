@@ -3,42 +3,34 @@
 [ext_resource type="Script" uid="uid://dkwd5ka0iluov" path="res://Scripts/Battle/Rooms/BattleRoomPoolDefinition.cs" id="1_3anlp"]
 [ext_resource type="Script" uid="uid://c3m18klvqpeik" path="res://Scripts/Battle/Rooms/BattleRoomPoolEntry.cs" id="2_u1q87"]
 [ext_resource type="PackedScene" uid="uid://dchwol31ix112" path="res://Scene/Battle/Rooms/Tutorial/Scene01TutorialFixedRoom.tscn" id="3_tutorial_fixed"]
-[ext_resource type="PackedScene" uid="uid://c37kf0xwp0hsf" path="res://Scene/Battle/Rooms/Authoring/pirate_blocker/room_01.tscn" id="4_blocker_01"]
-[ext_resource type="PackedScene" uid="uid://gvsbn7ssasck" path="res://Scene/Battle/Rooms/Authoring/pirate_blocker/room_02.tscn" id="5_blocker_02"]
-[ext_resource type="PackedScene" uid="uid://d1ahydmcfjjgu" path="res://Scene/Battle/Rooms/Authoring/pirate_blocker/room_03.tscn" id="6_blocker_03"]
-[ext_resource type="PackedScene" uid="uid://u03256idgt0r" path="res://Scene/Battle/Rooms/Authoring/pirate_blocker/room_04.tscn" id="7_blocker_04"]
-[ext_resource type="PackedScene" uid="uid://bp1j85cokjcw7" path="res://Scene/Battle/Rooms/Authoring/pirate_blocker/room_05.tscn" id="8_blocker_05"]
-[ext_resource type="PackedScene" path="res://Scene/Battle/Rooms/Authoring/pirate_scout/room_01.tscn" id="9_scout_01"]
-[ext_resource type="PackedScene" path="res://Scene/Battle/Rooms/Authoring/pirate_scout/room_02.tscn" id="10_scout_02"]
-[ext_resource type="PackedScene" path="res://Scene/Battle/Rooms/Authoring/pirate_scout/room_03.tscn" id="11_scout_03"]
-[ext_resource type="PackedScene" path="res://Scene/Battle/Rooms/Authoring/pirate_scout/room_04.tscn" id="12_scout_04"]
-[ext_resource type="PackedScene" path="res://Scene/Battle/Rooms/Authoring/pirate_scout/room_05.tscn" id="13_scout_05"]
-[ext_resource type="PackedScene" path="res://Scene/Battle/Rooms/Authoring/pirate_shocker/room_01.tscn" id="14_shocker_01"]
-[ext_resource type="PackedScene" path="res://Scene/Battle/Rooms/Authoring/pirate_shocker/room_02.tscn" id="15_shocker_02"]
-[ext_resource type="PackedScene" path="res://Scene/Battle/Rooms/Authoring/pirate_shocker/room_03.tscn" id="16_shocker_03"]
-[ext_resource type="PackedScene" path="res://Scene/Battle/Rooms/Authoring/pirate_shocker/room_04.tscn" id="17_shocker_04"]
-[ext_resource type="PackedScene" path="res://Scene/Battle/Rooms/Authoring/pirate_shocker/room_05.tscn" id="18_shocker_05"]
-[ext_resource type="PackedScene" path="res://Scene/Battle/Rooms/Authoring/pirate_gunner/room_01.tscn" id="19_gunner_01"]
-[ext_resource type="PackedScene" path="res://Scene/Battle/Rooms/Authoring/pirate_gunner/room_02.tscn" id="20_gunner_02"]
-[ext_resource type="PackedScene" path="res://Scene/Battle/Rooms/Authoring/pirate_gunner/room_03.tscn" id="21_gunner_03"]
-[ext_resource type="PackedScene" path="res://Scene/Battle/Rooms/Authoring/pirate_gunner/room_04.tscn" id="22_gunner_04"]
-[ext_resource type="PackedScene" path="res://Scene/Battle/Rooms/Authoring/pirate_gunner/room_05.tscn" id="23_gunner_05"]
-[ext_resource type="PackedScene" path="res://Scene/Battle/Rooms/Authoring/pirate_pipe_bomber/room_01.tscn" id="24_pipe_01"]
-[ext_resource type="PackedScene" path="res://Scene/Battle/Rooms/Authoring/pirate_pipe_bomber/room_02.tscn" id="25_pipe_02"]
-[ext_resource type="PackedScene" path="res://Scene/Battle/Rooms/Authoring/pirate_pipe_bomber/room_03.tscn" id="26_pipe_03"]
-[ext_resource type="PackedScene" path="res://Scene/Battle/Rooms/Authoring/pirate_pipe_bomber/room_04.tscn" id="27_pipe_04"]
-[ext_resource type="PackedScene" path="res://Scene/Battle/Rooms/Authoring/pirate_pipe_bomber/room_05.tscn" id="28_pipe_05"]
-[ext_resource type="PackedScene" path="res://Scene/Battle/Rooms/Authoring/pirate_brute_elite/room_01.tscn" id="29_brute_01"]
-[ext_resource type="PackedScene" path="res://Scene/Battle/Rooms/Authoring/pirate_brute_elite/room_02.tscn" id="30_brute_02"]
-[ext_resource type="PackedScene" path="res://Scene/Battle/Rooms/Authoring/pirate_brute_elite/room_03.tscn" id="31_brute_03"]
-[ext_resource type="PackedScene" uid="uid://d1c3ubcoq82yq" path="res://Scene/Battle/Rooms/Authoring/scrap_medic_elite/room_01.tscn" id="34_medic_01"]
-[ext_resource type="PackedScene" uid="uid://cq245cpxdlc27" path="res://Scene/Battle/Rooms/Authoring/scrap_medic_elite/room_02.tscn" id="35_medic_02"]
-[ext_resource type="PackedScene" uid="uid://k0k1i5nurkhi" path="res://Scene/Battle/Rooms/Authoring/scrap_medic_elite/room_03.tscn" id="36_medic_03"]
-[ext_resource type="PackedScene" path="res://Scene/Battle/Rooms/Authoring/sewer_gatekeeper/room_01.tscn" id="39_gate_01"]
-[ext_resource type="PackedScene" path="res://Scene/Battle/Rooms/Authoring/sewer_gatekeeper/room_02.tscn" id="40_gate_02"]
-[ext_resource type="PackedScene" path="res://Scene/Battle/Rooms/Authoring/sewer_gatekeeper/room_03.tscn" id="41_gate_03"]
-[ext_resource type="PackedScene" path="res://Scene/Battle/Rooms/Authoring/sewer_gatekeeper/room_04.tscn" id="42_gate_04"]
-[ext_resource type="PackedScene" path="res://Scene/Battle/Rooms/Authoring/sewer_gatekeeper/room_05.tscn" id="43_gate_05"]
+[ext_resource type="PackedScene" uid="uid://ccatj4jxuoe5u" path="res://Scene/Battle/Rooms/Authoring/pirate_blocker/room_01.tscn" id="4_blocker_01"]
+[ext_resource type="PackedScene" uid="uid://be7hrmlvkmrai" path="res://Scene/Battle/Rooms/Authoring/pirate_blocker/room_02.tscn" id="5_blocker_02"]
+[ext_resource type="PackedScene" uid="uid://bagjqvb83g31j" path="res://Scene/Battle/Rooms/Authoring/pirate_blocker/room_03.tscn" id="6_blocker_03"]
+[ext_resource type="PackedScene" uid="uid://xglqelphxqyc" path="res://Scene/Battle/Rooms/Authoring/pirate_blocker/room_04.tscn" id="7_blocker_04"]
+[ext_resource type="PackedScene" uid="uid://cbq552ithh631" path="res://Scene/Battle/Rooms/Authoring/pirate_blocker/room_05.tscn" id="8_blocker_05"]
+[ext_resource type="PackedScene" uid="uid://y3bq2xpeg2m7" path="res://Scene/Battle/Rooms/Authoring/pirate_scout/room_01.tscn" id="9_scout_01"]
+[ext_resource type="PackedScene" uid="uid://dw1d3yxak0r5j" path="res://Scene/Battle/Rooms/Authoring/pirate_scout/room_02.tscn" id="10_scout_02"]
+[ext_resource type="PackedScene" uid="uid://ckwyt0r0nee8j" path="res://Scene/Battle/Rooms/Authoring/pirate_scout/room_03.tscn" id="11_scout_03"]
+[ext_resource type="PackedScene" uid="uid://btj3k7u2mddfk" path="res://Scene/Battle/Rooms/Authoring/pirate_shocker/room_01.tscn" id="14_shocker_01"]
+[ext_resource type="PackedScene" uid="uid://0farnx6jv41p" path="res://Scene/Battle/Rooms/Authoring/pirate_shocker/room_02.tscn" id="15_shocker_02"]
+[ext_resource type="PackedScene" uid="uid://bj3yvuqmi08jj" path="res://Scene/Battle/Rooms/Authoring/pirate_shocker/room_03.tscn" id="16_shocker_03"]
+[ext_resource type="PackedScene" uid="uid://cycakyhyvjj76" path="res://Scene/Battle/Rooms/Authoring/pirate_gunner/room_01.tscn" id="19_gunner_01"]
+[ext_resource type="PackedScene" uid="uid://42t43myikoyl" path="res://Scene/Battle/Rooms/Authoring/pirate_gunner/room_02.tscn" id="20_gunner_02"]
+[ext_resource type="PackedScene" uid="uid://dy7r0jxj207f5" path="res://Scene/Battle/Rooms/Authoring/pirate_gunner/room_03.tscn" id="21_gunner_03"]
+[ext_resource type="PackedScene" uid="uid://dxmji2mhqgu8n" path="res://Scene/Battle/Rooms/Authoring/pirate_gunner/room_04.tscn" id="22_gunner_04"]
+[ext_resource type="PackedScene" uid="uid://baifyl3heaxdq" path="res://Scene/Battle/Rooms/Authoring/pirate_gunner/room_05.tscn" id="23_gunner_05"]
+[ext_resource type="PackedScene" uid="uid://drt74j4qyshcx" path="res://Scene/Battle/Rooms/Authoring/pirate_pipe_bomber/room_01.tscn" id="24_pipe_01"]
+[ext_resource type="PackedScene" uid="uid://ce2u2h23behux" path="res://Scene/Battle/Rooms/Authoring/pirate_pipe_bomber/room_02.tscn" id="25_pipe_02"]
+[ext_resource type="PackedScene" uid="uid://bhhjw1e1ptddx" path="res://Scene/Battle/Rooms/Authoring/pirate_pipe_bomber/room_03.tscn" id="26_pipe_03"]
+[ext_resource type="PackedScene" uid="uid://bpl8els4mf724" path="res://Scene/Battle/Rooms/Authoring/pirate_brute_elite/room_01.tscn" id="29_brute_01"]
+[ext_resource type="PackedScene" uid="uid://4xq8lhxyrfg2" path="res://Scene/Battle/Rooms/Authoring/pirate_brute_elite/room_02.tscn" id="30_brute_02"]
+[ext_resource type="PackedScene" uid="uid://dyjbmx3mxnpxn" path="res://Scene/Battle/Rooms/Authoring/pirate_brute_elite/room_03.tscn" id="31_brute_03"]
+[ext_resource type="PackedScene" uid="uid://dtu81avjqp2ef" path="res://Scene/Battle/Rooms/Authoring/scrap_medic_elite/room_01.tscn" id="34_medic_01"]
+[ext_resource type="PackedScene" uid="uid://b2cua41dix0n" path="res://Scene/Battle/Rooms/Authoring/scrap_medic_elite/room_02.tscn" id="35_medic_02"]
+[ext_resource type="PackedScene" uid="uid://bpr1p5hmkegxl" path="res://Scene/Battle/Rooms/Authoring/scrap_medic_elite/room_03.tscn" id="36_medic_03"]
+[ext_resource type="PackedScene" uid="uid://by0edx3y35a7v" path="res://Scene/Battle/Rooms/Authoring/sewer_gatekeeper/room_01.tscn" id="39_gate_01"]
+[ext_resource type="PackedScene" uid="uid://dalkhwp0kfcej" path="res://Scene/Battle/Rooms/Authoring/sewer_gatekeeper/room_02.tscn" id="40_gate_02"]
+[ext_resource type="PackedScene" uid="uid://csih2geom2noy" path="res://Scene/Battle/Rooms/Authoring/sewer_gatekeeper/room_03.tscn" id="41_gate_03"]
 [ext_resource type="PackedScene" uid="uid://b7ms6tivpp65w" path="res://Scene/Battle/Rooms/Authoring/boss_rust_captain/room_01.tscn" id="44_boss_01"]
 
 [sub_resource type="Resource" id="Pool_scene01_tutorial"]
@@ -57,13 +49,13 @@ RoomScenes = [ExtResource("4_blocker_01"), ExtResource("5_blocker_02"), ExtResou
 script = ExtResource("2_u1q87")
 RoomPoolId = "pirate_scout"
 EnemyTypeId = "pirate_scout"
-RoomScenes = [ExtResource("9_scout_01"), ExtResource("10_scout_02"), ExtResource("11_scout_03"), ExtResource("12_scout_04"), ExtResource("13_scout_05")]
+RoomScenes = [ExtResource("9_scout_01"), ExtResource("10_scout_02"), ExtResource("11_scout_03")]
 
 [sub_resource type="Resource" id="Pool_pirate_shocker"]
 script = ExtResource("2_u1q87")
 RoomPoolId = "pirate_shocker"
 EnemyTypeId = "pirate_shocker"
-RoomScenes = [ExtResource("14_shocker_01"), ExtResource("15_shocker_02"), ExtResource("16_shocker_03"), ExtResource("17_shocker_04"), ExtResource("18_shocker_05")]
+RoomScenes = [ExtResource("14_shocker_01"), ExtResource("15_shocker_02"), ExtResource("16_shocker_03")]
 
 [sub_resource type="Resource" id="Pool_pirate_gunner"]
 script = ExtResource("2_u1q87")
@@ -75,7 +67,7 @@ RoomScenes = [ExtResource("19_gunner_01"), ExtResource("20_gunner_02"), ExtResou
 script = ExtResource("2_u1q87")
 RoomPoolId = "pirate_pipe_bomber"
 EnemyTypeId = "pirate_pipe_bomber"
-RoomScenes = [ExtResource("24_pipe_01"), ExtResource("25_pipe_02"), ExtResource("26_pipe_03"), ExtResource("27_pipe_04"), ExtResource("28_pipe_05")]
+RoomScenes = [ExtResource("24_pipe_01"), ExtResource("25_pipe_02"), ExtResource("26_pipe_03")]
 
 [sub_resource type="Resource" id="Pool_pirate_brute_elite"]
 script = ExtResource("2_u1q87")
@@ -93,7 +85,7 @@ RoomScenes = [ExtResource("34_medic_01"), ExtResource("35_medic_02"), ExtResourc
 script = ExtResource("2_u1q87")
 RoomPoolId = "sewer_gatekeeper"
 EnemyTypeId = "sewer_gatekeeper"
-RoomScenes = [ExtResource("39_gate_01"), ExtResource("40_gate_02"), ExtResource("41_gate_03"), ExtResource("42_gate_04"), ExtResource("43_gate_05")]
+RoomScenes = [ExtResource("39_gate_01"), ExtResource("40_gate_02"), ExtResource("41_gate_03")]
 
 [sub_resource type="Resource" id="Pool_boss_rust_captain"]
 script = ExtResource("2_u1q87")

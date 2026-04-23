@@ -35,8 +35,8 @@ public sealed class PlayerStatResolver
 		int attackRangeBonus = SumTalentScalarBonuses(progressionState, "stat.attack_range_bonus.") + SumEquipmentIntModifiers(loadoutState, "player.attack_range_bonus", weaponOverrideItemId);
 		int defenseReductionBonus = SumTalentScalarBonuses(progressionState, "stat.defense_reduction_bonus.") + SumEquipmentIntModifiers(loadoutState, "player.defense_reduction_bonus");
 		int defenseShieldBonus = SumTalentScalarBonuses(progressionState, "stat.defense_shield_bonus.") + SumEquipmentIntModifiers(loadoutState, "player.defense_shield_bonus");
-		int maxHpBonus = SumEquipmentIntModifiers(loadoutState, "player.max_hp_bonus");
-		int moveBonus = SumEquipmentIntModifiers(loadoutState, "player.move_bonus");
+		int maxHpBonus = SumTalentScalarBonuses(progressionState, "stat.max_hp_bonus.") + SumEquipmentIntModifiers(loadoutState, "player.max_hp_bonus");
+		int moveBonus = SumTalentScalarBonuses(progressionState, "stat.move_bonus.") + SumEquipmentIntModifiers(loadoutState, "player.move_bonus");
 
 		return new ResolvedPlayerStats
 		{

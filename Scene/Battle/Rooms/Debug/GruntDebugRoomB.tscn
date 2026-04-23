@@ -208,9 +208,12 @@ tile_map_data = PackedByteArray("AAAAAAcAAQAAAAAAAQAPAAcAAQAAAAAAAgAPAAAAAQAAAAA
 tile_set = SubResource("TileSet_ssyln")
 
 [node name="EscapeLayer" type="TileMapLayer" parent="." unique_id=1853104012]
-tile_map_data = PackedByteArray("AAAPAAIAAQAAAAAABgAPAAMAAQAAAAAABgAPAAQAAQAAAAAABgA=")
+tile_map_data = PackedByteArray()
+
 tile_set = SubResource("TileSet_ssyln")
 
 [node name="FacingLayer" type="TileMapLayer" parent="." unique_id=138411087]
 tile_map_data = PackedByteArray("AAABAAQAAQAAAAAACQAMAAEAAQAAAAAABwANAAYAAQAAAAAABwAJAAMAAQAAAAAABwA=")
 tile_set = SubResource("TileSet_ssyln")
+
+

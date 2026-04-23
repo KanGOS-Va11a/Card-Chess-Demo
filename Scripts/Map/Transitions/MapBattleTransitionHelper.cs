@@ -10,6 +10,7 @@ namespace CardChessDemo.Map;
 public static class MapBattleTransitionHelper
 {
     private const string DefaultTransitionOverlayScenePath = "res://Scene/Transitions/MapBattleTransitionOverlay.tscn";
+    private const string EscapeTutorialBattleScenePath = "res://Scene/Battle/BattleTutorialEscape.tscn";
 
     public static bool TryEnterBattle(
         Node contextNode,
@@ -49,7 +50,13 @@ public static class MapBattleTransitionHelper
             : string.Empty;
         int battleSeed = BuildBattleSeed(battleEncounterId);
         GD.Print($"MapBattleTransitionHelper: enter battle from '{currentScenePath}', encounter='{battleEncounterId}', playerPos={player.GlobalPosition}, source='{sourceInteractablePath}'");
-        globalSession.BeginBattle(BattleRequest.FromSession(globalSession, battleEncounterId, battleSeed));
+        BattleRequest request = BattleRequest.FromSession(globalSession, battleEncounterId, battleSeed);
+        if (ShouldAllowRetreat(battleScene, battleScenePath))
+        {
+            request.RuntimeModifiers["allow_retreat"] = true;
+        }
+
+        globalSession.BeginBattle(request);
         globalSession.SetPendingBattleEncounterId(battleEncounterId);
         globalSession.SetPendingBattleReturnContext(new MapResumeContext(
             currentScenePath,
@@ -60,6 +67,14 @@ public static class MapBattleTransitionHelper
 
         _ = ExecuteBattleTransitionAsync(contextNode, battleScene, battleScenePath, globalSession, deferredFailureCallback);
         return true;
+    }
+
+    private static bool ShouldAllowRetreat(PackedScene? battleScene, string battleScenePath)
+    {
+        string resolvedPath = battleScene != null && !string.IsNullOrWhiteSpace(battleScene.ResourcePath)
+            ? battleScene.ResourcePath
+            : battleScenePath?.Trim() ?? string.Empty;
+        return string.Equals(resolvedPath, EscapeTutorialBattleScenePath, StringComparison.OrdinalIgnoreCase);
     }
 
     private static int BuildBattleSeed(string battleEncounterId)

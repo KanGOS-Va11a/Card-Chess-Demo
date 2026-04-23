@@ -16,6 +16,11 @@
 [ext_resource type="PackedScene" path="res://Scene/UI/SystemFeatureOverlay.tscn" id="20_overlay"]
 [ext_resource type="TileSet" uid="uid://cee0umruk6at7" path="res://Resources/Map/EnemySpawnTileSet.tres" id="21_enemy_spawn_tiles"]
 [ext_resource type="TileSet" uid="uid://dvsv43jlor71o" path="res://Resources/Map/InteractionTileSet.tres" id="22_interaction_tiles"]
+[ext_resource type="PackedScene" uid="uid://bhogk5l71kt6s" path="res://Scene/InteractableItem/Door03.tscn" id="23_return_door"]
+[ext_resource type="Script" uid="uid://b0tj6vn1kmg2s" path="res://Scripts/Map/Controllers/MazeEnemySpawnController.cs" id="24_maze_spawnctl"]
+[ext_resource type="PackedScene" path="res://Scene/Map/Triggers/StoryTriggerZone.tscn" id="25_story_trigger"]
+[ext_resource type="PackedScene" path="res://Scene/UI/AreaTitleOverlay.tscn" id="26_area_title"]
+[ext_resource type="PackedScene" path="res://Scene/Character/BossStoryPreview.tscn" id="27_boss_preview"]
 [ext_resource type="TileSet" uid="uid://bk2oy8wp4bh0a" path="res://Resources/Map/PlayerSpawnTileSet.tres" id="99_player_spawn_tiles"]
 
 [sub_resource type="TileSetAtlasSource" id="TileSetAtlasSource_s6_wall_8"]
@@ -446,13 +451,28 @@ tile_set = ExtResource("99_player_spawn_tiles")
 
 [node name="InteractionLayer" type="TileMapLayer" parent="WorldObjects" unique_id=595914859]
 y_sort_enabled = true
-tile_map_data = PackedByteArray("AAADACAAAQAAAAAAAQALABYAAQAAAAAAAQAAAAQAAQAAAAAAAQA=")
+tile_map_data = PackedByteArray("AAADACAAAQAAAAAAAQALABYAAQAAAAAAAQAAAAQAAQAAAAAAAQATABAAAQAAAAAABgA=")
 tile_set = ExtResource("22_interaction_tiles")
 
 [node name="EnemySpawnLayer" type="TileMapLayer" parent="WorldObjects" unique_id=291149041]
 y_sort_enabled = true
-tile_map_data = PackedByteArray("AAASAAYAAQAAAAAAAgAHAAsAAQAAAAAAAgAcAAYAAQAAAAAAAgAYAAsAAQAAAAAAAgAcABAAAQAAAAAAAgAHABAAAQAAAAAAAgALABUAAQAAAAAAAgAQABYAAQAAAAAAAgAfABUAAQAAAAAAAgAQAAsAAQAAAAAAAgANABAAAQAAAAAAAgA=")
+tile_map_data = PackedByteArray("AAASAAYAAQAAAAAACwAHAAsAAQAAAAAACwAcAAYAAQAAAAAACwAYAAsAAQAAAAAACwAcABAAAQAAAAAABwAHABAAAQAAAAAACwALABUAAQAAAAAACQAQABYAAQAAAAAACwAfABUAAQAAAAAACAAQAAsAAQAAAAAACwANABAAAQAAAAAACwA=")
 tile_set = ExtResource("21_enemy_spawn_tiles")
+
+[node name="ReturnDoorToScene05" parent="WorldObjects" unique_id=179357676 instance=ExtResource("23_return_door")]
+position = Vector2(-8, 24)
+
+[node name="BossStoryPreview" parent="WorldObjects" unique_id=1148392105 instance=ExtResource("27_boss_preview")]
+position = Vector2(73, 476)
+
+[node name="BossBattleTrigger" parent="WorldObjects" unique_id=1056471187 instance=ExtResource("25_story_trigger")]
+position = Vector2(118, 517)
+scale = Vector2(4.5111933, 2.1265152)
+TriggerSize = Vector2(128, 112)
+DialogueScriptId = "scene06_boss_story"
+StartBattleOnComplete = true
+BattleEncounterId = "boss_rust_captain"
+BattleScenePath = "res://Scene/Battle/Battle.tscn"
 
 [node name="Light" type="Node2D" parent="WorldObjects" unique_id=1993982649]
 y_sort_enabled = true
@@ -510,6 +530,12 @@ position = Vector2(0, 22)
 
 [node name="CanvasModulate" type="CanvasModulate" parent="." unique_id=980165958]
 color = Color(0.24, 0.24, 0.28, 1)
+
+[node name="AreaTitleOverlay" parent="." unique_id=184900321 instance=ExtResource("26_area_title")]
+TitleId = "scene06_base"
+
+[node name="MazeEnemySpawnController" type="Node" parent="." unique_id=98660641]
+script = ExtResource("24_maze_spawnctl")
 
 [node name="MapSceneController" type="Node2D" parent="." unique_id=647046752]
 script = ExtResource("1_mapctl")

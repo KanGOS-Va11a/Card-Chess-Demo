@@ -19,7 +19,7 @@ public partial class MapSceneController : Node2D
 	{
 		["res://Scene/Maps/Scene01.tscn"] = "res://Scene/Maps/Scene03.tscn",
 		["res://Scene/Maps/Scene03.tscn"] = "res://Scene/Maps/Scene04.tscn",
-		["res://Scene/Maps/Scene04.tscn"] = "res://Scene/Maps/Scene05.tscn",
+		["res://Scene/Maps/Scene04.tscn"] = "res://Scene/Maps/Scene04To05Cutscene.tscn",
 		["res://Scene/Maps/Scene05.tscn"] = "res://Scene/Maps/Scene06.tscn",
 	};
 
@@ -30,6 +30,9 @@ public partial class MapSceneController : Node2D
 		await ToSignal(GetTree(), SceneTree.SignalName.ProcessFrame);
 		_globalSession = GetNodeOrNull<GlobalGameSession>("/root/GlobalGameSession");
 		string currentScenePath = GetTree().CurrentScene?.SceneFilePath ?? SceneFilePath;
+		_globalSession?.SetCurrentMapContext(currentScenePath);
+		MapResumeContext? consumedBattleResumeContext = null;
+		BattleResult? pendingBattleResult = _globalSession?.PeekLastBattleResult();
 
 		Node2D? player = EnsurePlayerNodePresent();
 		HideAllSpawnMarkers();
@@ -39,6 +42,7 @@ public partial class MapSceneController : Node2D
 			&& _globalSession.TryConsumePendingBattleReturn(currentScenePath, out MapResumeContext? resumeContext)
 			&& resumeContext != null)
 		{
+			consumedBattleResumeContext = resumeContext;
 			GD.Print($"MapSceneController: applying battle return for '{currentScenePath}', playerPos={resumeContext.PlayerGlobalPosition}");
 			MapRuntimeSnapshotHelper.ApplyToScene(GetTree().CurrentScene ?? this, resumeContext.MapRuntimeSnapshot);
 			if (player != null)
@@ -56,9 +60,18 @@ public partial class MapSceneController : Node2D
 
 			GD.Print($"MapSceneController: applying scene entry spawn for '{currentScenePath}', targetSpawnId='{targetSpawnId}'");
 			ApplySpawnMarkerPosition(player, targetSpawnId);
+			ApplyPendingRestorePosition(player);
 		}
 
+		if (_globalSession != null
+			&& _globalSession.TryConsumePendingSceneRuntimeSnapshot(currentScenePath, out Godot.Collections.Dictionary sceneRuntimeSnapshot))
+		{
+			MapRuntimeSnapshotHelper.ApplyToScene(GetTree().CurrentScene ?? this, sceneRuntimeSnapshot);
+		}
+
+		SceneLootPresetCatalog.ApplyToScene(GetTree().CurrentScene ?? this, currentScenePath);
 		ApplyUsedInteractableRemovals();
+		ResolveMazeEnemySpawnController()?.InitializeForScene(player as Player, currentScenePath, consumedBattleResumeContext, pendingBattleResult);
 		_globalSession?.ConsumeLastBattleResult();
 		GameAudio.Instance?.PlayMapMusic();
 	}
@@ -127,6 +140,18 @@ public partial class MapSceneController : Node2D
 		GD.Print($"MapSceneController: selected spawn '{spawnPoint.SpawnId}' at {spawnPoint.WorldPosition}");
 	}
 
+	private void ApplyPendingRestorePosition(Node2D? player)
+	{
+		if (player == null || _globalSession == null || !_globalSession.ShouldRestorePlayerPosition)
+		{
+			return;
+		}
+
+		player.GlobalPosition = _globalSession.PendingRestorePlayerPosition;
+		GD.Print($"MapSceneController: applied saved restore position {_globalSession.PendingRestorePlayerPosition}");
+		_globalSession.ClearPendingRestorePlayerPosition();
+	}
+
 	private void HideAllSpawnMarkers()
 	{
 		foreach (TileMapLayer spawnLayer in EnumeratePlayerSpawnLayers(GetTree().CurrentScene ?? this))
@@ -187,6 +212,11 @@ public partial class MapSceneController : Node2D
 			snapshot["remove_from_scene"] = true;
 			interactable.ApplyRuntimeSnapshot(snapshot);
 		}
+	}
+
+	private MazeEnemySpawnController? ResolveMazeEnemySpawnController()
+	{
+		return GetTree().CurrentScene?.FindChild("MazeEnemySpawnController", true, false) as MazeEnemySpawnController;
 	}
 
 	private Node2D? ResolvePlayerNode()

@@ -3,15 +3,16 @@
 [ext_resource type="Script" uid="uid://bacvjmwtxs21k" path="res://Scripts/Map/Controllers/MapSceneController.cs" id="1_mapctl"]
 [ext_resource type="Script" uid="uid://dyw2yvmw0516w" path="res://Scripts/Map/Controllers/MapResolutionController.cs" id="1_resctl"]
 [ext_resource type="Texture2D" uid="uid://c4hbgup3bropd" path="res://bcg1@0,25x.png" id="1_swr6d"]
+[ext_resource type="Script" uid="uid://c7tqgm8d6no52" path="res://Scripts/Map/UI/Scene03PostBattleTutorialController.cs" id="2_post_battle"]
 [ext_resource type="Script" uid="uid://ko3c2evxdpee" path="res://Scripts/Map/World/WallLayerCollisionBuilder.cs" id="2_umcx7"]
-[ext_resource type="Texture2D" uid="uid://s5f1cihm0idq" path="res://ArtResource/resource/闂傚倷绶氬濠氭⒔閸曨偒鐔嗘俊顖氥偨?婵?8.png" id="3_a0dq8"]
-[ext_resource type="Texture2D" uid="uid://c5thwoux5l8wr" path="res://ArtResource/resource/闂傚倷绶氬濠氭⒔閸曨偒鐔嗘俊顖氥偨?婵?10.png" id="4_7mc1r"]
+[ext_resource type="Texture2D" uid="uid://s5f1cihm0idq" path="res://ArtResource/resource/地图/墙/8.png" id="3_a0dq8"]
+[ext_resource type="Texture2D" uid="uid://c5thwoux5l8wr" path="res://ArtResource/resource/地图/墙/10.png" id="4_7mc1r"]
 [ext_resource type="Texture2D" uid="uid://cbnn0o0mufyk5" path="res://CosmicLegacy_PetricakeGamesPNG.png" id="5_ipros"]
-[ext_resource type="Texture2D" uid="uid://bgi7gmfjh3c5d" path="res://ArtResource/resource/闂傚倷绶氬濠氭⒔閸曨偒鐔嗘俊顖氥偨?婵?3.png" id="6_3deog"]
-[ext_resource type="Texture2D" uid="uid://d2g57n2phpmsn" path="res://ArtResource/resource/闂傚倷绶氬濠氭⒔閸曨偒鐔嗘俊顖氥偨?婵?Wall.png" id="6_xyoex"]
-[ext_resource type="Texture2D" uid="uid://bma1hxkxhkpd3" path="res://ArtResource/resource/闂傚倷绶氬濠氭⒔閸曨偒鐔嗘俊顖氥偨?婵?4.png" id="7_xyoex"]
-[ext_resource type="Texture2D" uid="uid://cnkys1b40rfbc" path="res://ArtResource/resource/闂傚倷绶氬濠氭⒔閸曨偒鐔嗘俊顖氥偨?婵?5.png" id="8_evddg"]
-[ext_resource type="Texture2D" uid="uid://b0km05r2h5wx7" path="res://ArtResource/resource/闂傚倷绶氬濠氭⒔閸曨偒鐔嗘俊顖氥偨?闂傚倷绶氬缁樹繆閸ャ劍娅犳俊銈傚亾妞?floors.png" id="14_evddg"]
+[ext_resource type="Texture2D" uid="uid://bgi7gmfjh3c5d" path="res://ArtResource/resource/地图/墙/3.png" id="6_3deog"]
+[ext_resource type="Texture2D" uid="uid://d2g57n2phpmsn" path="res://ArtResource/resource/地图/墙/Wall.png" id="6_xyoex"]
+[ext_resource type="Texture2D" uid="uid://bma1hxkxhkpd3" path="res://ArtResource/resource/地图/墙/4.png" id="7_xyoex"]
+[ext_resource type="Texture2D" uid="uid://cnkys1b40rfbc" path="res://ArtResource/resource/地图/墙/5.png" id="8_evddg"]
+[ext_resource type="Texture2D" uid="uid://b0km05r2h5wx7" path="res://ArtResource/resource/地图/地板/floors.png" id="14_evddg"]
 [ext_resource type="PackedScene" uid="uid://bk5e0eijairxv" path="res://Scene/InteractableItem/Door02.tscn" id="15_a0dq8"]
 [ext_resource type="PackedScene" path="res://Scene/Character/EnemyStoryDialogue.tscn" id="18_3deog"]
 [ext_resource type="PackedScene" path="res://Scene/UI/SystemFeatureOverlay.tscn" id="20_overlay"]
@@ -267,7 +268,7 @@ tile_set = ExtResource("99_player_spawn_tiles")
 
 [node name="InteractionLayer" type="TileMapLayer" parent="WorldObjects" unique_id=1624165136]
 y_sort_enabled = true
-tile_map_data = PackedByteArray("AAD8//z/AQAAAAAAAQD6/wAAAQAAAAAAAgAOAAoAAQAAAAAAAwD6//7/AQAAAAAAAwD6/wUAAQAAAAAAAwAZAPT/AQAAAAAAAwAMAAkAAQAAAAAAAQA=")
+tile_map_data = PackedByteArray("AAD8//z/AQAAAAAAAQD6/wAAAQAAAAAAAgAOAAoAAQAAAAAAAwD6//7/AQAAAAAAAwD6/wUAAQAAAAAAAwAZAPT/AQAAAAAAAwAMAAkAAQAAAAAAAQD9//7/AQAAAAAABgA=")
 tile_set = ExtResource("24_interaction_tiles")
 
 [node name="EnemySpawnLayer" type="TileMapLayer" parent="WorldObjects" unique_id=1689363866]
@@ -299,12 +300,6 @@ metadata/_edit_lock_ = true
 [node name="Doors" type="Node2D" parent="WorldObjects" unique_id=92205131]
 y_sort_enabled = true
 
-[node name="TutorialBasicTrigger" parent="WorldObjects" instance=ExtResource("25_story_trigger")]
-position = Vector2(88, 8)
-TriggerSize = Vector2(48, 32)
-TriggerInteractablePath = NodePath("WorldObjects/Enemies/Enemy2")
-DialogueScriptId = "scene03_basic_story"
-
 [node name="Door02" parent="WorldObjects/Doors" unique_id=1311460087 instance=ExtResource("15_a0dq8")]
 position = Vector2(568, -7)
 rotation = 1.5707964
@@ -321,6 +316,12 @@ rotation = 1.5707964
 position = Vector2(568, -23)
 rotation = 1.5707964
 
+[node name="TutorialBasicTrigger" parent="WorldObjects" unique_id=430653029 instance=ExtResource("25_story_trigger")]
+position = Vector2(88, 8)
+TriggerSize = Vector2(48, 32)
+DialogueScriptId = "scene03_basic_story"
+TriggerInteractablePath = NodePath("WorldObjects/Enemies/Enemy2")
+
 [node name="CanvasModulate" type="CanvasModulate" parent="." unique_id=1626774945]
 color = Color(0.8745098, 0.83137256, 0.94509804, 1)
 
@@ -330,6 +331,9 @@ PlayerPath = NodePath("")
 
 [node name="MapResolutionController" type="Node" parent="." unique_id=1452553793]
 script = ExtResource("1_resctl")
+
+[node name="Scene03PostBattleTutorial" type="Node" parent="." unique_id=1452553794]
+script = ExtResource("2_post_battle")
 
 [node name="SystemFeatureOverlay" parent="." unique_id=942023797 instance=ExtResource("20_overlay")]
 PlayerPath = NodePath("")

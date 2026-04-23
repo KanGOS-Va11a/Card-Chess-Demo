@@ -1,4 +1,6 @@
+﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 using Godot;
 
 namespace CardChessDemo.Map;
@@ -8,6 +10,8 @@ public partial class MazeEnemyChaser : Enemy
 	[Export] public NodePath PlayerPath { get; set; } = new("../../../WorldObjects/MainPlayer/Player");
 	[Export] public NodePath WallLayerPath { get; set; } = new("../../../WallLayer");
 	[Export] public NodePath GroundLayerPath { get; set; } = new("../../../GroundLayer");
+	[Export] public string[] CandidateEncounterIds { get; set; } = Array.Empty<string>();
+	[Export] public bool SpawnControllerManaged { get; set; } = true;
 	[Export(PropertyHint.Range, "1,16,1")] public int VisionRangeTiles { get; set; } = 5;
 	[Export(PropertyHint.Range, "1,20,1")] public int ChaseRangeTiles { get; set; } = 8;
 	[Export(PropertyHint.Range, "0,2,1")] public int StopDistanceTiles { get; set; } = 1;
@@ -23,6 +27,7 @@ public partial class MazeEnemyChaser : Enemy
 	private Player? _player;
 	private TileMapLayer? _wallLayer;
 	private TileMapLayer? _groundLayer;
+	private Area2D? _interactionAreaNode;
 	private readonly HashSet<Vector2I> _groundCells = new();
 	private bool _isMoving;
 	private Vector2 _moveStart = Vector2.Zero;
@@ -32,12 +37,25 @@ public partial class MazeEnemyChaser : Enemy
 	private double _stepCooldown;
 	private bool _isChasing;
 	private double _chaseElapsed;
+	private bool _managedSpawnActive = true;
+	private uint _baseCollisionLayer;
+	private uint _baseCollisionMask;
+	private uint _baseInteractionCollisionLayer;
+	private uint _baseInteractionCollisionMask;
+
+	public bool IsManagedSpawnActive => !SpawnControllerManaged || _managedSpawnActive;
 
 	public override void _Ready()
 	{
 		base._Ready();
 		ResolveReferences();
+		CacheCollisionState();
 		GlobalPosition = SnapToGrid(GlobalPosition);
+		if (SpawnControllerManaged)
+		{
+			RemoveOnBattleVictory = false;
+			MarkUsedOnBattleVictory = false;
+		}
 	}
 
 	public override void SetInteractionHighlight(bool highlighted)
@@ -46,6 +64,11 @@ public partial class MazeEnemyChaser : Enemy
 
 	public override void _PhysicsProcess(double delta)
 	{
+		if (SpawnControllerManaged && !_managedSpawnActive)
+		{
+			return;
+		}
+
 		if (_stepCooldown > 0.0d)
 		{
 			_stepCooldown = Mathf.Max(0.0d, _stepCooldown - delta);
@@ -112,11 +135,81 @@ public partial class MazeEnemyChaser : Enemy
 		StartMove(nextCell);
 	}
 
+	public string[] GetEncounterCandidates()
+	{
+		string[] candidates = CandidateEncounterIds
+			.Where(value => !string.IsNullOrWhiteSpace(value))
+			.Select(value => value.Trim())
+			.Distinct(StringComparer.Ordinal)
+			.ToArray();
+		if (candidates.Length > 0)
+		{
+			return candidates;
+		}
+
+		return string.IsNullOrWhiteSpace(EncounterId)
+			? Array.Empty<string>()
+			: new[] { EncounterId.Trim() };
+	}
+
+	public Vector2I GetAnchorCell()
+	{
+		ResolveReferences();
+		return WorldToCell(SnapToGrid(GlobalPosition));
+	}
+
+	public void ActivateManagedSpawn(string encounterId)
+	{
+		if (!SpawnControllerManaged)
+		{
+			return;
+		}
+
+		if (!string.IsNullOrWhiteSpace(encounterId))
+		{
+			EncounterId = encounterId.Trim();
+		}
+
+		ResetChaseState();
+		_isMoving = false;
+		_moveElapsed = 0.0d;
+		_stepCooldown = 0.0d;
+		_managedSpawnActive = true;
+		GlobalPosition = SnapToGrid(GlobalPosition);
+		Visible = true;
+		ResetEncounterInteractionState();
+		RestoreCollisionState();
+		SetPhysicsProcess(true);
+	}
+
+	public void DeactivateManagedSpawn(bool hideVisual = true)
+	{
+		if (!SpawnControllerManaged)
+		{
+			return;
+		}
+
+		ResetChaseState();
+		_isMoving = false;
+		_moveElapsed = 0.0d;
+		_stepCooldown = 0.0d;
+		_managedSpawnActive = false;
+		ResetEncounterInteractionState(enableInteraction: false);
+		IsDisabled = true;
+		DisableCollisionState();
+		if (hideVisual)
+		{
+			Visible = false;
+		}
+		SetPhysicsProcess(false);
+	}
+
 	private void ResolveReferences()
 	{
 		_player ??= ResolvePlayer();
 		_wallLayer ??= GetNodeOrNull<TileMapLayer>(WallLayerPath) ?? GetTree().CurrentScene?.FindChild("WallLayer", true, false) as TileMapLayer;
 		_groundLayer ??= GetNodeOrNull<TileMapLayer>(GroundLayerPath) ?? GetTree().CurrentScene?.FindChild("GroundLayer", true, false) as TileMapLayer;
+		_interactionAreaNode ??= GetNodeOrNull<Area2D>("InteractionArea");
 
 		if (_groundLayer != null && _groundCells.Count == 0)
 		{
@@ -155,7 +248,7 @@ public partial class MazeEnemyChaser : Enemy
 		}
 
 		_moveElapsed += delta;
-		double duration = System.Math.Max(0.01d, StepDurationSeconds);
+		double duration = Math.Max(0.01d, StepDurationSeconds);
 		float t = Mathf.Clamp((float)(_moveElapsed / duration), 0.0f, 1.0f);
 		GlobalPosition = _moveStart.Lerp(_moveTarget, t);
 		if (t < 1.0f)
@@ -366,5 +459,42 @@ public partial class MazeEnemyChaser : Enemy
 	private Vector2 SnapToGrid(Vector2 worldPosition)
 	{
 		return CellToWorld(WorldToCell(worldPosition));
+	}
+
+	private void CacheCollisionState()
+	{
+		_baseCollisionLayer = CollisionLayer;
+		_baseCollisionMask = CollisionMask;
+		if (_interactionAreaNode != null)
+		{
+			_baseInteractionCollisionLayer = _interactionAreaNode.CollisionLayer;
+			_baseInteractionCollisionMask = _interactionAreaNode.CollisionMask;
+		}
+	}
+
+	private void RestoreCollisionState()
+	{
+		CollisionLayer = _baseCollisionLayer;
+		CollisionMask = _baseCollisionMask;
+		if (_interactionAreaNode != null)
+		{
+			_interactionAreaNode.CollisionLayer = _baseInteractionCollisionLayer;
+			_interactionAreaNode.CollisionMask = _baseInteractionCollisionMask;
+			_interactionAreaNode.Monitoring = true;
+			_interactionAreaNode.Monitorable = true;
+		}
+	}
+
+	private void DisableCollisionState()
+	{
+		CollisionLayer = 0;
+		CollisionMask = 0;
+		if (_interactionAreaNode != null)
+		{
+			_interactionAreaNode.CollisionLayer = 0;
+			_interactionAreaNode.CollisionMask = 0;
+			_interactionAreaNode.Monitoring = false;
+			_interactionAreaNode.Monitorable = false;
+		}
 	}
 }

@@ -86,6 +86,8 @@ public sealed class BattleDeckState
             {
                 _drawPile.Add(CreateInstance(definition));
             }
+
+            Shuffle(_drawPile);
         }
 
         CurrentEnergy = runtimeInit != null && runtimeInit.InitialEnergy >= 0

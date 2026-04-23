@@ -53,7 +53,7 @@ public partial class GameAudio : Node
 			[UiCancelCueId] = -6.0f,
 			[UiToggleOnCueId] = -5.0f,
 			[UiToggleOffCueId] = -5.0f,
-			[DialoguePopupCueId] = -8.5f,
+			[DialoguePopupCueId] = -6.0f,
 		};
 
 	private static readonly IReadOnlyDictionary<string, string[]> CueCandidatePaths =
@@ -72,7 +72,7 @@ public partial class GameAudio : Node
 			[UiCancelCueId] = new[] { "res://Assets/Audio/SFX/UI_clicked.wav" },
 			[UiToggleOnCueId] = new[] { "res://Assets/Audio/SFX/ui_on.wav" },
 			[UiToggleOffCueId] = new[] { "res://Assets/Audio/SFX/ui_off.wav" },
-			[DialoguePopupCueId] = new[] { "res://Assets/Audio/SFX/text_rolling.wav" },
+			[DialoguePopupCueId] = new[] { "res://Assets/Audio/SFX/UI_clicked.wav" },
 		};
 
 	public static GameAudio? Instance { get; private set; }
@@ -517,11 +517,6 @@ public partial class GameAudio : Node
 
 		foreach (string candidate in candidates)
 		{
-			if (!FileAccess.FileExists(candidate))
-			{
-				continue;
-			}
-
 			AudioStream? stream = ResourceLoader.Load<AudioStream>(candidate);
 			if (stream != null)
 			{

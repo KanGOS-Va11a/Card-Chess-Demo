@@ -1,7 +1,7 @@
-[gd_scene format=4 uid="uid://d1ahydmcfjjgu"]
+[gd_scene format=4 uid="uid://bagjqvb83g31j"]
 
 [ext_resource type="Script" uid="uid://ct05gdp6367dx" path="res://Scripts/Battle/Rooms/BattleRoomTemplate.cs" id="1_room"]
-[ext_resource type="Texture2D" uid="uid://cbnn0o0mufyk5" path="res://Assets/Tilemap/CosmicLegacy_PetricakeGamesPNG.png" id="2_2sv7a"]
+[ext_resource type="Texture2D" uid="uid://cbnn0o0mufyk5" path="res://Assets/Tilemap/CosmicLegacy_PetricakeGamesPNG.png" id="2_lh25s"]
 [ext_resource type="PackedScene" path="res://Scene/Battle/Tiles/Markers/MarkerBase_Player.tscn" id="3_eqlnx"]
 [ext_resource type="PackedScene" path="res://Scene/Battle/Tiles/BattleFacingDownTile.tscn" id="4_lh25s"]
 [ext_resource type="PackedScene" path="res://Scene/Battle/Tiles/Markers/MarkerEnemy_Scene01Tutorial.tscn" id="5_ir66p"]
@@ -14,6 +14,7 @@
 [ext_resource type="PackedScene" path="res://Scene/Battle/Tiles/Markers/MarkerEnemy_ScrapMedicElite.tscn" id="12_e63xc"]
 [ext_resource type="PackedScene" path="res://Scene/Battle/Tiles/Markers/MarkerEnemy_SewerGatekeeper.tscn" id="13_3cx2d"]
 [ext_resource type="PackedScene" path="res://Scene/Battle/Tiles/Markers/MarkerEnemy_Generic.tscn" id="14_iswtg"]
+[ext_resource type="PackedScene" path="res://Scene/Battle/Tiles/Markers/MarkerEnemy_BossRustCaptain.tscn" id="15_ir66p"]
 [ext_resource type="PackedScene" path="res://Scene/Battle/Tiles/Markers/MarkerObstacle_Breakable.tscn" id="15_xs68q"]
 [ext_resource type="PackedScene" path="res://Scene/Battle/Tiles/Markers/MarkerObstacle_Wall.tscn" id="16_1jvew"]
 [ext_resource type="PackedScene" path="res://Scene/Battle/Tiles/Markers/MarkerObstacle_Slow.tscn" id="17_ak3wh"]
@@ -21,9 +22,10 @@
 [ext_resource type="PackedScene" path="res://Scene/Battle/Tiles/BattleFacingLeftTile.tscn" id="19_35o2s"]
 [ext_resource type="PackedScene" path="res://Scene/Battle/Tiles/BattleFacingUpTile.tscn" id="20_hlg7t"]
 [ext_resource type="PackedScene" path="res://Scene/Battle/Tiles/BattleFacingRightTile.tscn" id="21_jsfra"]
+[ext_resource type="Texture2D" uid="uid://cfpdq1bxwcrde" path="res://Assets/Tilemap/地板片集合.png" id="23_qderr"]
 
-[sub_resource type="TileSetAtlasSource" id="TileSetAtlasSource_lc7sh"]
-texture = ExtResource("2_2sv7a")
+[sub_resource type="TileSetAtlasSource" id="TileSetAtlasSource_2frwe"]
+texture = ExtResource("2_lh25s")
 0:0/0 = 0
 1:0/0 = 0
 2:0/0 = 0
@@ -161,7 +163,7 @@ texture = ExtResource("2_2sv7a")
 15:7/0 = 0
 16:7/0 = 0
 
-[sub_resource type="TileSetScenesCollectionSource" id="TileSetScenesCollectionSource_yeswh"]
+[sub_resource type="TileSetScenesCollectionSource" id="TileSetScenesCollectionSource_euqph"]
 scenes/1/scene = ExtResource("3_eqlnx")
 scenes/2/scene = ExtResource("14_iswtg")
 scenes/3/scene = ExtResource("15_xs68q")
@@ -181,10 +183,43 @@ scenes/16/scene = ExtResource("10_hwrb4")
 scenes/17/scene = ExtResource("11_ql42u")
 scenes/18/scene = ExtResource("12_e63xc")
 scenes/19/scene = ExtResource("13_3cx2d")
+scenes/20/scene = ExtResource("15_ir66p")
 
-[sub_resource type="TileSet" id="TileSet_a6qd5"]
-sources/0 = SubResource("TileSetAtlasSource_lc7sh")
-sources/1 = SubResource("TileSetScenesCollectionSource_yeswh")
+[sub_resource type="TileSetAtlasSource" id="TileSetAtlasSource_i2m88"]
+texture = ExtResource("23_qderr")
+0:0/0 = 0
+1:0/0 = 0
+2:0/0 = 0
+3:0/0 = 0
+4:0/0 = 0
+5:0/0 = 0
+6:0/0 = 0
+0:1/0 = 0
+1:1/0 = 0
+2:1/0 = 0
+3:1/0 = 0
+4:1/0 = 0
+5:1/0 = 0
+6:1/0 = 0
+0:2/0 = 0
+1:2/0 = 0
+2:2/0 = 0
+3:2/0 = 0
+4:2/0 = 0
+5:2/0 = 0
+6:2/0 = 0
+0:3/0 = 0
+1:3/0 = 0
+2:3/0 = 0
+3:3/0 = 0
+4:3/0 = 0
+5:3/0 = 0
+6:3/0 = 0
+
+[sub_resource type="TileSet" id="TileSet_hwrb4"]
+sources/0 = SubResource("TileSetAtlasSource_2frwe")
+sources/2 = SubResource("TileSetAtlasSource_i2m88")
+sources/1 = SubResource("TileSetScenesCollectionSource_euqph")
 
 [node name="pirate_blocker_room_03" type="Node2D" unique_id=751278464]
 script = ExtResource("1_room")
@@ -198,16 +233,16 @@ DefaultSlowPassObstacleCells = Array[Vector2i]([])
 
 [node name="FloorLayer" type="TileMapLayer" parent="." unique_id=1715569539]
 tile_map_data = PackedByteArray("AAAAAAAAAAACAAEAAAABAAAAAAACAAEAAAACAAAAAAACAAEAAAADAAAAAAACAAEAAAAEAAAAAAACAAEAAAAFAAAAAAACAAEAAAAGAAAAAAACAAEAAAAHAAAAAAACAAEAAAAIAAAAAAACAAEAAAAJAAAAAAACAAEAAAAKAAAAAAACAAEAAAALAAAAAAACAAEAAAAMAAAAAAACAAEAAAANAAAAAAACAAEAAAAOAAAAAAACAAEAAAAPAAAAAAACAAEAAAAAAAEAAAABAAEAAAABAAEAAAABAAEAAAACAAEAAAABAAEAAAADAAEAAAABAAEAAAAEAAEAAAABAAEAAAAFAAEAAAABAAEAAAAGAAEAAAABAAEAAAAHAAEAAAABAAEAAAAIAAEAAAABAAEAAAAJAAEAAAABAAEAAAAKAAEAAAABAAEAAAALAAEAAAABAAEAAAAMAAEAAAABAAEAAAANAAEAAAABAAEAAAAOAAEAAAABAAEAAAAPAAEAAAABAAEAAAAAAAIAAAABAAEAAAABAAIAAAABAAEAAAACAAIAAAABAAEAAAADAAIAAAABAAEAAAAEAAIAAAABAAEAAAAFAAIAAAABAAEAAAAGAAIAAAABAAEAAAAHAAIAAAABAAEAAAAIAAIAAAABAAEAAAAJAAIAAAABAAEAAAAKAAIAAAABAAEAAAALAAIAAAABAAEAAAAMAAIAAAABAAEAAAANAAIAAAABAAEAAAAOAAIAAAABAAEAAAAPAAIAAAABAAEAAAAAAAMAAAABAAEAAAABAAMAAAABAAEAAAACAAMAAAABAAEAAAADAAMAAAABAAEAAAAEAAMAAAABAAEAAAAFAAMAAAABAAEAAAAGAAMAAAABAAEAAAAHAAMAAAABAAEAAAAIAAMAAAABAAEAAAAJAAMAAAABAAEAAAAKAAMAAAABAAEAAAALAAMAAAABAAEAAAAMAAMAAAABAAEAAAANAAMAAAABAAEAAAAOAAMAAAABAAEAAAAPAAMAAAABAAEAAAAAAAQAAAABAAEAAAABAAQAAAABAAEAAAACAAQAAAABAAEAAAADAAQAAAABAAEAAAAEAAQAAAABAAEAAAAFAAQAAAABAAEAAAAGAAQAAAABAAEAAAAHAAQAAAABAAEAAAAIAAQAAAABAAEAAAAJAAQAAAABAAEAAAAKAAQAAAABAAEAAAALAAQAAAABAAEAAAAMAAQAAAABAAEAAAANAAQAAAABAAEAAAAOAAQAAAABAAEAAAAPAAQAAAABAAEAAAAAAAUAAAABAAEAAAABAAUAAAABAAEAAAACAAUAAAABAAEAAAADAAUAAAABAAEAAAAEAAUAAAABAAEAAAAFAAUAAAABAAEAAAAGAAUAAAABAAEAAAAHAAUAAAABAAEAAAAIAAUAAAABAAEAAAAJAAUAAAABAAEAAAAKAAUAAAABAAEAAAALAAUAAAABAAEAAAAMAAUAAAABAAEAAAANAAUAAAABAAEAAAAOAAUAAAABAAEAAAAPAAUAAAABAAEAAAAAAAYAAAABAAEAAAABAAYAAAABAAEAAAACAAYAAAABAAEAAAADAAYAAAABAAEAAAAEAAYAAAABAAEAAAAFAAYAAAABAAEAAAAGAAYAAAABAAEAAAAHAAYAAAABAAEAAAAIAAYAAAABAAEAAAAJAAYAAAABAAEAAAAKAAYAAAABAAEAAAALAAYAAAABAAEAAAAMAAYAAAABAAEAAAANAAYAAAABAAEAAAAOAAYAAAABAAEAAAAPAAYAAAABAAEAAAAAAAcAAAACAAEAAAABAAcAAAACAAEAAAACAAcAAAACAAEAAAADAAcAAAACAAEAAAAEAAcAAAACAAEAAAAFAAcAAAACAAEAAAAGAAcAAAACAAEAAAAHAAcAAAACAAEAAAAIAAcAAAACAAEAAAAJAAcAAAACAAEAAAAKAAcAAAACAAEAAAALAAcAAAACAAEAAAAMAAcAAAACAAEAAAANAAcAAAACAAEAAAAOAAcAAAACAAEAAAAPAAcAAAACAAEAAAA=")
-tile_set = SubResource("TileSet_a6qd5")
+tile_set = SubResource("TileSet_hwrb4")
 
 [node name="MarkerLayer" type="TileMapLayer" parent="." unique_id=648193836]
 tile_map_data = PackedByteArray("AAAHAAcAAQAAAAAAAQAEAAMAAQAAAAAADAAMAAUAAQAAAAAADAAMAAEAAQAAAAAADAADAAQAAQAAAAAABAAEAAQAAQAAAAAABAAFAAQAAQAAAAAABAALAAYAAQAAAAAABAAMAAYAAQAAAAAABAANAAYAAQAAAAAABAALAAIAAQAAAAAABAAMAAIAAQAAAAAABAANAAIAAQAAAAAABAAGAAQAAQAAAAAAAwACAAQAAQAAAAAAAwAKAAYAAQAAAAAAAwAOAAYAAQAAAAAAAwAKAAIAAQAAAAAAAwAOAAIAAQAAAAAAAwAFAAEAAQAAAAAABQAGAAEAAQAAAAAABQAHAAEAAQAAAAAABQAIAAEAAQAAAAAABQAJAAEAAQAAAAAABQAKAAEAAQAAAAAABQAEAAAAAQAAAAAABQAEAAEAAQAAAAAABQALAAAAAQAAAAAABQALAAEAAQAAAAAABQA=")
-tile_set = SubResource("TileSet_a6qd5")
+tile_set = SubResource("TileSet_hwrb4")
 
 [node name="EscapeLayer" type="TileMapLayer" parent="." unique_id=1304745908]
-tile_map_data = PackedByteArray("AAAFAAAAAQAAAAAABgAGAAAAAQAAAAAABgAHAAAAAQAAAAAABgAIAAAAAQAAAAAABgAJAAAAAQAAAAAABgAKAAAAAQAAAAAABgA=")
-tile_set = SubResource("TileSet_a6qd5")
+tile_map_data = PackedByteArray("AAAGAAAAAQAAAAAABgAHAAAAAQAAAAAABgAIAAAAAQAAAAAABgAJAAAAAQAAAAAABgA=")
+tile_set = SubResource("TileSet_hwrb4")
 
 [node name="FacingLayer" type="TileMapLayer" parent="." unique_id=1487696151]
 tile_map_data = PackedByteArray("AAAHAAcAAQAAAAAACQAEAAMAAQAAAAAACQAMAAUAAQAAAAAABwAMAAEAAQAAAAAABwA=")
-tile_set = SubResource("TileSet_a6qd5")
+tile_set = SubResource("TileSet_hwrb4")

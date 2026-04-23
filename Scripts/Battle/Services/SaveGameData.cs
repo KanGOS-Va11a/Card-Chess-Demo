@@ -19,4 +19,10 @@ public sealed class SaveGameData
 	public Godot.Collections.Dictionary InventorySnapshot { get; set; } = new();
 
 	public Godot.Collections.Dictionary SaveRuntimeSnapshot { get; set; } = new();
+
+	public Godot.Collections.Dictionary MapRuntimeSnapshot { get; set; } = new();
+
+	public string SceneRuntimeScenePath { get; set; } = string.Empty;
+
+	public Godot.Collections.Dictionary SceneRuntimeSnapshot { get; set; } = new();
 }

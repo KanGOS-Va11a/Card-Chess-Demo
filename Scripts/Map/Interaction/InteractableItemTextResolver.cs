@@ -29,19 +29,25 @@ public static class InteractableItemTextResolver
 			return string.Empty;
 		}
 
-		if (session?.FindEquipmentDefinition(itemId.Trim()) is EquipmentDefinition equipmentDefinition)
+		string normalizedId = itemId.Trim();
+		if (session?.FindEquipmentDefinition(normalizedId) is EquipmentDefinition equipmentDefinition)
 		{
 			return equipmentDefinition.DisplayName;
 		}
 
-		return itemId.Trim() switch
+		if (InteractableRewardResolver.IsCardUnlockReward(normalizedId))
+		{
+			return InteractableRewardResolver.ResolveRewardDisplayName(session, normalizedId);
+		}
+
+		return normalizedId switch
 		{
 			"steel_scrap" => "钢铁碎片",
 			"charged_core" => "充能核心",
 			"arakawa_battery" => "荒川充能电池",
 			"medical_gel" => "医疗凝胶",
 			"optical_part" => "光学零件",
-			_ => itemId.Trim(),
+			_ => normalizedId,
 		};
 	}
 }

@@ -18,6 +18,7 @@
 [ext_resource type="PackedScene" path="res://Scene/UI/SystemFeatureOverlay.tscn" id="20_overlay"]
 [ext_resource type="PackedScene" uid="uid://tln526npf6w6" path="res://Scene/Character/Enemy.tscn" id="21_enemy"]
 [ext_resource type="PackedScene" uid="uid://cdc88qnl7fo02" path="res://Scene/Battle/BattleTutorialEscape.tscn" id="22_escape_tutorial_battle"]
+[ext_resource type="PackedScene" uid="uid://bkufwqhbi1hcx" path="res://Scene/Battle/BattleTutorialArakawa.tscn" id="23_arakawa_tutorial_battle"]
 [ext_resource type="TileSet" uid="uid://dvsv43jlor71o" path="res://Resources/Map/InteractionTileSet.tres" id="24_interaction_tiles"]
 [ext_resource type="PackedScene" path="res://Scene/Map/Triggers/StoryTriggerZone.tscn" id="25_story_trigger"]
 [ext_resource type="TileSet" uid="uid://bk2oy8wp4bh0a" path="res://Resources/Map/PlayerSpawnTileSet.tres" id="99_player_spawn_tiles"]
@@ -293,37 +294,53 @@ tile_set = ExtResource("24_interaction_tiles")
 [node name="Door02" parent="WorldObjects" unique_id=1311460087 instance=ExtResource("10_oq60o")]
 position = Vector2(472, 40)
 rotation = 1.5707964
+NextScenePath = "res://Scene/Maps/Scene04To05Cutscene.tscn"
 
 [node name="Door03" parent="WorldObjects" unique_id=328735162 instance=ExtResource("10_oq60o")]
 position = Vector2(472, 72)
 rotation = 1.5707964
+NextScenePath = "res://Scene/Maps/Scene04To05Cutscene.tscn"
 
 [node name="Door04" parent="WorldObjects" unique_id=2110190930 instance=ExtResource("10_oq60o")]
 position = Vector2(472, 56)
 rotation = 1.5707964
+NextScenePath = "res://Scene/Maps/Scene04To05Cutscene.tscn"
 
 [node name="Door05" parent="WorldObjects" unique_id=1230134832 instance=ExtResource("10_oq60o")]
 position = Vector2(472, 23)
 rotation = 1.5707964
+NextScenePath = "res://Scene/Maps/Scene04To05Cutscene.tscn"
 
 [node name="EnemyEscapeTutorial" parent="WorldObjects" unique_id=1781789760 instance=ExtResource("21_enemy")]
 position = Vector2(136, 56)
 EncounterId = "scene01_tutorial"
 BattleScene = ExtResource("22_escape_tutorial_battle")
-PromptText = "闂備緡鍋勯崯浼粹€栭崶銊︿氦闁芥ê顦?
+PromptText = ""
 
-[node name="
+[node name="InteractionArea" parent="WorldObjects/EnemyEscapeTutorial" index="1" unique_id=2063466717]
+collision_layer = 0
+
+[node name="EnemyArakawaTutorial" parent="WorldObjects" unique_id=1781789761 instance=ExtResource("21_enemy")]
+position = Vector2(312, 56)
+EncounterId = "scene01_tutorial"
+BattleScene = ExtResource("23_arakawa_tutorial_battle")
+PromptText = ""
+
+[node name="InteractionArea" parent="WorldObjects/EnemyArakawaTutorial" index="1" unique_id=2063466717]
+collision_layer = 0
 
 [node name="TutorialEscapeTrigger" parent="WorldObjects" unique_id=734168011 instance=ExtResource("25_story_trigger")]
 position = Vector2(112, 56)
-scale = Vector2(1, 1)
+scale = Vector2(1, 4.0399995)
 TriggerSize = Vector2(48, 40)
 DialogueScriptId = "scene04_escape_story"
 TriggerInteractablePath = NodePath("WorldObjects/EnemyEscapeTutorial")
+RemoveSelfOnBattleRetreat = true
+RemoveTargetInteractableOnBattleRetreat = true
 
 [node name="TutorialArakawaTrigger" parent="WorldObjects" unique_id=351039382 instance=ExtResource("25_story_trigger")]
 position = Vector2(288, 56)
-scale = Vector2(1, 1)
+scale = Vector2(1, 3.04)
 TriggerSize = Vector2(48, 40)
 DialogueScriptId = "scene04_arakawa_story"
 TriggerInteractablePath = NodePath("WorldObjects/EnemyArakawaTutorial")
@@ -342,3 +359,4 @@ script = ExtResource("1_resctl")
 PlayerPath = NodePath("")
 
 [editable path="WorldObjects/EnemyEscapeTutorial"]
+[editable path="WorldObjects/EnemyArakawaTutorial"]

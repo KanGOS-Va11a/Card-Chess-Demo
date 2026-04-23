@@ -173,24 +173,13 @@ public partial class Cabinet : InteractableTemplate, IConfigurableLootInteractab
 			return false;
 		}
 
-		InventoryDelta delta = new();
-		foreach ((string itemId, int amount) in EnumerateGrantedItems())
-		{
-			delta.ItemDeltas[itemId] = delta.ItemDeltas.TryGetValue(itemId, out int currentAmount)
-				? currentAmount + amount
-				: amount;
-		}
-
-		if (delta.ItemDeltas.Count > 0)
-		{
-			_session.ApplyInventoryDelta(delta);
-		}
+		bool grantedLoot = InteractableRewardResolver.ApplyConfiguredRewards(_session, EnumerateGrantedItems());
 
 		_isOpened = true;
 		LootAmount = 0;
 		_session.MarkInteractableUsed(interactableId);
 		ApplyVisualState();
-		return delta.ItemDeltas.Count > 0;
+		return grantedLoot;
 	}
 
 	private string ResolveInteractionMessage(bool granted)
@@ -207,11 +196,6 @@ public partial class Cabinet : InteractableTemplate, IConfigurableLootInteractab
 
 		if (granted)
 		{
-			if (!string.IsNullOrWhiteSpace(ItemDescription))
-			{
-				return ItemDescription;
-			}
-
 			return InteractableItemTextResolver.BuildLootSummary(_session, EnumerateGrantedItems());
 		}
 

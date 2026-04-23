@@ -10,13 +10,16 @@ public sealed class SaveGameService
 	{
 		return new SaveGameData
 		{
-			SessionId = Guid.NewGuid().ToString("N"),
+			SessionId = session.SessionId,
 			PlayerSnapshot = session.BuildPlayerSnapshot(),
 			CompanionSnapshot = session.BuildCompanionSnapshot(),
 			ProgressionSnapshot = session.BuildProgressionSnapshotModel().ToDictionary(),
 			DeckBuildSnapshot = session.BuildDeckBuildSnapshotModel().ToDictionary(),
 			InventorySnapshot = session.BuildInventorySnapshot(),
 			SaveRuntimeSnapshot = session.BuildSaveRuntimeSnapshot(),
+			MapRuntimeSnapshot = session.BuildMapRuntimeSnapshot(),
+			SceneRuntimeScenePath = string.Empty,
+			SceneRuntimeSnapshot = new(),
 		};
 	}
 
@@ -28,6 +31,7 @@ public sealed class SaveGameService
 		session.ApplyDeckBuildSnapshot(saveData.DeckBuildSnapshot);
 		session.ApplyInventorySnapshot(saveData.InventorySnapshot);
 		session.ApplySaveRuntimeSnapshot(saveData.SaveRuntimeSnapshot);
+		session.ApplyMapRuntimeSnapshot(saveData.MapRuntimeSnapshot);
 	}
 
 	public string SerializeToJson(SaveGameData saveData)
@@ -42,6 +46,9 @@ public sealed class SaveGameService
 			["deck_build_snapshot"] = saveData.DeckBuildSnapshot,
 			["inventory_snapshot"] = saveData.InventorySnapshot,
 			["save_runtime_snapshot"] = saveData.SaveRuntimeSnapshot,
+			["map_runtime_snapshot"] = saveData.MapRuntimeSnapshot,
+			["scene_runtime_scene_path"] = saveData.SceneRuntimeScenePath,
+			["scene_runtime_snapshot"] = saveData.SceneRuntimeSnapshot,
 		};
 
 		return Json.Stringify(root);
@@ -70,6 +77,9 @@ public sealed class SaveGameService
 			DeckBuildSnapshot = root.TryGetValue("deck_build_snapshot", out Variant deckBuildSnapshot) && deckBuildSnapshot.Obj is Godot.Collections.Dictionary rawDeck ? CloneDictionary(rawDeck) : new(),
 			InventorySnapshot = root.TryGetValue("inventory_snapshot", out Variant inventorySnapshot) && inventorySnapshot.Obj is Godot.Collections.Dictionary rawInventory ? CloneDictionary(rawInventory) : new(),
 			SaveRuntimeSnapshot = root.TryGetValue("save_runtime_snapshot", out Variant saveRuntimeSnapshot) && saveRuntimeSnapshot.Obj is Godot.Collections.Dictionary rawSaveRuntime ? CloneDictionary(rawSaveRuntime) : new(),
+			MapRuntimeSnapshot = root.TryGetValue("map_runtime_snapshot", out Variant mapRuntimeSnapshot) && mapRuntimeSnapshot.Obj is Godot.Collections.Dictionary rawMapRuntime ? CloneDictionary(rawMapRuntime) : new(),
+			SceneRuntimeScenePath = root.TryGetValue("scene_runtime_scene_path", out Variant sceneRuntimeScenePath) ? sceneRuntimeScenePath.AsString() : string.Empty,
+			SceneRuntimeSnapshot = root.TryGetValue("scene_runtime_snapshot", out Variant sceneRuntimeSnapshot) && sceneRuntimeSnapshot.Obj is Godot.Collections.Dictionary rawSceneRuntime ? CloneDictionary(rawSceneRuntime) : new(),
 		};
 		return true;
 	}

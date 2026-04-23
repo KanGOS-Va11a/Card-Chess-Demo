@@ -1,0 +1,7 @@
+[gd_scene format=3]
+
+[ext_resource type="PackedScene" path="res://Scene/Character/EnemyMazeChaser.tscn" id="1_base"]
+
+[node name="EnemyMazePirateMixed" instance=ExtResource("1_base")]
+EncounterId = "pirate_blocker"
+CandidateEncounterIds = PackedStringArray("pirate_blocker", "pirate_scout", "pirate_shocker", "pirate_gunner", "pirate_pipe_bomber")

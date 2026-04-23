@@ -13,6 +13,10 @@ namespace CardChessDemo.Battle.Shared;
 
 public partial class GlobalGameSession : Node
 {
+	public const string PrimarySaveSlotId = "slot_01";
+	private const string PrimarySaveFilePath = "user://saves/slot_01.json";
+	private const string DefaultNewGameScenePath = "res://Scene/Maps/Scene01.tscn";
+
 	[Signal] public delegate void PlayerRuntimeChangedEventHandler();
 	[Signal] public delegate void ArakawaRuntimeChangedEventHandler();
 
@@ -28,7 +32,7 @@ public partial class GlobalGameSession : Node
 	[Export] public int ArakawaCurrentEnergy { get; set; } = 3;
 	[Export] public int PlayerLevel { get; set; } = 1;
 	[Export] public int PlayerExperience { get; set; } = 0;
-	[Export] public int PlayerMasteryPoints { get; set; } = 0;
+	[Export] public int PlayerMasteryPoints { get; set; } = 2;
 	[Export] public int ArakawaGrowthLevel { get; set; } = 1;
 	[Export] public string[] TalentIds { get; set; } = Array.Empty<string>();
 	[Export] public string[] ArakawaUnlockIds { get; set; } = Array.Empty<string>();
@@ -66,6 +70,8 @@ public partial class GlobalGameSession : Node
 	public BattleResult? LastBattleResult { get; private set; }
 	public MapResumeContext? PendingBattleReturnContext { get; private set; }
 	public string PendingBattleEncounterId { get; private set; } = string.Empty;
+	public string PendingSceneRuntimeScenePath { get; private set; } = string.Empty;
+	public Godot.Collections.Dictionary PendingSceneRuntimeSnapshot { get; private set; } = new();
 	public PartyRuntimeState PartyState { get; } = new();
 	public ProgressionRuntimeState ProgressionState { get; } = new();
 	public DeckBuildState DeckBuildState { get; } = new();
@@ -82,6 +88,15 @@ public partial class GlobalGameSession : Node
 
 	private EquipmentService _equipmentService = null!;
 	private PlayerStatResolver _playerStatResolver = null!;
+	private readonly List<string> _pendingRetreatCleanupInteractablePaths = new();
+	private readonly SaveGameService _saveGameService = new();
+	private Godot.Collections.Dictionary _defaultPlayerSnapshot = new();
+	private Godot.Collections.Dictionary _defaultCompanionSnapshot = new();
+	private Godot.Collections.Dictionary _defaultProgressionSnapshot = new();
+	private Godot.Collections.Dictionary _defaultDeckBuildSnapshot = new();
+	private Godot.Collections.Dictionary _defaultInventorySnapshot = new();
+	private Godot.Collections.Dictionary _defaultSaveRuntimeSnapshot = new();
+	private Godot.Collections.Dictionary _defaultMapRuntimeSnapshot = new();
 
 	public override void _Ready()
 	{
@@ -92,6 +107,162 @@ public partial class GlobalGameSession : Node
 
 		EnsureCompositionServices();
 		SyncCompositeStateFromFields();
+		CaptureDefaultSnapshots();
+	}
+
+	public bool HasPrimarySave()
+	{
+		return FileAccess.FileExists(PrimarySaveFilePath);
+	}
+
+	public bool DeletePrimarySave(out string failureReason)
+	{
+		failureReason = string.Empty;
+		if (!HasPrimarySave())
+		{
+			return true;
+		}
+
+		Error error = DirAccess.RemoveAbsolute(PrimarySaveFilePath);
+		if (error != Error.Ok)
+		{
+			failureReason = $"Delete save failed. error={error}, path='{PrimarySaveFilePath}'";
+			return false;
+		}
+
+		return true;
+	}
+
+	public bool TrySavePrimaryCheckpoint(string scenePath, Vector2 checkpointPosition, Godot.Collections.Dictionary? sceneRuntimeSnapshot, out string failureReason)
+	{
+		failureReason = string.Empty;
+		string resolvedScenePath = string.IsNullOrWhiteSpace(scenePath) ? DefaultNewGameScenePath : scenePath.Trim();
+
+		SaveState.LastCheckpointSaveId = PrimarySaveSlotId;
+		SaveState.LastManualSaveId = PrimarySaveSlotId;
+		SaveState.LastCheckpointScenePath = resolvedScenePath;
+		SaveState.LastCheckpointMapId = resolvedScenePath;
+		SaveState.LastCheckpointSpawnId = string.Empty;
+		SaveState.LastAutoSaveTimestampUtc = DateTime.UtcNow.ToString("O");
+		SaveState.PreferredRollbackSlotKind = SaveSlotKind.Checkpoint;
+		SyncFieldsFromCompositeState();
+
+		SaveGameData saveData = _saveGameService.BuildSaveData(this);
+		saveData.MapRuntimeSnapshot = CloneDictionary(BuildMapRuntimeSnapshot());
+		saveData.MapRuntimeSnapshot["should_restore_player_position"] = true;
+		saveData.MapRuntimeSnapshot["pending_restore_player_position"] = checkpointPosition;
+		saveData.SceneRuntimeScenePath = resolvedScenePath;
+		saveData.SceneRuntimeSnapshot = CloneDictionary(sceneRuntimeSnapshot);
+
+		string saveDirectory = PrimarySaveFilePath.GetBaseDir();
+		if (!string.IsNullOrWhiteSpace(saveDirectory))
+		{
+			DirAccess.MakeDirRecursiveAbsolute(saveDirectory);
+		}
+
+		FileAccess? file = FileAccess.Open(PrimarySaveFilePath, FileAccess.ModeFlags.Write);
+		if (file == null)
+		{
+			failureReason = $"Open save file failed. error={FileAccess.GetOpenError()}, path='{PrimarySaveFilePath}'";
+			return false;
+		}
+
+		file.StoreString(_saveGameService.SerializeToJson(saveData));
+		file.Flush();
+		file.Close();
+		return true;
+	}
+
+	public bool TryLoadPrimarySave(out string scenePath, out string failureReason)
+	{
+		scenePath = DefaultNewGameScenePath;
+		failureReason = string.Empty;
+		if (!HasPrimarySave())
+		{
+			failureReason = "Primary save file was not found.";
+			return false;
+		}
+
+		FileAccess? file = FileAccess.Open(PrimarySaveFilePath, FileAccess.ModeFlags.Read);
+		if (file == null)
+		{
+			failureReason = $"Open save file failed. error={FileAccess.GetOpenError()}, path='{PrimarySaveFilePath}'";
+			return false;
+		}
+
+		string json = file.GetAsText();
+		file.Close();
+		if (!_saveGameService.TryDeserializeFromJson(json, out SaveGameData? saveData, out failureReason) || saveData == null)
+		{
+			return false;
+		}
+
+		ResetToNewGameDefaults();
+		_saveGameService.ApplySaveData(this, saveData);
+		SetPendingSceneRuntimeSnapshot(saveData.SceneRuntimeScenePath, saveData.SceneRuntimeSnapshot);
+		scenePath = string.IsNullOrWhiteSpace(SaveState.LastCheckpointScenePath)
+			? DefaultNewGameScenePath
+			: SaveState.LastCheckpointScenePath;
+		return true;
+	}
+
+	public void ResetToNewGameDefaults()
+	{
+		CancelPendingBattleTransition();
+		ClearPendingBattleReturnContext();
+		ConsumeLastBattleResult();
+		ClearPendingRestorePlayerPosition();
+		ClearPendingSceneRuntimeSnapshot();
+		PendingSceneTransferScenePath = string.Empty;
+		PendingSceneTransferSpawnId = string.Empty;
+
+		ApplyPlayerSnapshot(CloneDictionary(_defaultPlayerSnapshot));
+		ApplyCompanionSnapshot(CloneDictionary(_defaultCompanionSnapshot));
+		ApplyProgressionSnapshot(CloneDictionary(_defaultProgressionSnapshot));
+		ApplyDeckBuildSnapshot(CloneDictionary(_defaultDeckBuildSnapshot));
+		ApplyInventorySnapshot(CloneDictionary(_defaultInventorySnapshot));
+		ApplySaveRuntimeSnapshot(CloneDictionary(_defaultSaveRuntimeSnapshot));
+		ApplyMapRuntimeSnapshot(CloneDictionary(_defaultMapRuntimeSnapshot));
+
+		SessionId = Guid.NewGuid().ToString("N");
+		LastBattleResult = null;
+	}
+
+	private void CaptureDefaultSnapshots()
+	{
+		_defaultPlayerSnapshot = CloneDictionary(BuildPlayerSnapshot());
+		_defaultCompanionSnapshot = CloneDictionary(BuildCompanionSnapshot());
+		_defaultProgressionSnapshot = CloneDictionary(BuildProgressionSnapshot());
+		_defaultDeckBuildSnapshot = CloneDictionary(BuildDeckBuildSnapshot());
+		_defaultInventorySnapshot = CloneDictionary(BuildInventorySnapshot());
+		_defaultSaveRuntimeSnapshot = CloneDictionary(BuildSaveRuntimeSnapshot());
+		_defaultMapRuntimeSnapshot = CloneDictionary(BuildMapRuntimeSnapshot());
+	}
+
+	public void SetPendingSceneRuntimeSnapshot(string scenePath, Godot.Collections.Dictionary? snapshot)
+	{
+		PendingSceneRuntimeScenePath = scenePath?.Trim() ?? string.Empty;
+		PendingSceneRuntimeSnapshot = CloneDictionary(snapshot);
+	}
+
+	public bool TryConsumePendingSceneRuntimeSnapshot(string currentScenePath, out Godot.Collections.Dictionary snapshot)
+	{
+		snapshot = new Godot.Collections.Dictionary();
+		if (string.IsNullOrWhiteSpace(PendingSceneRuntimeScenePath)
+			|| !string.Equals(PendingSceneRuntimeScenePath, currentScenePath ?? string.Empty, StringComparison.OrdinalIgnoreCase))
+		{
+			return false;
+		}
+
+		snapshot = CloneDictionary(PendingSceneRuntimeSnapshot);
+		ClearPendingSceneRuntimeSnapshot();
+		return true;
+	}
+
+	public void ClearPendingSceneRuntimeSnapshot()
+	{
+		PendingSceneRuntimeScenePath = string.Empty;
+		PendingSceneRuntimeSnapshot = new Godot.Collections.Dictionary();
 	}
 
 	public void SetCurrentMapContext(string mapId, string spawnId = "", string playerProfileId = "")
@@ -428,8 +599,28 @@ public partial class GlobalGameSession : Node
 		{
 			DeckBuildState.CardIds = starterDeck;
 		}
+		else if (LooksLikeLegacyStarterDeckWithRam(DeckBuildState.CardIds, starterDeck))
+		{
+			DeckBuildState.CardIds = DeckBuildState.CardIds
+				.Where(cardId => !string.Equals(cardId, "card_ram", StringComparison.Ordinal))
+				.ToArray();
+		}
 
 		SyncFieldsFromCompositeState();
+	}
+
+	private static bool LooksLikeLegacyStarterDeckWithRam(string[] currentDeck, string[] starterDeck)
+	{
+		if (currentDeck == null || starterDeck == null || currentDeck.Length <= starterDeck.Length || !currentDeck.Contains("card_ram", StringComparer.Ordinal))
+		{
+			return false;
+		}
+
+		HashSet<string> allowedIds = starterDeck
+			.Concat(new[] { "card_ram" })
+			.ToHashSet(StringComparer.Ordinal);
+
+		return currentDeck.All(cardId => allowedIds.Contains(cardId));
 	}
 
 	public void CancelPendingBattleTransition()
@@ -437,6 +628,27 @@ public partial class GlobalGameSession : Node
 		PendingBattleRequest = null;
 		PendingBattleEncounterId = string.Empty;
 		PendingBattleReturnContext = null;
+		ClearPendingRetreatCleanupInteractables();
+	}
+
+	public void SetPendingRetreatCleanupInteractables(IEnumerable<string> interactablePaths)
+	{
+		_pendingRetreatCleanupInteractablePaths.Clear();
+		foreach (string path in interactablePaths)
+		{
+			string trimmed = path?.Trim() ?? string.Empty;
+			if (string.IsNullOrWhiteSpace(trimmed) || _pendingRetreatCleanupInteractablePaths.Any(existing => string.Equals(existing, trimmed, StringComparison.Ordinal)))
+			{
+				continue;
+			}
+
+			_pendingRetreatCleanupInteractablePaths.Add(trimmed);
+		}
+	}
+
+	public void ClearPendingRetreatCleanupInteractables()
+	{
+		_pendingRetreatCleanupInteractablePaths.Clear();
 	}
 
 	public void SetPendingBattleReturnContext(MapResumeContext? resumeContext)
@@ -507,6 +719,8 @@ public partial class GlobalGameSession : Node
 			mergedRuntimeFlags[key] = resolutionPlan.RewardBundle.RuntimeFlags[key];
 		}
 
+		ApplyEncounteredEnemyCodexFlags(mergedRuntimeFlags);
+
 		if (resolutionPlan.ShouldClearEncounter)
 		{
 			mergedRuntimeFlags["cleared_encounter_id"] = resolutionPlan.ClearedEncounterId;
@@ -516,6 +730,10 @@ public partial class GlobalGameSession : Node
 		if (result.Outcome == BattleOutcome.Victory && PendingBattleReturnContext != null)
 		{
 			ApplyBattleVictoryToPendingMapResume(PendingBattleReturnContext);
+		}
+		else if (result.Outcome == BattleOutcome.Retreat && PendingBattleReturnContext != null)
+		{
+			ApplyPendingRetreatCleanupToMapResume(PendingBattleReturnContext);
 		}
 
 		BattleResult resolvedResult = new(
@@ -532,6 +750,27 @@ public partial class GlobalGameSession : Node
 
 		LastBattleResult = resolvedResult;
 		resolvedResult.ApplyToSession(this);
+		ClearPendingRetreatCleanupInteractables();
+	}
+
+	private void ApplyEncounteredEnemyCodexFlags(Godot.Collections.Dictionary runtimeFlags)
+	{
+		if (!runtimeFlags.TryGetValue("encountered_enemy_definition_ids", out Variant encounteredIdsVariant)
+			|| encounteredIdsVariant.Obj is not Godot.Collections.Array encounteredIds)
+		{
+			return;
+		}
+
+		foreach (Variant encounteredIdVariant in encounteredIds)
+		{
+			string encounteredId = encounteredIdVariant.AsString();
+			if (string.IsNullOrWhiteSpace(encounteredId))
+			{
+				continue;
+			}
+
+			SetFlag(new StringName($"enemy_encountered:{encounteredId}"), true);
+		}
 	}
 
 	public BattleResult? PeekLastBattleResult()
@@ -558,17 +797,47 @@ public partial class GlobalGameSession : Node
 			return;
 		}
 
-		MarkInteractableUsed(new StringName(resumeContext.SourceInteractablePath));
+		ApplyInteractableRemovalToPendingMapResume(resumeContext, resumeContext.SourceInteractablePath);
+	}
+
+	private void ApplyPendingRetreatCleanupToMapResume(MapResumeContext resumeContext)
+	{
+		foreach (string interactablePath in _pendingRetreatCleanupInteractablePaths)
+		{
+			ApplyInteractableRemovalToPendingMapResume(resumeContext, interactablePath);
+		}
+	}
+
+	private void ApplyInteractableRemovalToPendingMapResume(MapResumeContext resumeContext, string interactablePath)
+	{
+		if (string.IsNullOrWhiteSpace(interactablePath))
+		{
+			return;
+		}
+
 		Godot.Collections.Dictionary snapshot = resumeContext.MapRuntimeSnapshot;
-		if (!snapshot.TryGetValue(resumeContext.SourceInteractablePath, out Variant sourceSnapshotVariant)
+		if (!snapshot.TryGetValue(interactablePath, out Variant sourceSnapshotVariant)
 			|| sourceSnapshotVariant.Obj is not Godot.Collections.Dictionary interactableSnapshot)
 		{
 			interactableSnapshot = new Godot.Collections.Dictionary();
-			snapshot[resumeContext.SourceInteractablePath] = interactableSnapshot;
+			snapshot[interactablePath] = interactableSnapshot;
+		}
+
+		bool markUsedOnVictory = !interactableSnapshot.TryGetValue("mark_used_on_battle_victory", out Variant markUsedVariant)
+			|| markUsedVariant.AsBool();
+		bool removeOnVictory = !interactableSnapshot.TryGetValue("remove_on_battle_victory", out Variant removeOnVictoryVariant)
+			|| removeOnVictoryVariant.AsBool();
+
+		if (markUsedOnVictory)
+		{
+			MarkInteractableUsed(new StringName(interactablePath));
 		}
 
 		interactableSnapshot["is_disabled"] = true;
-		interactableSnapshot["remove_from_scene"] = true;
+		if (removeOnVictory)
+		{
+			interactableSnapshot["remove_from_scene"] = true;
+		}
 	}
 
 	public Godot.Collections.Dictionary BuildPlayerSnapshot()
@@ -679,7 +948,7 @@ public partial class GlobalGameSession : Node
 		}
 		else if (snapshot.TryGetValue("max_hp", out Variant maxHp))
 		{
-			// 鍏煎鏃у揩鐓э細濡傛灉娌℃湁鏄惧紡鍩虹鍊硷紝鍙兘閫€鍥炲埌鍘嗗彶瀛楁銆?			PartyState.Player.MaxHp = maxHp.AsInt32();
+			// 閸忕厧顔愰弮褍鎻╅悡褝绱版俊鍌涚亯濞屸剝婀侀弰鎯х础閸╄櫣顢呴崐纭风礉閸欘亣鍏橀柅鈧崶鐐插煂閸樺棗褰剁€涙顔岄妴?			PartyState.Player.MaxHp = maxHp.AsInt32();
 		}
 
 		if (snapshot.TryGetValue("current_hp", out Variant currentHp))
@@ -693,7 +962,7 @@ public partial class GlobalGameSession : Node
 		}
 		else if (snapshot.TryGetValue("move_points_per_turn", out Variant movePoints))
 		{
-			// 鍏煎鏃у揩鐓э細濡傛灉娌℃湁鏄惧紡鍩虹鍊硷紝鍙兘閫€鍥炲埌鍘嗗彶瀛楁銆?			PartyState.Player.MovePointsPerTurn = movePoints.AsInt32();
+			// 閸忕厧顔愰弮褍鎻╅悡褝绱版俊鍌涚亯濞屸剝婀侀弰鎯х础閸╄櫣顢呴崐纭风礉閸欘亣鍏橀柅鈧崶鐐插煂閸樺棗褰剁€涙顔岄妴?			PartyState.Player.MovePointsPerTurn = movePoints.AsInt32();
 		}
 
 		if (snapshot.TryGetValue("attack_range", out Variant attackRange))
@@ -707,7 +976,7 @@ public partial class GlobalGameSession : Node
 		}
 		else if (snapshot.TryGetValue("attack_damage", out Variant attackDamage))
 		{
-			// 鍏煎鏃у揩鐓э細濡傛灉娌℃湁鏄惧紡鍩虹鍊硷紝鍙兘閫€鍥炲埌鍘嗗彶瀛楁銆?			PartyState.Player.AttackDamage = attackDamage.AsInt32();
+			// 閸忕厧顔愰弮褍鎻╅悡褝绱版俊鍌涚亯濞屸剝婀侀弰鎯х础閸╄櫣顢呴崐纭风礉閸欘亣鍏橀柅鈧崶鐐插煂閸樺棗褰剁€涙顔岄妴?			PartyState.Player.AttackDamage = attackDamage.AsInt32();
 		}
 
 		if (snapshot.TryGetValue("base_defense_damage_reduction_percent", out Variant baseDefenseReduction))
@@ -1184,7 +1453,7 @@ public partial class GlobalGameSession : Node
 		PartyState.Player.AttackDamage = PlayerAttackDamage;
 
 		PartyState.Arakawa.CompanionId = "arakawa";
-		PartyState.Arakawa.DisplayName = "鑽掑窛";
+		PartyState.Arakawa.DisplayName = "Arakawa";
 		PartyState.Arakawa.GrowthLevel = ArakawaGrowthLevel;
 		PartyState.Arakawa.MaxEnergy = ArakawaMaxEnergy;
 		PartyState.Arakawa.CurrentEnergy = ArakawaCurrentEnergy;

@@ -1,4 +1,4 @@
-using Godot;
+﻿using Godot;
 
 namespace CardChessDemo.Map;
 
@@ -9,6 +9,8 @@ public partial class Enemy : InteractableTemplate
 	[Export(PropertyHint.File, "*.tscn")] public string BattleScenePath = "res://Scene/Battle/Battle.tscn";
 	[Export] public string BusyText = "战斗中...";
 	[Export] public bool DisableAfterInteract = true;
+	[Export] public bool RemoveOnBattleVictory = true;
+	[Export] public bool MarkUsedOnBattleVictory = true;
 
 	private bool _isTransitioning;
 
@@ -49,6 +51,15 @@ public partial class Enemy : InteractableTemplate
 		return TryStartEncounter(player);
 	}
 
+	public void ResetEncounterInteractionState(bool enableInteraction = true)
+	{
+		_isTransitioning = false;
+		if (enableInteraction)
+		{
+			IsDisabled = false;
+		}
+	}
+
 	protected override void OnInteract(Player player)
 	{
 		TryStartEncounter(player);
@@ -87,6 +98,8 @@ public partial class Enemy : InteractableTemplate
 	{
 		Godot.Collections.Dictionary snapshot = base.BuildRuntimeSnapshot();
 		snapshot["remove_from_scene"] = false;
+		snapshot["remove_on_battle_victory"] = RemoveOnBattleVictory;
+		snapshot["mark_used_on_battle_victory"] = MarkUsedOnBattleVictory;
 		return snapshot;
 	}
 

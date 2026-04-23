@@ -10,6 +10,7 @@
 [ext_resource type="PackedScene" path="res://Scene/Character/EnemyMazeScrapMedicElite.tscn" id="8_scrap_medic"]
 [ext_resource type="PackedScene" path="res://Scene/Character/EnemyMazeSewerGatekeeper.tscn" id="9_sewer_gatekeeper"]
 [ext_resource type="PackedScene" path="res://Scene/Character/EnemyMazeBossRustCaptain.tscn" id="10_boss_rust_captain"]
+[ext_resource type="PackedScene" path="res://Scene/Character/EnemyMazePirateMixed.tscn" id="11_pirate_mixed"]
 
 [sub_resource type="TileSetScenesCollectionSource" id="TileSetScenesCollectionSource_map_enemy"]
 scenes/1/scene = ExtResource("1_scene01_tutorial")
@@ -22,6 +23,7 @@ scenes/7/scene = ExtResource("7_pirate_brute")
 scenes/8/scene = ExtResource("8_scrap_medic")
 scenes/9/scene = ExtResource("9_sewer_gatekeeper")
 scenes/10/scene = ExtResource("10_boss_rust_captain")
+scenes/11/scene = ExtResource("11_pirate_mixed")
 
 [resource]
 sources/1 = SubResource("TileSetScenesCollectionSource_map_enemy")

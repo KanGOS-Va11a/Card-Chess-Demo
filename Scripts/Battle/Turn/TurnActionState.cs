@@ -194,6 +194,11 @@ public sealed class TurnActionState
         EnergyRechargeTurnProgress = Math.Min(EnergyRechargeTurnProgress, EnergyRechargeTurnInterval - 1);
     }
 
+    public void ResetEnergyRechargeProgress()
+    {
+        EnergyRechargeTurnProgress = 0;
+    }
+
     public bool AdvanceEnergyRechargeProgress()
     {
         EnergyRechargeTurnProgress++;

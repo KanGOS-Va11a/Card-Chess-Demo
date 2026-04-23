@@ -219,10 +219,12 @@ layout_mode = 2
 text = "浣跨敤"
 
 [node name="SeedInventoryButton" type="Button" parent="PanelRoot/Window/Margin/Root/Tabs/InventoryTab/Footer"]
+visible = false
 layout_mode = 2
 text = "濉厖娴嬭瘯鐗╄祫"
 
 [node name="ClearInventoryButton" type="Button" parent="PanelRoot/Window/Margin/Root/Tabs/InventoryTab/Footer"]
+visible = false
 layout_mode = 2
 text = "娓呯┖娴嬭瘯鐗╄祫"
 
@@ -428,6 +430,7 @@ theme_override_font_sizes/font_size = 16
 text = "澶╄祴璇︽儏"
 
 [node name="ActionHint" type="Label" parent="PanelRoot/Window/Margin/Root/Tabs/TalentTab/Body/DetailPanel/Margin/Content"]
+visible = false
 layout_mode = 2
 autowrap_mode = 3
 text = "点击节点只会选中，不会直接消耗点数。"
@@ -461,14 +464,17 @@ layout_mode = 2
 theme_override_constants/separation = 8
 
 [node name="GrantPointButton" type="Button" parent="PanelRoot/Window/Margin/Root/Tabs/TalentTab/Footer"]
+visible = false
 layout_mode = 2
 text = "+1 专精点"
 
 [node name="RevokePointButton" type="Button" parent="PanelRoot/Window/Margin/Root/Tabs/TalentTab/Footer"]
+visible = false
 layout_mode = 2
 text = "-1 专精点"
 
 [node name="ResetTalentButton" type="Button" parent="PanelRoot/Window/Margin/Root/Tabs/TalentTab/Footer"]
+visible = false
 layout_mode = 2
 text = "閲嶇疆娴嬭瘯澶╄祴"
 
@@ -644,6 +650,7 @@ layout_mode = 2
 theme_override_constants/separation = 8
 
 [node name="StarterButton" type="Button" parent="PanelRoot/Window/Margin/Root/Tabs/DeckTab/Footer"]
+visible = false
 layout_mode = 2
 text = "榛樿鐗岀粍"
 

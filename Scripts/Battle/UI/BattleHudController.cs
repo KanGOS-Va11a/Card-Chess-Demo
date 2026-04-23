@@ -354,8 +354,9 @@ public partial class BattleHudController : CanvasLayer
 			return;
 		}
 		_turnLabel.Visible = false;
-		_resourceLabel.Visible = false;
+		_resourceLabel.Visible = true;
 		_arakawaEnergyLabel.Visible = false;
+		_resourceLabel.Text = BuildEnergyRechargeText();
 		RefreshStatusBadges();
 		_arakawaButton.Disabled = !_canUseArakawa && !_isArakawaWheelOpen;
 		_arakawaButton.Text = string.Empty;
@@ -802,7 +803,7 @@ public partial class BattleHudController : CanvasLayer
 		_exhaustPileGrid = GetNodeOrNull<GridContainer>("PilePopup/Margin/VBox/PileTabs/ExhaustTab/PileScroll/PileContent/PileGrid");
 		_exhaustPileOverscrollSpacer = GetNodeOrNull<Control>("PilePopup/Margin/VBox/PileTabs/ExhaustTab/PileScroll/PileContent/OverscrollSpacer");
 		_turnLabel = GetNodeOrNull<Label>("TopBar/LeftInfo/TurnLabel");
-		_resourceLabel = GetNodeOrNull<Label>("TopBar/LeftInfo/ResourceLabel");
+		_resourceLabel = GetNodeOrNull<Label>("ResourceLabel");
 		_arakawaEnergyLabel = GetNodeOrNull<Label>("TopBar/ArakawaInfo/ArakawaEnergyLabel");
 		_arakawaButton = GetNodeOrNull<Button>("TopBar/ArakawaInfo/ArakawaButton");
 		_actionLogButton = GetNodeOrNull<Button>("RightControls/ActionLogButton");
@@ -1321,8 +1322,18 @@ public partial class BattleHudController : CanvasLayer
 	{
 		RefreshStatusBadge("hp", _playerCurrentHp.ToString(), $"HP {_playerCurrentHp}/{_playerMaxHp}");
 		RefreshStatusBadge("shield", _playerCurrentShield.ToString(), $"SH {_playerCurrentShield}");
-		RefreshStatusBadge("energy", _currentEnergy.ToString(), $"E {_currentEnergy}/{_maxEnergy}");
+		RefreshStatusBadge("energy", _currentEnergy.ToString(), BuildEnergyRechargeText());
 		RefreshStatusBadge("arakawa", _arakawaCurrentEnergy.ToString(), $"\u8352\u5DDD {_arakawaCurrentEnergy}/{_arakawaMaxEnergy}");
+	}
+
+	private string BuildEnergyRechargeText()
+	{
+		if (_currentEnergy >= _maxEnergy)
+		{
+			return string.Empty;
+		}
+
+		return $"\u56DE\u80FD {_energyRechargeProgress}/{_energyRechargeInterval}";
 	}
 
 	private void RefreshStatusBadge(string key, string value, string tooltip)

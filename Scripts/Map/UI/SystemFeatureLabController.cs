@@ -93,8 +93,11 @@ public partial class SystemFeatureLabController : CanvasLayer
 	private BattleCardTemplate[] _codexTemplates = Array.Empty<BattleCardTemplate>();
 	private EnemyCodexEntry[] _resolvedEnemyCodexEntries = Array.Empty<EnemyCodexEntry>();
 	private RuntimeEquipmentDefinition[] _visibleEquipmentCandidates = Array.Empty<RuntimeEquipmentDefinition>();
+	private DeckListEntry[] _visibleDeckEntries = Array.Empty<DeckListEntry>();
 	private List<string> _workingDeck = new();
-	private int _baseMasteryPoints = 6;
+	private bool _deckDirty;
+	private bool _deckRefreshScheduled;
+	private int _baseMasteryPoints = 2;
 	private string _selectedEquipmentSlotId = EquipmentSlotIds.Weapon;
 	private const int TalentTabIndex = 2;
 
@@ -164,6 +167,9 @@ public partial class SystemFeatureLabController : CanvasLayer
 		["card_chain_detonation"] = "\u8FDE\u9501\u7206\u538B",
 		["card_gate_strike"] = "\u95E8\u7981\u6572\u51FB",
 		["card_dead_hold"] = "\u6B7B\u5B88\u67B6\u52BF",
+		["card_momentum_slice"] = "\u987A\u52BF\u5207\u5F00",
+		["card_salvage_focus"] = "\u56DE\u6536\u4E13\u6CE8",
+		["card_overclock_beam"] = "\u8FC7\u8F7D\u5149\u675F",
 	};
 
 #if false
@@ -339,6 +345,11 @@ public partial class SystemFeatureLabController : CanvasLayer
 		_deckStarterButton = GetNode<Button>("PanelRoot/Window/Margin/Root/Tabs/DeckTab/Footer/StarterButton");
 		_seedInventoryButton = GetNode<Button>("PanelRoot/Window/Margin/Root/Tabs/InventoryTab/Footer/SeedInventoryButton");
 		_clearInventoryButton = GetNode<Button>("PanelRoot/Window/Margin/Root/Tabs/InventoryTab/Footer/ClearInventoryButton");
+		GetNodeOrNull<Control>("PanelRoot/Window/Margin/Root/Tabs/InventoryTab/Footer/SeedInventoryButton")?.Hide();
+		GetNodeOrNull<Control>("PanelRoot/Window/Margin/Root/Tabs/InventoryTab/Footer/ClearInventoryButton")?.Hide();
+		GetNodeOrNull<Control>("PanelRoot/Window/Margin/Root/Tabs/TalentTab/Footer")?.Hide();
+		GetNodeOrNull<Control>("PanelRoot/Window/Margin/Root/Tabs/TalentTab/Body/DetailPanel/Margin/Content/ActionHint")?.Hide();
+		_deckStarterButton.Hide();
 
 		_tabs.SetTabTitle(0, "鑳屽寘");
 		_tabs.SetTabTitle(1, "澶╄祴");
@@ -365,8 +376,6 @@ public partial class SystemFeatureLabController : CanvasLayer
 		_statusUnequipButton.Pressed += OnUnequipButtonPressed;
 		_unlockTalentButton.Pressed += OnUnlockTalentPressed;
 		_refundTalentButton.Pressed += OnRefundTalentPressed;
-		_seedInventoryButton.Pressed += OnSeedInventoryPressed;
-		_clearInventoryButton.Pressed += OnClearInventoryPressed;
 		_inventoryItemList.ItemSelected += OnInventoryItemSelected;
 		_inventoryUseButton.Pressed += OnInventoryUsePressed;
 		_talentDetailDim.GuiInput += OnTalentDetailDimGuiInput;
@@ -379,7 +388,6 @@ public partial class SystemFeatureLabController : CanvasLayer
 		_deckRemoveButton.Pressed += OnDeckRemovePressed;
 		_deckSaveButton.Pressed += OnDeckSavePressed;
 		_deckResetButton.Pressed += OnDeckResetPressed;
-		_deckStarterButton.Pressed += OnDeckStarterPressed;
 		_cardTreeLabel.MouseFilter = Control.MouseFilterEnum.Ignore;
 		_roleTreeLabel.MouseFilter = Control.MouseFilterEnum.Ignore;
 		_masteryLabel.MouseFilter = Control.MouseFilterEnum.Ignore;
@@ -455,6 +463,7 @@ public partial class SystemFeatureLabController : CanvasLayer
 			return;
 		}
 
+		bool wasVisible = _panelRoot.Visible;
 		_panelRoot.Visible = !_panelRoot.Visible;
 		_hintLabel.Visible = false;
 		_statusLabel.Visible = false;
@@ -465,6 +474,10 @@ public partial class SystemFeatureLabController : CanvasLayer
 			ApplyVisibleUiOverrides();
 			ApplyReadableUiTextOverrides();
 			ScheduleTalentViewReset();
+		}
+		else if (wasVisible && _deckDirty)
+		{
+			LoadWorkingDeckFromSession();
 		}
 
 		GetViewport().SetInputAsHandled();
@@ -1336,7 +1349,7 @@ public partial class SystemFeatureLabController : CanvasLayer
 
 	private void BuildCodexSource()
 	{
-		_codexTemplates = _cardLibrary?.Entries
+		_codexTemplates = _cardLibrary?.AllEntries
 			.Where(entry => entry != null)
 			.OrderBy(entry => entry.CardId, StringComparer.Ordinal)
 			.ToArray()
@@ -1367,16 +1380,16 @@ public partial class SystemFeatureLabController : CanvasLayer
 			return;
 		}
 
-		_session.ProgressionState.PlayerLevel = Math.Max(3, _session.ProgressionState.PlayerLevel);
+		_session.ProgressionState.PlayerLevel = Math.Max(1, _session.ProgressionState.PlayerLevel);
 		int levelFloorExperience = _session.RuntimeProgressionRuleSet.GetAccumulatedExperienceForLevel(_session.ProgressionState.PlayerLevel);
 		_session.ProgressionState.PlayerExperience = Math.Max(levelFloorExperience, _session.ProgressionState.PlayerExperience);
 		_session.PlayerLevel = _session.ProgressionState.PlayerLevel;
 		_session.PlayerExperience = _session.ProgressionState.PlayerExperience;
 		_session.PlayerAttackDamage = Math.Max(2, _session.PlayerAttackDamage);
 		_session.PlayerDefenseDamageReductionPercent = Math.Max(50, _session.PlayerDefenseDamageReductionPercent);
-		if (_session.InventoryState.ItemCounts.Count == 0)
+		if (HasLegacySeedInventory(_session.InventoryState.ItemCounts))
 		{
-			SeedInventoryDefaults();
+			_session.InventoryState.ItemCounts.Clear();
 		}
 	}
 
@@ -1401,7 +1414,7 @@ public partial class SystemFeatureLabController : CanvasLayer
 			_purchasedTalentIds.Add(rootTalent.Id);
 		}
 
-		_baseMasteryPoints = Math.Max(6, _session.ProgressionState.PlayerMasteryPoints + GetSpentPoints());
+		_baseMasteryPoints = Math.Max(2, _session.ProgressionState.PlayerMasteryPoints + GetSpentPoints());
 	}
 
 	private void LoadWorkingDeckFromSession()
@@ -1412,6 +1425,7 @@ public partial class SystemFeatureLabController : CanvasLayer
 		}
 
 		_workingDeck = _session.DeckBuildState.CardIds.ToList();
+		_deckDirty = false;
 	}
 
 	private void RefreshAll()
@@ -1448,6 +1462,7 @@ public partial class SystemFeatureLabController : CanvasLayer
 			return;
 		}
 
+		ProgressionSnapshot progression = _session.BuildProgressionSnapshotModel();
 		List<string> readableStatusLines = new()
 		{
 			$"[b]{_session.PlayerDisplayName}[/b]",
@@ -1463,8 +1478,10 @@ public partial class SystemFeatureLabController : CanvasLayer
 			$"\u653B\u51FB\u8303\u56F4: {_session.PlayerAttackRange}",
 			$"\u9632\u5FA1\u51CF\u4F24: {_session.GetResolvedPlayerDefenseDamageReductionPercent()}%",
 			$"\u9632\u5FA1\u62A4\u76FE: {_session.GetResolvedPlayerDefenseShieldGain()}",
+			$"\u5206\u7CFB\u4E13\u7CBE: \u8FD1\u6218 {progression.MeleeMastery} / \u8FDC\u7A0B {progression.RangedMastery} / \u7075\u6D3B {progression.FlexMastery}",
 			$"\u6784\u7B51\u9884\u7B97\u52A0\u6210: {_session.ProgressionState.DeckPointBudgetBonus}",
 			$"\u540C\u540D\u4E0A\u9650\u52A0\u6210: {_session.ProgressionState.DeckMaxCopiesPerCardBonus}",
+			$"\u8D85\u89C4\u652F\u63F4: \u69FD\u4F4D +{progression.OverlimitCarrySlotBonus} / \u8D39\u7528\u51CF\u514D {progression.OverlimitCostPenaltyReduction} / \u6548\u679C\u4FDD\u7559 +{progression.OverlimitEffectBonusPercent}%",
 		};
 		_statusOverviewText.Text = string.Join('\n', readableStatusLines);
 		RefreshEquipmentSection();
@@ -1959,15 +1976,10 @@ public partial class SystemFeatureLabController : CanvasLayer
 		_talentDetail.Text = string.Join('\n', new[]
 		{
 			$"[b]{readableTalent.DisplayName}[/b]",
-			readableTalent.Description,
+			BuildReadableTalentEffectSummary(readableTalent),
 			$"\u82B1\u8D39: {readableTalent.Cost}",
-			$"\u524D\u7F6E: {(readableTalent.PrerequisiteTalentIds.Length == 0 ? "\u65E0" : string.Join(", ", readableTalent.PrerequisiteTalentIds))}",
-			$"\u5206\u652F: {(readableTalent.GrantedBranchTags.Length == 0 ? "\u65E0" : string.Join(", ", readableTalent.GrantedBranchTags))}",
-			$"\u89E3\u9501\u5361\u724C: {(readableTalent.UnlockedCardIds.Length == 0 ? "\u65E0" : string.Join(", ", readableTalent.UnlockedCardIds.Select(GetCardDisplayName)))}",
-			$"\u6784\u7B51\u4FEE\u6B63: +{readableTalent.DeckPointBudgetBonus} / \u540C\u540D\u4E0A\u9650 +{readableTalent.DeckMaxCopiesPerCardBonus}",
-			string.Empty,
-			"\u70B9\u51FB\u8282\u70B9\u53EA\u4F1A\u9009\u4E2D\uFF0C\u4E0D\u4F1A\u76F4\u63A5\u89E3\u9501\u3002",
-			"\u8BF7\u4F7F\u7528\u53F3\u4FA7\u6309\u94AE\u786E\u8BA4\u89E3\u9501\u6216\u9000\u70B9\u3002",
+			$"\u524D\u7F6E: {(readableTalent.PrerequisiteTalentIds.Length == 0 ? "\u65E0" : string.Join(" / ", readableTalent.PrerequisiteTalentIds.Select(GetTalentDisplayName)))}",
+			$"\u72B6\u6001: {(readablePurchased ? "\u5DF2\u89E3\u9501" : "\u672A\u89E3\u9501")}",
 		});
 		_unlockTalentButton.Disabled = readablePurchased || !readableCanPurchase;
 		_unlockTalentButton.Text = readablePurchased ? "\u5DF2\u89E3\u9501" : readableCanPurchase ? $"\u89E3\u9501 ({readableTalent.Cost}\u70B9)" : "\u4E0D\u53EF\u89E3\u9501";
@@ -2083,34 +2095,47 @@ public partial class SystemFeatureLabController : CanvasLayer
 			return;
 		}
 
+		string selectedAvailableCardId = GetSelectedAvailableCardId();
+		string selectedDeckCardId = GetSelectedDeckCardId();
+
 		ProgressionSnapshot readableProgression = _session.BuildProgressionSnapshotModel();
 		_availableTemplates = _constructionService.GetAvailableCardPool(readableProgression).ToArray();
 		_availableList.Clear();
 		foreach (BattleCardTemplate template in _availableTemplates)
 		{
 			bool overlimit = !template.CanCarryNormally(readableProgression) && template.CanCarryOverlimit(readableProgression);
+			bool atCopyLimit = IsAtDeckCopyLimit(template, readableProgression);
 			string suffix = template.IsLearnedCard ? " [\u5B66\u4E60]" : overlimit ? " [\u8D85\u9650]" : string.Empty;
-			_availableList.AddItem($"{GetCardDisplayName(template.CardId)}{suffix}");
+			int itemIndex = _availableList.ItemCount;
+			_availableList.AddItem($"{GetCardDisplayName(template.CardId)}{suffix}  C{template.Cost}  I{template.GetEffectiveBuildPoints()}");
+			_availableList.SetItemCustomFgColor(itemIndex, atCopyLimit ? new Color(0.42f, 0.42f, 0.42f, 1.0f) : Colors.White);
 		}
+
+		_visibleDeckEntries = _workingDeck
+			.OrderBy(cardId => GetCardDisplayName(cardId), StringComparer.Ordinal)
+			.Select(cardId => new DeckListEntry(cardId, 1))
+			.ToArray();
 
 		_deckList.Clear();
-		foreach (string cardId in _workingDeck)
+		foreach (DeckListEntry entry in _visibleDeckEntries)
 		{
-			BattleCardTemplate? template = _cardLibrary.FindTemplate(cardId);
-			_deckList.AddItem(template != null ? GetCardDisplayName(template.CardId) : cardId);
+			BattleCardTemplate? template = _cardLibrary.FindTemplate(entry.CardId);
+			bool overlimit = template != null && !template.CanCarryNormally(readableProgression) && template.CanCarryOverlimit(readableProgression);
+			string suffix = overlimit ? " [\u8D85\u9650]" : string.Empty;
+			_deckList.AddItem($"{GetCardDisplayName(entry.CardId)}{suffix}");
 		}
 
-		DeckBuildSnapshot readableSnapshot = new()
-		{
-			BuildName = _session.DeckBuildState.BuildName,
-			CardIds = _workingDeck.ToArray(),
-			RelicIds = _session.DeckBuildState.RelicIds,
-		};
+		DeckBuildSnapshot readableSnapshot = BuildWorkingDeckSnapshot();
 		BattleDeckValidationResult readableValidation = _constructionService.ValidateDeck(readableSnapshot, readableProgression);
 		_deckPoolSummaryLabel.Text = $"\u53EF\u9009 { _availableTemplates.Length }";
 		_deckSummaryLabel.Text = $"\u5F53\u524D {readableValidation.TotalCardCount} \u5F20 / \u5F71\u54CD {readableValidation.TotalBuildPoints}";
-		_deckValidationText.Text = BuildReadableDeckValidationText(readableValidation);
+		_deckValidationText.Text = _deckDirty
+			? BuildReadableDeckValidationText(readableValidation) + "\n\u672A\u4FDD\u5B58"
+			: BuildReadableDeckValidationText(readableValidation);
 		_deckSaveButton.Disabled = !readableValidation.IsValid;
+		RestoreAvailableSelection(selectedAvailableCardId);
+		RestoreDeckSelection(selectedDeckCardId);
+		UpdateDeckActionButtons();
 		return;
 		}
 
@@ -2227,7 +2252,6 @@ public partial class SystemFeatureLabController : CanvasLayer
 			: string.Join('\n', new[]
 			{
 				"[b]\u672A\u89E3\u9501[/b]",
-				"[\u9ED1\u8272\u526A\u5F71]",
 				$"\u89E3\u9501\u65B9\u5F0F: {BuildReadableCardUnlockHint(selectedTemplate)}",
 			});
 		return;
@@ -2272,8 +2296,7 @@ public partial class SystemFeatureLabController : CanvasLayer
 		_enemyCodexDetail.Text = enemyUnlocked ? BuildEnemyCodexDetailText(selectedEntry) : string.Join('\n', new[]
 		{
 			"[b]\u672A\u89E3\u9501[/b]",
-			"[\u9ED1\u8272\u526A\u5F71]",
-			$"\u89E3\u9501\u65B9\u5F0F: {selectedEntry.UnlockHint}",
+			"\u89E3\u9501\u65B9\u5F0F: \u5728\u6218\u6597\u4E2D\u906D\u9047\u8BE5\u654C\u4EBA\u540E\u89E3\u9501",
 		});
 		return;
 		}
@@ -2343,8 +2366,13 @@ public partial class SystemFeatureLabController : CanvasLayer
 	}
 	private bool IsEnemyCodexUnlocked(EnemyCodexEntry entry, ProgressionSnapshot progression)
 	{
-		return entry.UnlockedByDefault
-			|| entry.RequiredUnlockedCardIds.All(cardId => progression.UnlockedCardIds.Contains(cardId, StringComparer.Ordinal));
+		if (_session == null)
+		{
+			return false;
+		}
+
+		return _session.TryGetFlag(new StringName($"enemy_encountered:{entry.Id}"), out Variant unlockedVariant)
+			&& unlockedVariant.AsBool();
 	}
 
 	private string BuildEnemyCodexDetailText(EnemyCodexEntry entry)
@@ -2374,7 +2402,7 @@ public partial class SystemFeatureLabController : CanvasLayer
 			$"[b]{(CardDisplayNameOverrides.TryGetValue(template.CardId, out string displayName) ? displayName : template.CardId)}[/b]",
 			template.Description,
 			string.Empty,
-			$"\u8D39\u7528 {FormatEnhancedValue(template.Cost, enhancement.CostDelta)} / \u5F71\u54CD\u56E0\u5B50 {template.BuildPoints}",
+			$"\u8D39\u7528 {FormatEnhancedValue(template.Cost, enhancement.CostDelta)} / \u5F71\u54CD\u56E0\u5B50 {template.GetEffectiveBuildPoints()}",
 		};
 
 		if (definition.Range > 0 || enhancement.RangeDelta != 0)
@@ -2407,7 +2435,32 @@ public partial class SystemFeatureLabController : CanvasLayer
 			lines.Add($"\u56DE\u80FD {FormatEnhancedValue(definition.EnergyGain, enhancement.EnergyGainDelta)}");
 		}
 
-		lines.Add($"Quick {template.IsQuick} / Exhaust {template.ExhaustsOnPlay}");
+		List<string> requirementParts = new();
+		if (template.RequiredMeleeMastery > 0)
+		{
+			requirementParts.Add($"\u8FD1\u6218 {template.RequiredMeleeMastery}");
+		}
+
+		if (template.RequiredRangedMastery > 0)
+		{
+			requirementParts.Add($"\u8FDC\u7A0B {template.RequiredRangedMastery}");
+		}
+
+		if (template.RequiredFlexMastery > 0)
+		{
+			requirementParts.Add($"\u7075\u6D3B {template.RequiredFlexMastery}");
+		}
+
+		if (requirementParts.Count > 0)
+		{
+			lines.Add($"\u643A\u5E26\u9700\u6C42: {string.Join(" / ", requirementParts)}");
+		}
+
+		string keywordLine = BuildCardKeywordLine(template.IsQuick, template.ExhaustsOnPlay);
+		if (!string.IsNullOrWhiteSpace(keywordLine))
+		{
+			lines.Add(keywordLine);
+		}
 		lines.Add($"\u8352\u5DDD\u5F3A\u5316: [color=#6dbbff]{BuildEnhancementSummary(enhancement)}[/color]");
 		lines.Add("\u72B6\u6001: \u5DF2\u89E3\u9501");
 		return string.Join('\n', lines);
@@ -2463,6 +2516,51 @@ public partial class SystemFeatureLabController : CanvasLayer
 		return _cardLibrary?.FindTemplate(cardId)?.DisplayName ?? cardId;
 	}
 
+	private string GetTalentDisplayName(string talentId)
+	{
+		if (string.IsNullOrWhiteSpace(talentId))
+		{
+			return "\u65E0";
+		}
+
+		return _talents.FirstOrDefault(talent => string.Equals(talent.Id, talentId, StringComparison.Ordinal))?.DisplayName
+			?? talentId;
+	}
+
+	private string BuildReadableTalentEffectSummary(TalentNode talent)
+	{
+		return talent.Id switch
+		{
+			"talent_melee_root" => "\u89E3\u9501\u51B2\u649E\uFF0C\u8FD1\u6218\u4E13\u7CBE +1",
+			"talent_melee_counter" => "\u89E3\u9501\u67B6\u52BF",
+			"talent_melee_counter_plus" => "\u67B6\u52BF\u53CD\u51FB\u4F24\u5BB3 +2\uFF0C\u89E3\u9501\u8B66\u60D5",
+			"talent_melee_blow" => "\u89E3\u9501\u91CD\u51FB",
+			"talent_melee_blow_plus" => "\u91CD\u51FB\u5BF9\u62A4\u76FE\u76EE\u6807\u989D\u5916\u4F24\u5BB3 +2\uFF0C\u89E3\u9501\u7ED3\u6784\u8865\u5F3A",
+			"talent_melee_core" => "\u8FD1\u6218\u4E13\u7CBE +1",
+			"talent_ranged_root" => "\u89E3\u9501\u5FEB\u67AA\uFF0C\u8FDC\u7A0B\u4E13\u7CBE +1",
+			"talent_ranged_control" => "\u89E3\u9501\u9707\u8361\u5C04\u51FB",
+			"talent_ranged_control_plus" => "\u9707\u8361\u5C04\u51FB\u4F24\u5BB3 +1\uFF0C\u78B0\u649E\u4F24\u5BB3 +1\uFF0C\u89E3\u9501\u6218\u7565\u8F6C\u79FB",
+			"talent_ranged_pressure" => "\u89E3\u9501\u6212\u5907",
+			"talent_ranged_signature" => "\u89E3\u9501\u62D4\u67AA",
+			"talent_ranged_core" => "\u8FDC\u7A0B\u4E13\u7CBE +1",
+			"talent_flex_root" => "\u89E3\u9501\u7535\u5F27\u6CC4\u9732\uFF0C\u7075\u6D3B\u4E13\u7CBE +1",
+			"talent_flex_field" => "\u89E3\u9501\u98CE\u5316",
+			"talent_flex_field_plus" => "\u98CE\u5316\u4F24\u5BB3 +1\uFF0C\u4FEE\u590D\u7CFB\u6CBB\u7597 +1\uFF0C\u7D27\u6025\u4FEE\u590D\u62A4\u76FE +1\uFF0C\u89E3\u9501\u7D27\u6025\u4FEE\u590D",
+			"talent_flex_learning" => "\u89E3\u9501\u5B66\u4E60",
+			"talent_flex_learning_plus" => "\u5B66\u4E60\u7279\u6B8A\u6210\u529F\u540E\u56DE\u80FD +1\uFF0C\u89E3\u9501\u6700\u4F18\u5316",
+			"talent_flex_core" => "\u7075\u6D3B\u4E13\u7CBE +1\uFF0C\u89E3\u9501\u4FEE\u590D",
+			"talent_role_atk" => "\u666E\u901A\u653B\u51FB +1",
+			"talent_role_hp" => "\u6700\u5927\u751F\u547D +4",
+			"talent_role_move" => "\u79FB\u52A8\u529B +1",
+			"talent_role_defense" => "\u9632\u5FA1\u51CF\u4F24 +10%",
+			"talent_role_guard" => "\u9632\u5FA1\u989D\u5916\u62A4\u76FE +2",
+			"talent_role_deck" => "\u6784\u7B51\u9884\u7B97 +2",
+			"talent_role_copies" => "\u540C\u540D\u4E0A\u9650 +1",
+			"talent_role_core" => "\u8D85\u89C4\u69FD\u4F4D +1\uFF0C\u8D85\u89C4\u8D39\u7528\u60E9\u7F5A -1\uFF0C\u8D85\u89C4\u6548\u679C\u4FDD\u7559 +10%",
+			_ => talent.Description,
+		};
+	}
+
 	private int GetSpentPoints()
 	{
 		return _talents.Where(talent => _purchasedTalentIds.Contains(talent.Id) && !IsDefaultUnlockedTalent(talent.Id)).Sum(talent => talent.Cost);
@@ -2470,9 +2568,7 @@ public partial class SystemFeatureLabController : CanvasLayer
 
 	private static bool IsDefaultUnlockedTalent(string talentId)
 	{
-		return string.Equals(talentId, "talent_melee_root", StringComparison.Ordinal)
-			|| string.Equals(talentId, "talent_ranged_root", StringComparison.Ordinal)
-			|| string.Equals(talentId, "talent_flex_root", StringComparison.Ordinal);
+		return false;
 	}
 
 	private int GetAvailablePoints()
@@ -2638,18 +2734,21 @@ public partial class SystemFeatureLabController : CanvasLayer
 
 		GameAudio.Instance?.PlayUiConfirm();
 		_deckDetailText.Text = BuildDeckDetailText(_availableTemplates[index]);
+		UpdateDeckActionButtons();
 	}
 
 	private void OnDeckSelected(long index)
 	{
-		if (index < 0 || index >= _workingDeck.Count || _cardLibrary == null)
+		if (index < 0 || index >= _visibleDeckEntries.Length || _cardLibrary == null)
 		{
 			return;
 		}
 
 		GameAudio.Instance?.PlayUiConfirm();
-		BattleCardTemplate? template = _cardLibrary.FindTemplate(_workingDeck[(int)index]);
-		_deckDetailText.Text = template != null ? BuildDeckDetailText(template) : _workingDeck[(int)index];
+		string cardId = _visibleDeckEntries[index].CardId;
+		BattleCardTemplate? template = _cardLibrary.FindTemplate(cardId);
+		_deckDetailText.Text = template != null ? BuildDeckDetailText(template) : cardId;
+		UpdateDeckActionButtons();
 	}
 
 	private static string BuildDeckDetailText(BattleCardTemplate template)
@@ -2666,6 +2765,149 @@ public partial class SystemFeatureLabController : CanvasLayer
 		});
 	}
 
+	private DeckBuildSnapshot BuildWorkingDeckSnapshot()
+	{
+		return new DeckBuildSnapshot
+		{
+			BuildName = _session?.DeckBuildState.BuildName ?? "default",
+			CardIds = _workingDeck.ToArray(),
+			RelicIds = _session?.DeckBuildState.RelicIds ?? Array.Empty<string>(),
+		};
+	}
+
+	private static int GetCurrentCopies(IReadOnlyList<string> workingDeck, string cardId)
+	{
+		return workingDeck.Count(value => string.Equals(value, cardId, StringComparison.Ordinal));
+	}
+
+	private string GetSelectedAvailableCardId()
+	{
+		if (_availableList == null)
+		{
+			return string.Empty;
+		}
+
+		int[] selectedItems = _availableList.GetSelectedItems();
+		if (selectedItems.Length == 0)
+		{
+			return string.Empty;
+		}
+
+		int selectedIndex = selectedItems[0];
+		return selectedIndex >= 0 && selectedIndex < _availableTemplates.Length
+			? _availableTemplates[selectedIndex].CardId
+			: string.Empty;
+	}
+
+	private string GetSelectedDeckCardId()
+	{
+		if (_deckList == null)
+		{
+			return string.Empty;
+		}
+
+		int[] selectedItems = _deckList.GetSelectedItems();
+		if (selectedItems.Length == 0)
+		{
+			return string.Empty;
+		}
+
+		int selectedIndex = selectedItems[0];
+		return selectedIndex >= 0 && selectedIndex < _visibleDeckEntries.Length
+			? _visibleDeckEntries[selectedIndex].CardId
+			: string.Empty;
+	}
+
+	private void RestoreAvailableSelection(string cardId)
+	{
+		if (_availableList == null || _availableTemplates.Length == 0)
+		{
+			return;
+		}
+
+		int selectedIndex = Array.FindIndex(_availableTemplates, template => string.Equals(template.CardId, cardId, StringComparison.Ordinal));
+		if (selectedIndex < 0)
+		{
+			return;
+		}
+
+		_availableList.Select(selectedIndex);
+	}
+
+	private void RestoreDeckSelection(string cardId)
+	{
+		if (_deckList == null || _visibleDeckEntries.Length == 0)
+		{
+			return;
+		}
+
+		int selectedIndex = Array.FindIndex(_visibleDeckEntries, entry => string.Equals(entry.CardId, cardId, StringComparison.Ordinal));
+		if (selectedIndex < 0)
+		{
+			return;
+		}
+
+		_deckList.Select(selectedIndex);
+	}
+
+	private int GetDeckCopyLimit(BattleCardTemplate template, ProgressionSnapshot progression)
+	{
+		bool usesOverlimitCarry = !template.CanCarryNormally(progression) && template.CanCarryOverlimit(progression);
+		if (usesOverlimitCarry)
+		{
+			return 1;
+		}
+
+		int effectiveMaxCopies = Math.Max(1, (_deckRules?.BaseMaxCopiesPerCard ?? 1) + progression.DeckMaxCopiesPerCardBonus);
+		return Math.Min(effectiveMaxCopies, Math.Max(1, template.MaxCopiesInDeck));
+	}
+
+	private bool IsAtDeckCopyLimit(BattleCardTemplate template, ProgressionSnapshot progression)
+	{
+		return GetCurrentCopies(_workingDeck, template.CardId) >= GetDeckCopyLimit(template, progression);
+	}
+
+	private void UpdateDeckActionButtons()
+	{
+		if (_constructionService == null || _session == null)
+		{
+			return;
+		}
+
+		ProgressionSnapshot progression = _session.BuildProgressionSnapshotModel();
+		bool canAdd = false;
+		int[] selectedAvailableItems = _availableList.GetSelectedItems();
+		if (selectedAvailableItems.Length > 0)
+		{
+			int selectedIndex = selectedAvailableItems[0];
+			if (selectedIndex >= 0 && selectedIndex < _availableTemplates.Length)
+			{
+				BattleCardTemplate template = _availableTemplates[selectedIndex];
+				canAdd = !IsAtDeckCopyLimit(template, progression);
+			}
+		}
+
+		_deckAddButton.Disabled = !canAdd;
+		_deckRemoveButton.Disabled = _deckList.GetSelectedItems().Length == 0;
+	}
+
+	private void ScheduleDeckViewRefresh()
+	{
+		if (_deckRefreshScheduled)
+		{
+			return;
+		}
+
+		_deckRefreshScheduled = true;
+		CallDeferred(nameof(ApplyScheduledDeckViewRefresh));
+	}
+
+	private void ApplyScheduledDeckViewRefresh()
+	{
+		_deckRefreshScheduled = false;
+		RefreshDeckView();
+	}
+
 	private void OnDeckAddPressed()
 	{
 		if (_constructionService == null || _session == null || _availableList.GetSelectedItems().Length == 0)
@@ -2674,6 +2916,13 @@ public partial class SystemFeatureLabController : CanvasLayer
 		}
 
 		BattleCardTemplate template = _availableTemplates[_availableList.GetSelectedItems()[0]];
+		if (IsAtDeckCopyLimit(template, _session.BuildProgressionSnapshotModel()))
+		{
+			_deckValidationText.Text = "\u8BE5\u5361\u5DF2\u8FBE\u643A\u5E26\u4E0A\u9650";
+			UpdateDeckActionButtons();
+			return;
+		}
+
 		List<string> candidateDeck = new(_workingDeck) { template.CardId };
 		BattleDeckValidationResult validation = _constructionService.ValidateDeck(
 			new DeckBuildSnapshot { CardIds = candidateDeck.ToArray(), RelicIds = _session.DeckBuildState.RelicIds },
@@ -2685,18 +2934,46 @@ public partial class SystemFeatureLabController : CanvasLayer
 		}
 
 		_workingDeck = candidateDeck;
+		_deckDirty = true;
 		RefreshDeckView();
+		ScheduleDeckViewRefresh();
+		int deckIndex = Array.FindIndex(_visibleDeckEntries, entry => string.Equals(entry.CardId, template.CardId, StringComparison.Ordinal));
+		if (deckIndex >= 0)
+		{
+			_deckList.Select(deckIndex);
+		}
+		_deckDetailText.Text = BuildDeckDetailText(template);
 	}
 
 	private void OnDeckRemovePressed()
 	{
-		if (_deckList.GetSelectedItems().Length == 0)
+		if (_deckList.GetSelectedItems().Length == 0 || _cardLibrary == null)
 		{
 			return;
 		}
 
-		_workingDeck.RemoveAt(_deckList.GetSelectedItems()[0]);
+		int selectedIndex = _deckList.GetSelectedItems()[0];
+		if (selectedIndex < 0 || selectedIndex >= _visibleDeckEntries.Length)
+		{
+			return;
+		}
+
+		string cardId = _visibleDeckEntries[selectedIndex].CardId;
+		int removeIndex = _workingDeck.FindIndex(value => string.Equals(value, cardId, StringComparison.Ordinal));
+		if (removeIndex < 0)
+		{
+			return;
+		}
+
+		_workingDeck.RemoveAt(removeIndex);
+		_deckDirty = true;
 		RefreshDeckView();
+		ScheduleDeckViewRefresh();
+		BattleCardTemplate? template = _cardLibrary.FindTemplate(cardId);
+		if (template != null)
+		{
+			_deckDetailText.Text = BuildDeckDetailText(template);
+		}
 	}
 
 	private void OnDeckSavePressed()
@@ -2707,12 +2984,7 @@ public partial class SystemFeatureLabController : CanvasLayer
 			return;
 		}
 
-		DeckBuildSnapshot saveSnapshot = new()
-		{
-			BuildName = _session.DeckBuildState.BuildName,
-			CardIds = _workingDeck.ToArray(),
-			RelicIds = _session.DeckBuildState.RelicIds,
-		};
+		DeckBuildSnapshot saveSnapshot = BuildWorkingDeckSnapshot();
 		BattleDeckValidationResult saveValidation = _constructionService.ValidateDeck(saveSnapshot, _session.BuildProgressionSnapshotModel());
 		if (!saveValidation.IsValid)
 		{
@@ -2721,7 +2993,9 @@ public partial class SystemFeatureLabController : CanvasLayer
 		}
 
 		_session.ApplyDeckBuildSnapshot(saveSnapshot.ToDictionary());
+		_deckDirty = false;
 		_deckValidationText.Text = BuildReadableDeckValidationText(saveValidation) + "\n\u5DF2\u4FDD\u5B58\u5230 GlobalGameSession";
+		ScheduleDeckViewRefresh();
 		return;
 		}
 
@@ -2751,6 +3025,7 @@ public partial class SystemFeatureLabController : CanvasLayer
 	{
 		LoadWorkingDeckFromSession();
 		RefreshDeckView();
+		ScheduleDeckViewRefresh();
 	}
 
 	private void OnDeckStarterPressed()
@@ -2761,7 +3036,9 @@ public partial class SystemFeatureLabController : CanvasLayer
 		}
 
 		_workingDeck = _cardLibrary.BuildStarterDeckCardIds().ToList();
+		_deckDirty = true;
 		RefreshDeckView();
+		ScheduleDeckViewRefresh();
 	}
 
 	private void SeedInventoryDefaults()
@@ -2773,21 +3050,35 @@ public partial class SystemFeatureLabController : CanvasLayer
 
 		Godot.Collections.Dictionary items = _session.InventoryState.ItemCounts;
 		items.Clear();
-		items["steel_scrap"] = 5;
-		items["charged_core"] = 2;
-		items["arakawa_battery"] = 2;
-		items["medical_gel"] = 3;
-		items["optical_part"] = 1;
-		items["equip_magnetic_scabbard"] = 1;
-		items["equip_arc_pipe"] = 1;
-		items["equip_old_coat"] = 1;
-		items["equip_phase_boots"] = 1;
-		items["equip_red_scarf"] = 1;
-		items["equip_target_lens"] = 1;
-		items["equip_archive_probe"] = 1;
-		items["equip_parallel_battery"] = 1;
-		items["equip_forbidden_patch"] = 1;
-		items["equip_insulated_cloak"] = 1;
+	}
+
+	private static bool HasLegacySeedInventory(Godot.Collections.Dictionary items)
+	{
+		if (items == null || items.Count != 15)
+		{
+			return false;
+		}
+
+		return HasLegacySeedCount(items, "steel_scrap", 5)
+			&& HasLegacySeedCount(items, "charged_core", 2)
+			&& HasLegacySeedCount(items, "arakawa_battery", 2)
+			&& HasLegacySeedCount(items, "medical_gel", 3)
+			&& HasLegacySeedCount(items, "optical_part", 1)
+			&& HasLegacySeedCount(items, "equip_magnetic_scabbard", 1)
+			&& HasLegacySeedCount(items, "equip_arc_pipe", 1)
+			&& HasLegacySeedCount(items, "equip_old_coat", 1)
+			&& HasLegacySeedCount(items, "equip_phase_boots", 1)
+			&& HasLegacySeedCount(items, "equip_red_scarf", 1)
+			&& HasLegacySeedCount(items, "equip_target_lens", 1)
+			&& HasLegacySeedCount(items, "equip_archive_probe", 1)
+			&& HasLegacySeedCount(items, "equip_parallel_battery", 1)
+			&& HasLegacySeedCount(items, "equip_forbidden_patch", 1)
+			&& HasLegacySeedCount(items, "equip_insulated_cloak", 1);
+	}
+
+	private static bool HasLegacySeedCount(Godot.Collections.Dictionary items, string itemId, int expectedAmount)
+	{
+		return items.TryGetValue(itemId, out Variant value) && value.AsInt32() == expectedAmount;
 	}
 
 	private void RecomputeSessionProgression()
@@ -2813,7 +3104,78 @@ public partial class SystemFeatureLabController : CanvasLayer
 			copiesBonus += talent.DeckMaxCopiesPerCardBonus;
 		}
 
-		_session.ProgressionState.PlayerLevel = Math.Max(3, _session.ProgressionState.PlayerLevel);
+		if (_purchasedTalentIds.Contains("talent_melee_root"))
+		{
+			talentIds.Add("mastery.melee.1");
+		}
+
+		if (_purchasedTalentIds.Contains("talent_melee_counter_plus"))
+		{
+			talentIds.Add("effect.stance_counter_bonus.2");
+			unlockedCardIds.Add("card_alert_guard");
+		}
+
+		if (_purchasedTalentIds.Contains("talent_melee_blow_plus"))
+		{
+			talentIds.Add("effect.heavy_blow_shield_bonus.2");
+			unlockedCardIds.Add("card_structural_boost");
+		}
+
+		if (_purchasedTalentIds.Contains("talent_melee_core"))
+		{
+			talentIds.Add("mastery.melee.1");
+		}
+
+		if (_purchasedTalentIds.Contains("talent_ranged_root"))
+		{
+			talentIds.Add("mastery.ranged.1");
+		}
+
+		if (_purchasedTalentIds.Contains("talent_ranged_control_plus"))
+		{
+			talentIds.Add("effect.concussion_shot_damage_bonus.1");
+			talentIds.Add("effect.concussion_shot_collision_bonus.1");
+			unlockedCardIds.Add("card_tactical_shift");
+		}
+
+		if (_purchasedTalentIds.Contains("talent_ranged_core"))
+		{
+			talentIds.Add("mastery.ranged.1");
+		}
+
+		if (_purchasedTalentIds.Contains("talent_flex_root"))
+		{
+			talentIds.Add("mastery.flex.1");
+		}
+
+		if (_purchasedTalentIds.Contains("talent_flex_field_plus"))
+		{
+			talentIds.Add("effect.weathering_damage_bonus.1");
+			talentIds.Add("effect.field_heal_bonus.1");
+			talentIds.Add("effect.field_shield_bonus.1");
+			unlockedCardIds.Add("card_field_patch_plus");
+		}
+
+		if (_purchasedTalentIds.Contains("talent_flex_learning_plus"))
+		{
+			talentIds.Add("effect.learning_signature_energy_bonus.1");
+			unlockedCardIds.Add("card_optimize");
+		}
+
+		if (_purchasedTalentIds.Contains("talent_flex_core"))
+		{
+			talentIds.Add("mastery.flex.1");
+			unlockedCardIds.Add("card_repair");
+		}
+
+		if (_purchasedTalentIds.Contains("talent_role_core"))
+		{
+			talentIds.Add("stat.overlimit_slots_bonus.1");
+			talentIds.Add("stat.overlimit_cost_reduction.1");
+			talentIds.Add("stat.overlimit_effect_bonus_percent.10");
+		}
+
+		_session.ProgressionState.PlayerLevel = Math.Max(1, _session.ProgressionState.PlayerLevel);
 		int levelFloorExperience = _session.RuntimeProgressionRuleSet.GetAccumulatedExperienceForLevel(_session.ProgressionState.PlayerLevel);
 		_session.ProgressionState.PlayerExperience = Math.Max(levelFloorExperience, _session.ProgressionState.PlayerExperience);
 		_session.ProgressionState.PlayerMasteryPoints = GetAvailablePoints();
@@ -3066,19 +3428,73 @@ public partial class SystemFeatureLabController : CanvasLayer
 			lines.AddRange(validation.Errors.Select(error => $"- {error}"));
 		}
 
+		if (validation.Warnings.Count > 0)
+		{
+			lines.Add("\u63D0\u793A:");
+			lines.AddRange(validation.Warnings.Select(warning => $"- {warning}"));
+		}
+
 		return string.Join('\n', lines);
 	}
 
 	private static string BuildReadableDeckDetailText(BattleCardTemplate template)
 	{
-		return string.Join('\n', new[]
+		List<string> lines = new()
 		{
 			$"[b]{(CardDisplayNameOverrides.TryGetValue(template.CardId, out string displayName) ? displayName : template.CardId)}[/b]",
 			template.Description,
-			$"\u8D39\u7528 {template.Cost} / \u5F71\u54CD\u56E0\u5B50 {template.BuildPoints}",
+			$"\u8D39\u7528 {template.Cost} / \u5F71\u54CD\u56E0\u5B50 {template.GetEffectiveBuildPoints()}",
 			$"\u4F24\u5BB3 {template.Damage} / \u6CBB\u7597 {template.HealingAmount} / \u62BD\u724C {template.DrawCount} / \u56DE\u80FD {template.EnergyGain} / \u62A4\u76FE {template.ShieldGain}",
-			$"Quick {template.IsQuick} / Exhaust {template.ExhaustsOnPlay}",
-		});
+		};
+
+		List<string> requirementParts = new();
+		if (template.RequiredMeleeMastery > 0)
+		{
+			requirementParts.Add($"\u8FD1\u6218 {template.RequiredMeleeMastery}");
+		}
+
+		if (template.RequiredRangedMastery > 0)
+		{
+			requirementParts.Add($"\u8FDC\u7A0B {template.RequiredRangedMastery}");
+		}
+
+		if (template.RequiredFlexMastery > 0)
+		{
+			requirementParts.Add($"\u7075\u6D3B {template.RequiredFlexMastery}");
+		}
+
+		if (template.RequiredBranchTags.Length > 0)
+		{
+			requirementParts.Add(string.Join(" / ", template.RequiredBranchTags));
+		}
+
+		if (requirementParts.Count > 0)
+		{
+			lines.Add($"\u9700\u6C42: {string.Join(" | ", requirementParts)}");
+		}
+
+		string keywordLine = BuildCardKeywordLine(template.IsQuick, template.ExhaustsOnPlay);
+		if (!string.IsNullOrWhiteSpace(keywordLine))
+		{
+			lines.Add(keywordLine);
+		}
+		return string.Join('\n', lines);
+	}
+
+	private static string BuildCardKeywordLine(bool isQuick, bool exhaustsOnPlay)
+	{
+		List<string> keywords = new();
+		if (isQuick)
+		{
+			keywords.Add("\u5FEB\u901F");
+		}
+
+		if (exhaustsOnPlay)
+		{
+			keywords.Add("\u6D88\u8017");
+		}
+
+		return keywords.Count == 0 ? string.Empty : $"\u8BCD\u6761: {string.Join(" / ", keywords)}";
 	}
 
 	private static string BuildReadableCardUnlockHint(BattleCardTemplate template)
@@ -3088,9 +3504,13 @@ public partial class SystemFeatureLabController : CanvasLayer
 			return "\u901A\u8FC7\u5B66\u4E60\u654C\u65B9\u7279\u6B8A\u884C\u52A8\u89E3\u9501";
 		}
 
-		if (template.RequiredTalentIds.Length > 0 || template.RequiredBranchTags.Length > 0)
+		if (template.RequiredTalentIds.Length > 0
+			|| template.RequiredBranchTags.Length > 0
+			|| template.RequiredMeleeMastery > 0
+			|| template.RequiredRangedMastery > 0
+			|| template.RequiredFlexMastery > 0)
 		{
-			return "\u6EE1\u8DB3\u5929\u8D4B\u6811\u8981\u6C42\u5E76\u83B7\u5F97\u5361\u724C\u540E\u89E3\u9501";
+			return "\u83B7\u5F97\u5361\u724C\u540E\uFF0C\u6EE1\u8DB3\u5206\u7CFB\u4E13\u7CBE\u4E0E\u5929\u8D4B\u8981\u6C42\u5373\u53EF\u6B63\u5E38\u643A\u5E26";
 		}
 
 		if (template.RequiredPlayerLevel > 1)
@@ -3101,6 +3521,19 @@ public partial class SystemFeatureLabController : CanvasLayer
 		return template.UnlockedByDefault
 			? "\u521D\u59CB\u5DF2\u89E3\u9501"
 			: "\u901A\u8FC7\u63A2\u7D22\u3001\u5546\u5E97\u6216\u5956\u52B1\u83B7\u5F97";
+	}
+
+	private sealed class DeckListEntry
+	{
+		public DeckListEntry(string cardId, int count)
+		{
+			CardId = cardId;
+			Count = Math.Max(0, count);
+		}
+
+		public string CardId { get; }
+
+		public int Count { get; }
 	}
 
 	private enum TalentTreeGroup

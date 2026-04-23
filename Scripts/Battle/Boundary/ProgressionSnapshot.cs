@@ -6,6 +6,13 @@ namespace CardChessDemo.Battle.Boundary;
 
 public sealed class ProgressionSnapshot
 {
+	private const string MeleeMasteryPrefix = "mastery.melee.";
+	private const string RangedMasteryPrefix = "mastery.ranged.";
+	private const string FlexMasteryPrefix = "mastery.flex.";
+	private const string OverlimitSlotBonusPrefix = "stat.overlimit_slots_bonus.";
+	private const string OverlimitCostReductionPrefix = "stat.overlimit_cost_reduction.";
+	private const string OverlimitEffectBonusPrefix = "stat.overlimit_effect_bonus_percent.";
+
 	public int PlayerLevel { get; set; } = 1;
 
 	public int PlayerExperience { get; set; }
@@ -30,6 +37,18 @@ public sealed class ProgressionSnapshot
 
 	public int DeckMaxCopiesPerCardBonus { get; set; }
 
+	public int MeleeMastery => GetTalentScalarBonus(MeleeMasteryPrefix);
+
+	public int RangedMastery => GetTalentScalarBonus(RangedMasteryPrefix);
+
+	public int FlexMastery => GetTalentScalarBonus(FlexMasteryPrefix);
+
+	public int OverlimitCarrySlotBonus => GetTalentScalarBonus(OverlimitSlotBonusPrefix);
+
+	public int OverlimitCostPenaltyReduction => GetTalentScalarBonus(OverlimitCostReductionPrefix);
+
+	public int OverlimitEffectBonusPercent => GetTalentScalarBonus(OverlimitEffectBonusPrefix);
+
 	public bool TryValidate(out string failureReason)
 	{
 		if (PlayerLevel <= 0)
@@ -46,6 +65,52 @@ public sealed class ProgressionSnapshot
 
 		failureReason = string.Empty;
 		return true;
+	}
+
+	public bool HasTalent(string talentId)
+	{
+		if (string.IsNullOrWhiteSpace(talentId))
+		{
+			return false;
+		}
+
+		return TalentIds.Contains(talentId, StringComparer.Ordinal);
+	}
+
+	public int GetBranchMastery(string branchId)
+	{
+		return branchId?.Trim().ToLowerInvariant() switch
+		{
+			"melee" => MeleeMastery,
+			"ranged" => RangedMastery,
+			"flex" => FlexMastery,
+			_ => 0,
+		};
+	}
+
+	public int GetTalentScalarBonus(string prefix)
+	{
+		if (string.IsNullOrWhiteSpace(prefix))
+		{
+			return 0;
+		}
+
+		int total = 0;
+		foreach (string talentId in TalentIds)
+		{
+			if (string.IsNullOrWhiteSpace(talentId) || !talentId.StartsWith(prefix, StringComparison.OrdinalIgnoreCase))
+			{
+				continue;
+			}
+
+			string valueText = talentId[prefix.Length..];
+			if (int.TryParse(valueText, out int parsedValue))
+			{
+				total += parsedValue;
+			}
+		}
+
+		return total;
 	}
 
 	public Godot.Collections.Dictionary ToDictionary()

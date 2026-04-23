@@ -4,17 +4,18 @@
 [ext_resource type="Script" uid="uid://bacvjmwtxs21k" path="res://Scripts/Map/Controllers/MapSceneController.cs" id="1_mapctl"]
 [ext_resource type="Script" uid="uid://dyw2yvmw0516w" path="res://Scripts/Map/Controllers/MapResolutionController.cs" id="1_resctl"]
 [ext_resource type="Script" uid="uid://ko3c2evxdpee" path="res://Scripts/Map/World/WallLayerCollisionBuilder.cs" id="2_dkejk"]
-[ext_resource type="Texture2D" uid="uid://s5f1cihm0idq" path="res://ArtResource/resource/地图/墙/8.png" id="3_vu1hj"]
-[ext_resource type="Texture2D" uid="uid://c5thwoux5l8wr" path="res://ArtResource/resource/地图/墙/10.png" id="4_mewkc"]
+[ext_resource type="Texture2D" uid="uid://s5f1cihm0idq" path="res://ArtResource/resource/鍦板浘/澧?8.png" id="3_vu1hj"]
+[ext_resource type="Texture2D" uid="uid://c5thwoux5l8wr" path="res://ArtResource/resource/鍦板浘/澧?10.png" id="4_mewkc"]
 [ext_resource type="Texture2D" uid="uid://cbnn0o0mufyk5" path="res://CosmicLegacy_PetricakeGamesPNG.png" id="5_dfrke"]
-[ext_resource type="Texture2D" uid="uid://bgi7gmfjh3c5d" path="res://ArtResource/resource/地图/墙/3.png" id="6_usvux"]
-[ext_resource type="Texture2D" uid="uid://bma1hxkxhkpd3" path="res://ArtResource/resource/地图/墙/4.png" id="7_5t4gw"]
-[ext_resource type="Texture2D" uid="uid://cnkys1b40rfbc" path="res://ArtResource/resource/地图/墙/5.png" id="8_p8g63"]
-[ext_resource type="Texture2D" uid="uid://b0km05r2h5wx7" path="res://ArtResource/resource/地图/地板/floors.png" id="9_dkejk"]
+[ext_resource type="Texture2D" uid="uid://bgi7gmfjh3c5d" path="res://ArtResource/resource/鍦板浘/澧?3.png" id="6_usvux"]
+[ext_resource type="Texture2D" uid="uid://bma1hxkxhkpd3" path="res://ArtResource/resource/鍦板浘/澧?4.png" id="7_5t4gw"]
+[ext_resource type="Texture2D" uid="uid://cnkys1b40rfbc" path="res://ArtResource/resource/鍦板浘/澧?5.png" id="8_p8g63"]
+[ext_resource type="Texture2D" uid="uid://b0km05r2h5wx7" path="res://ArtResource/resource/鍦板浘/鍦版澘/floors.png" id="9_dkejk"]
 [ext_resource type="PackedScene" path="res://Scene/Decor/AutoTriggerLightBulb.tscn" id="14_dfrke"]
 [ext_resource type="PackedScene" path="res://Scene/UI/SystemFeatureOverlay.tscn" id="20_overlay"]
 [ext_resource type="TileSet" uid="uid://cee0umruk6at7" path="res://Resources/Map/EnemySpawnTileSet.tres" id="21_enemy_spawn_tiles"]
 [ext_resource type="TileSet" uid="uid://dvsv43jlor71o" path="res://Resources/Map/InteractionTileSet.tres" id="22_interaction_tiles"]
+[ext_resource type="Script" path="res://Scripts/Map/Controllers/MazeEnemySpawnController.cs" id="23_maze_spawnctl"]
 [ext_resource type="TileSet" uid="uid://bk2oy8wp4bh0a" path="res://Resources/Map/PlayerSpawnTileSet.tres" id="99_player_spawn_tiles"]
 
 [sub_resource type="TileSetAtlasSource" id="TileSetAtlasSource_s6_wall_8"]
@@ -482,6 +483,9 @@ position = Vector2(146, 440)
 [node name="CanvasModulate" type="CanvasModulate" parent="." unique_id=980165958]
 color = Color(0.24, 0.24, 0.28, 1)
 
+[node name="MazeEnemySpawnController" type="Node" parent="."]
+script = ExtResource("23_maze_spawnctl")
+
 [node name="MapSceneController" type="Node2D" parent="." unique_id=647046752]
 script = ExtResource("1_mapctl")
 PlayerPath = NodePath("")
@@ -491,3 +495,4 @@ script = ExtResource("1_resctl")
 
 [node name="SystemFeatureOverlay" parent="." unique_id=1151502618 instance=ExtResource("20_overlay")]
 PlayerPath = NodePath("")
+

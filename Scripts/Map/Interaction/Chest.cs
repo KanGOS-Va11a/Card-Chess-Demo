@@ -164,21 +164,7 @@ public partial class Chest : InteractableTemplate, IConfigurableLootInteractable
 			return false;
 		}
 
-		InventoryDelta delta = new();
-		foreach ((string itemId, int amount) in EnumerateGrantedItems())
-		{
-			delta.ItemDeltas[itemId] = delta.ItemDeltas.TryGetValue(itemId, out int currentAmount)
-				? currentAmount + amount
-				: amount;
-		}
-
-		if (delta.ItemDeltas.Count == 0)
-		{
-			return false;
-		}
-
-		_session.ApplyInventoryDelta(delta);
-		return true;
+		return InteractableRewardResolver.ApplyConfiguredRewards(_session, EnumerateGrantedItems());
 	}
 
 	private IEnumerable<(string ItemId, int Amount)> EnumerateGrantedItems()
@@ -220,11 +206,6 @@ public partial class Chest : InteractableTemplate, IConfigurableLootInteractable
 
 		if (grantedLoot)
 		{
-			if (!string.IsNullOrWhiteSpace(ItemDescription))
-			{
-				return ItemDescription;
-			}
-
 			return InteractableItemTextResolver.BuildLootSummary(_session, EnumerateGrantedItems());
 		}
 

@@ -38,6 +38,9 @@ public partial class BattleCardView : Button
 		["card_aim"] = "\u7784\u51C6",
 		["card_mark"] = "\u70B9\u540D",
 		["card_vault"] = "\u5B9D\u5E93",
+		["card_momentum_slice"] = "\u987A\u52BF\u5207\u5F00",
+		["card_salvage_focus"] = "\u56DE\u6536\u4E13\u6CE8",
+		["card_overclock_beam"] = "\u8FC7\u8F7D\u5149\u675F",
 	};
 	private static readonly string[] ArtSearchPaths =
 	{

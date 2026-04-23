@@ -29,6 +29,7 @@ public partial class BattleDeckBuilderController : Control
 
 	private BattleCardTemplate[] _availableTemplates = Array.Empty<BattleCardTemplate>();
 	private List<string> _workingDeck = new();
+	private bool _deckDirty;
 
 	public override void _Ready()
 	{
@@ -77,6 +78,7 @@ public partial class BattleDeckBuilderController : Control
 		}
 
 		_workingDeck = _session.DeckBuildState.CardIds.ToList();
+		_deckDirty = false;
 	}
 
 	public void RefreshFromExternalState()
@@ -101,7 +103,7 @@ public partial class BattleDeckBuilderController : Control
 			bool isOverlimitCandidate = !template.CanCarryNormally(progression) && template.CanCarryOverlimit(progression);
 			string learnedLabel = template.IsLearnedCard ? "  [学习]" : string.Empty;
 			string overlimitLabel = isOverlimitCandidate ? "  [超规]" : string.Empty;
-			_availableList.AddItem($"{template.DisplayName}{learnedLabel}{overlimitLabel}  C{template.Cost}  I{template.BuildPoints}");
+			_availableList.AddItem($"{template.DisplayName}{learnedLabel}{overlimitLabel}  C{template.Cost}  I{template.GetEffectiveBuildPoints()}");
 		}
 
 		_deckList.Clear();
@@ -191,16 +193,44 @@ public partial class BattleDeckBuilderController : Control
 
 	private static string BuildTemplateDetailText(BattleCardTemplate template)
 	{
-		return string.Join('\n', new[]
+		List<string> lines = new()
 		{
 			$"[b]{template.DisplayName}[/b] ({template.CardId})",
 			template.Description,
-			$"费用 {template.Cost} / 范围 {template.Range} / 影响因子 {template.BuildPoints}",
+			$"费用 {template.Cost} / 范围 {template.Range} / 影响因子 {template.GetEffectiveBuildPoints()}",
 			$"伤害 {template.Damage} / 治疗 {template.HealingAmount} / 抽牌 {template.DrawCount} / 回能 {template.EnergyGain} / 护盾 {template.ShieldGain}",
-			$"目标 {template.TargetingMode} / Quick {template.IsQuick} / Exhaust {template.ExhaustsOnPlay}",
-			$"学习牌 {template.IsLearnedCard} / 可超规 {(!template.DisallowOverlimitCarry)} / 同名上限 {template.MaxCopiesInDeck}",
-			$"循环标签: {(template.CycleTags.Length == 0 ? "无" : string.Join(", ", template.CycleTags))}",
-		});
+			$"目标 {template.TargetingMode}",
+		};
+
+		List<string> keywords = new();
+		if (template.IsQuick)
+		{
+			keywords.Add("快速");
+		}
+
+		if (template.ExhaustsOnPlay)
+		{
+			keywords.Add("消耗");
+		}
+
+		if (keywords.Count > 0)
+		{
+			lines.Add($"词条: {string.Join(" / ", keywords)}");
+		}
+
+		lines.Add($"学习牌 {template.IsLearnedCard} / 可超规 {(!template.DisallowOverlimitCarry)} / 同名上限 {template.MaxCopiesInDeck}");
+		lines.Add($"循环标签: {(template.CycleTags.Length == 0 ? "无" : string.Join(", ", template.CycleTags))}");
+		return string.Join('\n', lines);
+	}
+
+	private DeckBuildSnapshot BuildWorkingDeckSnapshot()
+	{
+		return new DeckBuildSnapshot
+		{
+			BuildName = _session?.DeckBuildState.BuildName ?? "default",
+			CardIds = _workingDeck.ToArray(),
+			RelicIds = _session?.DeckBuildState.RelicIds ?? Array.Empty<string>(),
+		};
 	}
 
 	private void OnAddPressed()
@@ -228,6 +258,7 @@ public partial class BattleDeckBuilderController : Control
 		}
 
 		_workingDeck = candidateDeck;
+		_deckDirty = true;
 		RefreshAll();
 	}
 
@@ -240,6 +271,7 @@ public partial class BattleDeckBuilderController : Control
 		}
 
 		_workingDeck.RemoveAt(selected[0]);
+		_deckDirty = true;
 		RefreshAll();
 	}
 
@@ -281,6 +313,7 @@ public partial class BattleDeckBuilderController : Control
 		}
 
 		_workingDeck = BattleCardLibrary.BuildStarterDeckCardIds().ToList();
+		_deckDirty = true;
 		RefreshAll();
 	}
 }

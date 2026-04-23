@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 using Godot;
 using CardChessDemo.Battle.Boundary;
@@ -8,6 +9,15 @@ namespace CardChessDemo.Battle.Cards;
 [GlobalClass]
 public partial class BattleCardTemplate : Resource
 {
+	private static readonly HashSet<string> HighImpactCardIds = new(StringComparer.Ordinal)
+	{
+		"draw_revolver",
+		"card_learning",
+		"card_pressure_breach",
+		"card_magnetic_hunt",
+		"card_overclock_beam",
+	};
+
 	[Export] public string CardId { get; set; } = "card_id";
 	[Export] public string DisplayName { get; set; } = "新卡牌";
 	[Export(PropertyHint.MultilineText)] public string Description { get; set; } = string.Empty;
@@ -29,6 +39,9 @@ public partial class BattleCardTemplate : Resource
 	[Export] public int RequiredPlayerLevel { get; set; } = 1;
 	[Export] public string[] RequiredTalentIds { get; set; } = Array.Empty<string>();
 	[Export] public string[] RequiredBranchTags { get; set; } = Array.Empty<string>();
+	[Export] public int RequiredMeleeMastery { get; set; }
+	[Export] public int RequiredRangedMastery { get; set; }
+	[Export] public int RequiredFlexMastery { get; set; }
 	[Export] public string[] CycleTags { get; set; } = Array.Empty<string>();
 	[Export] public bool IsLearnedCard { get; set; }
 	[Export] public bool DisallowOverlimitCarry { get; set; }
@@ -36,7 +49,7 @@ public partial class BattleCardTemplate : Resource
 	[Export(PropertyHint.Range, "0,1,0.05")] public float OverlimitEffectMultiplier { get; set; } = 0.8f;
 	[Export] public int OverlimitExtraBuildPoints { get; set; } = 1;
 
-	public BattleCardDefinition BuildRuntimeDefinition(bool applyOverlimitPenalty = false)
+	public BattleCardDefinition BuildRuntimeDefinition(bool applyOverlimitPenalty = false, ProgressionSnapshot? snapshot = null)
 	{
 		int cost = Cost;
 		int damage = Damage;
@@ -49,15 +62,22 @@ public partial class BattleCardTemplate : Resource
 
 		if (applyOverlimitPenalty)
 		{
-			float multiplier = Mathf.Clamp(OverlimitEffectMultiplier, 0.0f, 1.0f);
-			cost += Math.Max(0, OverlimitCostPenalty);
+			int adjustedCostPenalty = GetAdjustedOverlimitCostPenalty(snapshot);
+			float multiplier = GetAdjustedOverlimitEffectMultiplier(snapshot);
+			cost += adjustedCostPenalty;
 			damage = ScalePositiveValue(damage, multiplier);
 			healingAmount = ScalePositiveValue(healingAmount, multiplier);
 			drawCount = ScalePositiveValue(drawCount, multiplier);
 			energyGain = ScalePositiveValue(energyGain, multiplier);
 			shieldGain = ScalePositiveValue(shieldGain, multiplier);
-			displayName = string.IsNullOrWhiteSpace(displayName) ? "超规卡牌" : $"{displayName} [超规]";
-			description = string.IsNullOrWhiteSpace(description) ? "以超规方式携带，费用或效果已受惩罚。" : $"{description} / 超规携带：费用提高或效果衰减";
+			displayName = string.IsNullOrWhiteSpace(displayName) ? "\u8D85\u89C4\u5361\u724C" : $"{displayName} [\u8D85\u89C4]";
+			int preservedPercent = Mathf.RoundToInt(multiplier * 100.0f);
+			string penaltyText = adjustedCostPenalty > 0
+				? $"\u8D39\u7528+{adjustedCostPenalty}\uFF0C\u6548\u679C\u4FDD\u7559{preservedPercent}%"
+				: $"\u6548\u679C\u4FDD\u7559{preservedPercent}%";
+			description = string.IsNullOrWhiteSpace(description)
+				? $"\u4EE5\u8D85\u89C4\u65B9\u5F0F\u643A\u5E26\u3002{penaltyText}"
+				: $"{description} / \u8D85\u89C4\u643A\u5E26\uFF1A{penaltyText}";
 		}
 
 		return new BattleCardDefinition(
@@ -99,6 +119,21 @@ public partial class BattleCardTemplate : Resource
 			return false;
 		}
 
+		if (snapshot.MeleeMastery < Math.Max(0, RequiredMeleeMastery))
+		{
+			return false;
+		}
+
+		if (snapshot.RangedMastery < Math.Max(0, RequiredRangedMastery))
+		{
+			return false;
+		}
+
+		if (snapshot.FlexMastery < Math.Max(0, RequiredFlexMastery))
+		{
+			return false;
+		}
+
 		return true;
 	}
 
@@ -134,6 +169,31 @@ public partial class BattleCardTemplate : Resource
 			.Select(tag => tag.Trim().ToLowerInvariant())
 			.Distinct(StringComparer.Ordinal)
 			.ToArray();
+	}
+
+	public int GetEffectiveBuildPoints()
+	{
+		int lowered = Math.Max(1, BuildPoints - 1);
+		return HighImpactCardIds.Contains(CardId)
+			? Math.Max(4, lowered)
+			: lowered;
+	}
+
+	public int GetAppliedBuildPoints(bool usesOverlimitCarry)
+	{
+		return GetEffectiveBuildPoints() + (usesOverlimitCarry ? Math.Max(0, OverlimitExtraBuildPoints) : 0);
+	}
+
+	public int GetAdjustedOverlimitCostPenalty(ProgressionSnapshot? snapshot)
+	{
+		int reduction = snapshot?.OverlimitCostPenaltyReduction ?? 0;
+		return Math.Max(0, OverlimitCostPenalty - reduction);
+	}
+
+	public float GetAdjustedOverlimitEffectMultiplier(ProgressionSnapshot? snapshot)
+	{
+		float bonus = (snapshot?.OverlimitEffectBonusPercent ?? 0) / 100.0f;
+		return Mathf.Clamp(OverlimitEffectMultiplier + bonus, 0.0f, 1.0f);
 	}
 
 	private static int ScalePositiveValue(int value, float multiplier)

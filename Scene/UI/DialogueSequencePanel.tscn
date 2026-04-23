@@ -36,15 +36,23 @@ theme_override_constants/margin_right = 10
 theme_override_constants/margin_bottom = 8
 
 [node name="VBox" type="VBoxContainer" parent="Panel/Margin"]
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+size_flags_horizontal = 3
 theme_override_constants/separation = 4
 
 [node name="SpeakerLabel" type="Label" parent="Panel/Margin/VBox"]
+size_flags_horizontal = 3
 theme_override_colors/font_color = Color(1, 0.92, 0.7, 1)
 theme_override_font_sizes/font_size = 16
 text = "旁白"
 
 [node name="ContentLabel" type="Label" parent="Panel/Margin/VBox"]
-custom_minimum_size = Vector2(0, 24)
+custom_minimum_size = Vector2(280, 24)
+size_flags_horizontal = 3
 theme_override_font_sizes/font_size = 16
 autowrap_mode = 2
 text = "..."

@@ -25,6 +25,9 @@ public partial class PagedTutorialPopup : CanvasLayer
 		Layer = 420;
 		_titleLabel = GetNode<Label>("Root/Panel/Margin/Content/Header/Title");
 		_contentLabel = GetNode<RichTextLabel>("Root/Panel/Margin/Content/Body");
+		_contentLabel.AutowrapMode = TextServer.AutowrapMode.WordSmart;
+		_contentLabel.SizeFlagsHorizontal = Control.SizeFlags.ExpandFill;
+		_contentLabel.CustomMinimumSize = new Vector2(264.0f, 72.0f);
 		_prevButton = GetNode<Button>("Root/Panel/Margin/Content/Footer/PrevButton");
 		_nextButton = GetNode<Button>("Root/Panel/Margin/Content/Footer/NextButton");
 		_closeButton = GetNode<Button>("Root/Panel/Margin/Content/Header/CloseButton");

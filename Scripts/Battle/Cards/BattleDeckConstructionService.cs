@@ -18,7 +18,7 @@ public sealed class BattleDeckConstructionService
 
 	public IReadOnlyList<BattleCardTemplate> GetAvailableCardPool(ProgressionSnapshot snapshot)
 	{
-		return _library.Entries
+		return _library.AllEntries
 			.Where(template => template != null && (template.CanCarryNormally(snapshot) || template.CanCarryOverlimit(snapshot)))
 			.OrderBy(template => template.CardId, StringComparer.Ordinal)
 			.ToArray();
@@ -34,7 +34,7 @@ public sealed class BattleDeckConstructionService
 			EffectiveCycleCardLimit = Math.Max(0, _rules.BaseCycleCardLimit),
 			EffectiveQuickCycleCardLimit = Math.Max(0, _rules.BaseQuickCycleCardLimit),
 			EffectiveEnergyPositiveCardLimit = Math.Max(0, _rules.BaseEnergyPositiveCardLimit),
-			EffectiveOverlimitCarrySlots = Math.Max(0, _rules.BaseOverlimitCarrySlots),
+			EffectiveOverlimitCarrySlots = Math.Max(0, _rules.BaseOverlimitCarrySlots + progression.OverlimitCarrySlotBonus),
 		};
 
 		Dictionary<string, int> copyCounts = new(StringComparer.Ordinal);
@@ -58,8 +58,9 @@ public sealed class BattleDeckConstructionService
 
 			BattleDeckResolvedCard resolvedCard = new(
 				template,
+				progression,
 				usesOverlimitCarry: canCarryOverlimit,
-				appliedBuildPoints: Math.Max(0, template.BuildPoints) + (canCarryOverlimit ? Math.Max(0, template.OverlimitExtraBuildPoints) : 0));
+				appliedBuildPoints: template.GetAppliedBuildPoints(canCarryOverlimit));
 			result.ResolvedCards.Add(resolvedCard);
 			result.ResolvedTemplates.Add(template);
 			copyCounts.TryGetValue(cardId, out int currentCopies);

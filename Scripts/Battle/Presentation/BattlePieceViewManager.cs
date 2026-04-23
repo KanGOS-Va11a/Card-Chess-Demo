@@ -13,6 +13,13 @@ namespace CardChessDemo.Battle.Presentation;
 public sealed class BattlePieceViewManager
 {
     private static readonly Color ActiveEnemyTurnBorderColor = new(1.0f, 0.22f, 0.22f, 0.95f);
+    private static readonly Texture2D? TileCrashSheet = GD.Load<Texture2D>("res://Assets/Vfx/tile_crash.png");
+    private static SpriteFrames? _tileCrashFrames;
+    private const string TileCrashAnimationName = "play";
+    private const int TileCrashFrameWidth = 16;
+    private const int TileCrashFrameHeight = 16;
+    private const int TileCrashFrameCount = 8;
+    private const double TileCrashAnimationFps = 18.0d;
     private readonly Node _pieceRoot;
     private readonly Node _killFxRoot;
     private readonly BattlePrefabLibrary _prefabLibrary;
@@ -426,6 +433,50 @@ public sealed class BattlePieceViewManager
         }
     }
 
+    public async Task PlayTileCrashEffectAsync(IEnumerable<Vector2I> cells, BattleRoomTemplate room)
+    {
+        Vector2I[] cellArray = cells?
+            .Distinct()
+            .ToArray() ?? Array.Empty<Vector2I>();
+        if (cellArray.Length == 0)
+        {
+            return;
+        }
+
+        SpriteFrames? frames = GetTileCrashFrames();
+        if (frames == null)
+        {
+            return;
+        }
+
+        foreach (Vector2I cell in cellArray)
+        {
+            AnimatedSprite2D effect = new()
+            {
+                Name = $"TileCrash_{cell.X}_{cell.Y}",
+                SpriteFrames = frames,
+                Animation = TileCrashAnimationName,
+                Centered = true,
+                Position = room.CellToLocalCenter(cell),
+                ZIndex = 120,
+            };
+            effect.AnimationFinished += () => effect.QueueFree();
+            _killFxRoot.AddChild(effect);
+            effect.Play(TileCrashAnimationName);
+        }
+
+        SceneTree? tree = _killFxRoot.GetTree();
+        if (tree == null)
+        {
+            return;
+        }
+
+        double animationDurationSeconds = Math.Max(
+            0.12d,
+            frames.GetFrameCount(TileCrashAnimationName) / Math.Max(1.0d, frames.GetAnimationSpeed(TileCrashAnimationName))) + 0.03d;
+        await _killFxRoot.ToSignal(tree.CreateTimer(animationDurationSeconds), SceneTreeTimer.SignalName.Timeout);
+    }
+
     public void PlayTintPulse(string objectId, Color tintColor)
     {
         if (_views.TryGetValue(objectId, out BattleAnimatedViewBase? view))
@@ -467,7 +518,7 @@ public sealed class BattlePieceViewManager
             && boardObject.ObjectType == BoardObjectType.Unit
             ? _enemyLibrary?.FindEntry(boardObject.DefinitionId)
             : null;
-        PackedScene? prefabScene = enemyDefinition?.PrefabScene ?? entry?.PrefabScene;
+        PackedScene? prefabScene = entry?.PrefabScene ?? enemyDefinition?.PrefabScene;
         if (prefabScene == null)
         {
             return null;
@@ -517,5 +568,40 @@ public sealed class BattlePieceViewManager
         }
 
         return ImageTexture.CreateFromImage(image);
+    }
+
+    private static SpriteFrames? GetTileCrashFrames()
+    {
+        if (_tileCrashFrames != null)
+        {
+            return _tileCrashFrames;
+        }
+
+        if (TileCrashSheet == null)
+        {
+            return null;
+        }
+
+        SpriteFrames frames = new();
+        frames.AddAnimation(TileCrashAnimationName);
+        frames.SetAnimationLoop(TileCrashAnimationName, false);
+        frames.SetAnimationSpeed(TileCrashAnimationName, TileCrashAnimationFps);
+
+        for (int frameIndex = 0; frameIndex < TileCrashFrameCount; frameIndex++)
+        {
+            AtlasTexture atlas = new()
+            {
+                Atlas = TileCrashSheet,
+                Region = new Rect2(
+                    frameIndex * TileCrashFrameWidth,
+                    0.0f,
+                    TileCrashFrameWidth,
+                    TileCrashFrameHeight),
+            };
+            frames.AddFrame(TileCrashAnimationName, atlas);
+        }
+
+        _tileCrashFrames = frames;
+        return _tileCrashFrames;
     }
 }

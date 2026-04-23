@@ -35,6 +35,7 @@ public sealed class BattleRewardResolver
 
 		bundle.RuntimeFlags["reward_context_encounter_id"] = context.EncounterId;
 		bundle.RuntimeFlags["reward_context_room_layout_id"] = context.RoomLayoutId;
+		AppendEncounteredEnemyFlags(bundle, context);
 
 		AppendDefeatedEnemyRewards(bundle, context);
 
@@ -60,6 +61,33 @@ public sealed class BattleRewardResolver
 		}
 
 		return bundle;
+	}
+
+	private static void AppendEncounteredEnemyFlags(RewardBundle bundle, BattleRewardContext context)
+	{
+		if (!context.RuntimeFlags.TryGetValue("encountered_enemy_definition_ids", out Variant encounteredEnemyIdsVariant)
+			|| encounteredEnemyIdsVariant.Obj is not Godot.Collections.Array encounteredEnemyIds)
+		{
+			return;
+		}
+
+		Godot.Collections.Array<string> uniqueEncounteredIds = new();
+		HashSet<string> seenIds = new(StringComparer.Ordinal);
+		foreach (Variant encounteredEnemyIdVariant in encounteredEnemyIds)
+		{
+			string encounteredEnemyId = encounteredEnemyIdVariant.AsString();
+			if (string.IsNullOrWhiteSpace(encounteredEnemyId) || !seenIds.Add(encounteredEnemyId))
+			{
+				continue;
+			}
+
+			uniqueEncounteredIds.Add(encounteredEnemyId);
+		}
+
+		if (uniqueEncounteredIds.Count > 0)
+		{
+			bundle.RuntimeFlags["encountered_enemy_definition_ids"] = uniqueEncounteredIds;
+		}
 	}
 
 	private void AppendDefeatedEnemyRewards(RewardBundle bundle, BattleRewardContext context)
