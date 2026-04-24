@@ -44,6 +44,12 @@ public partial class BattleObstacleView : BattleAnimatedViewBase
             return null;
         }
 
+        if (State.ObjectId.StartsWith("arakawa_wall_", System.StringComparison.Ordinal))
+        {
+            return ResourceLoader.Load<Texture2D>(BreakableArakawaObstaclePath)
+                ?? ResourceLoader.Load<Texture2D>(BreakableObstaclePath);
+        }
+
         if (State.DefinitionId == "battle_obstacle_slow")
         {
             return ResourceLoader.Load<Texture2D>(SlowObstaclePath);
@@ -51,12 +57,6 @@ public partial class BattleObstacleView : BattleAnimatedViewBase
 
         if (State.DefinitionId == "battle_obstacle_wall")
         {
-            if (State.ObjectId.StartsWith("arakawa_wall_", System.StringComparison.Ordinal))
-            {
-                return ResourceLoader.Load<Texture2D>(BreakableArakawaObstaclePath)
-                    ?? ResourceLoader.Load<Texture2D>(BreakableObstaclePath);
-            }
-
             return ResourceLoader.Load<Texture2D>(UnbreakableObstaclePath);
         }
 

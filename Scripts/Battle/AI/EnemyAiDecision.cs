@@ -53,9 +53,9 @@ public sealed class EnemyAiDecision
         return new EnemyAiDecision(EnemyAiDecisionType.Wait, Vector2I.Zero, string.Empty, null, 0, 0, string.Empty, Vector2I.Zero, System.Array.Empty<Vector2I>());
     }
 
-    public static EnemyAiDecision Move(Vector2I targetCell)
+    public static EnemyAiDecision Move(Vector2I targetCell, string targetObjectId = "")
     {
-        return new EnemyAiDecision(EnemyAiDecisionType.Move, targetCell, string.Empty, null, 0, 0, string.Empty, Vector2I.Zero, System.Array.Empty<Vector2I>());
+        return new EnemyAiDecision(EnemyAiDecisionType.Move, targetCell, targetObjectId, null, 0, 0, string.Empty, Vector2I.Zero, System.Array.Empty<Vector2I>());
     }
 
     public static EnemyAiDecision Attack(string targetObjectId)

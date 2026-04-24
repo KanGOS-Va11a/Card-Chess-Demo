@@ -108,9 +108,7 @@ public partial class SystemFeatureOverlayAdapter : Node
 			return;
 		}
 
-		Player? player = _controller.PlayerPath.IsEmpty
-			? null
-			: _controller.GetNodeOrNull<Player>(_controller.PlayerPath);
+		Player? player = ResolvePlayer();
 		if (player == null)
 		{
 			_statusLabel.Text = "Player node was not found";
@@ -182,12 +180,7 @@ public partial class SystemFeatureOverlayAdapter : Node
 
 	private void SetPlayerInputEnabled(bool enabled)
 	{
-		if (_controller == null)
-		{
-			return;
-		}
-
-		Node? player = _controller.PlayerPath.IsEmpty ? null : _controller.GetNodeOrNull(_controller.PlayerPath);
+		Player? player = ResolvePlayer();
 		if (player == null)
 		{
 			return;
@@ -197,5 +190,21 @@ public partial class SystemFeatureOverlayAdapter : Node
 		player.SetProcess(enabled);
 		player.SetProcessInput(enabled);
 		player.SetProcessUnhandledInput(enabled);
+	}
+
+	private Player? ResolvePlayer()
+	{
+		if (_controller == null)
+		{
+			return null;
+		}
+
+		if (!_controller.PlayerPath.IsEmpty && _controller.GetNodeOrNull<Player>(_controller.PlayerPath) is Player byPath)
+		{
+			return byPath;
+		}
+
+		Node? sceneRoot = _controller.GetTree().CurrentScene ?? _controller;
+		return sceneRoot.FindChild("Player", true, false) as Player;
 	}
 }

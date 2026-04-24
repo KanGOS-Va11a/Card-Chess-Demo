@@ -32,6 +32,7 @@
 [ext_resource type="PackedScene" uid="uid://dalkhwp0kfcej" path="res://Scene/Battle/Rooms/Authoring/sewer_gatekeeper/room_02.tscn" id="40_gate_02"]
 [ext_resource type="PackedScene" uid="uid://csih2geom2noy" path="res://Scene/Battle/Rooms/Authoring/sewer_gatekeeper/room_03.tscn" id="41_gate_03"]
 [ext_resource type="PackedScene" uid="uid://b7ms6tivpp65w" path="res://Scene/Battle/Rooms/Authoring/boss_rust_captain/room_01.tscn" id="44_boss_01"]
+[ext_resource type="PackedScene" uid="uid://bknwj5873nsol" path="res://Scene/Battle/Rooms/Tutorial/Scene03LearningEmptyRoom.tscn" id="45_scene03_learning"]
 
 [sub_resource type="Resource" id="Pool_scene01_tutorial"]
 script = ExtResource("2_u1q87")
@@ -93,6 +94,12 @@ RoomPoolId = "boss_rust_captain"
 EnemyTypeId = "boss_rust_captain"
 RoomScenes = [ExtResource("44_boss_01")]
 
+[sub_resource type="Resource" id="Pool_scene03_learning_enemy"]
+script = ExtResource("2_u1q87")
+RoomPoolId = "scene03_learning_enemy"
+EnemyTypeId = "scene01_tutorial_enemy"
+RoomScenes = [ExtResource("45_scene03_learning")]
+
 [resource]
 script = ExtResource("1_3anlp")
-Entries = [SubResource("Pool_scene01_tutorial"), SubResource("Pool_pirate_blocker"), SubResource("Pool_pirate_scout"), SubResource("Pool_pirate_shocker"), SubResource("Pool_pirate_gunner"), SubResource("Pool_pirate_pipe_bomber"), SubResource("Pool_pirate_brute_elite"), SubResource("Pool_scrap_medic_elite"), SubResource("Pool_sewer_gatekeeper"), SubResource("Pool_boss_rust_captain")]
+Entries = [SubResource("Pool_scene01_tutorial"), SubResource("Pool_pirate_blocker"), SubResource("Pool_pirate_scout"), SubResource("Pool_pirate_shocker"), SubResource("Pool_pirate_gunner"), SubResource("Pool_pirate_pipe_bomber"), SubResource("Pool_pirate_brute_elite"), SubResource("Pool_scrap_medic_elite"), SubResource("Pool_sewer_gatekeeper"), SubResource("Pool_boss_rust_captain"), SubResource("Pool_scene03_learning_enemy")]

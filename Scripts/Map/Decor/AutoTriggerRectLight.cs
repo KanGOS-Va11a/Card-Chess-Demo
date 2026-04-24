@@ -91,7 +91,7 @@ public partial class AutoTriggerRectLight : Node2D
 		int texHeight = Mathf.Clamp(height, 16, 2048);
 		float softness = Mathf.Clamp(EdgeSoftness, 0.0f, 0.49f);
 
-		Image image = Image.Create(texWidth, texHeight, false, Image.Format.Rgba8);
+		Image image = Image.CreateEmpty(texWidth, texHeight, false, Image.Format.Rgba8);
 		for (int y = 0; y < texHeight; y++)
 		{
 			float v = (y + 0.5f) / texHeight;

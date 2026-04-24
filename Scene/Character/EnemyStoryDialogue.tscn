@@ -7,20 +7,15 @@
 
 [sub_resource type="Resource" id="DialoguePage_1"]
 script = ExtResource("4_page_script")
-Speaker = "荒川"
-Content = "前面那个家伙堵住了通路。先别急着动手，先记住最基础的操作。"
+Speaker = "主角"
+Content = "先拿这名搭船客练手，至少要把最基础的战斗规则摸明白。"
 
 [sub_resource type="Resource" id="DialoguePage_2"]
 script = ExtResource("4_page_script")
-Speaker = "荒川"
-Content = "进战斗后你会靠手牌来移动、攻击和防御。先把这一场当成练习。"
-
-[sub_resource type="Resource" id="DialoguePage_3"]
-script = ExtResource("4_page_script")
-Speaker = "主角"
-Content = "明白了。先把它解决掉，再继续往前。"
+Speaker = "旁白"
+Content = "进战斗后先观察状态、基础动作和手牌的配合，再把眼前的敌人解决掉。"
 
 [node name="EnemyStoryDialogue" instance=ExtResource("1_base")]
 script = ExtResource("2_script")
 DialoguePanelScene = ExtResource("3_dialogue")
-DialoguePages = Array[ExtResource("4_page_script")]([SubResource("DialoguePage_1"), SubResource("DialoguePage_2"), SubResource("DialoguePage_3")])
+DialoguePages = Array[ExtResource("4_page_script")]([SubResource("DialoguePage_1"), SubResource("DialoguePage_2")])

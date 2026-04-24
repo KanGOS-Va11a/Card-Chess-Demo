@@ -315,7 +315,7 @@ public sealed class BattleActionService
         BoardObjectSpawnDefinition spawn = new()
         {
             ObjectId = $"arakawa_wall_{Guid.NewGuid():N}"[..21],
-            DefinitionId = "battle_obstacle_wall",
+            DefinitionId = "battle_obstacle_destructible",
             ObjectType = BoardObjectType.Obstacle,
             Cell = targetCell,
             Faction = BoardObjectFaction.World,

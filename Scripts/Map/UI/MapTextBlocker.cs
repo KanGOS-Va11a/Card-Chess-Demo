@@ -18,7 +18,7 @@ public static class MapTextBlocker
 			return true;
 		}
 
-		if (MapDialogueService.HasBlockingDialogue())
+		if (MapDialogueService.IsDialogueVisible(context))
 		{
 			return true;
 		}

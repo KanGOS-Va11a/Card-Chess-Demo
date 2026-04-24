@@ -7,7 +7,7 @@
 [sub_resource type="Resource" id="Enemy_scene01_tutorial"]
 script = ExtResource("2_definition")
 DefinitionId = "scene01_tutorial_enemy"
-DisplayName = "教程拾荒兵"
+DisplayName = "搭船客拾荒兵"
 PrefabScene = ExtResource("3_enemy_scene")
 AiId = "scene01_learning"
 MaxHp = 6

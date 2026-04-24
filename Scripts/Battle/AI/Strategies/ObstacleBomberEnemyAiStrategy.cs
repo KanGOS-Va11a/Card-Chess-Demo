@@ -12,7 +12,6 @@ public sealed class ObstacleBomberEnemyAiStrategy : IEnemyAiStrategy
     public EnemyAiDecision Decide(EnemyAiContext context)
     {
         BoardObject? nearestOpponent = EnemyAiTactics.FindNearestOpponentUnit(context);
-        BoardObject? obstacleTarget = FindNearestDestructibleObstacle(context);
         if (nearestOpponent != null)
         {
             BoardObject? playerAttackTarget = EnemyAiTactics.FindOpponentAttackTargetInRange(context);
@@ -21,47 +20,59 @@ public sealed class ObstacleBomberEnemyAiStrategy : IEnemyAiStrategy
                 return EnemyAiDecision.Attack(playerAttackTarget.ObjectId);
             }
 
-            Vector2I? playerApproachCell = EnemyAiTactics.FindBestApproachCell(
+            EnemyAiTactics.PathBlockAnalysis playerRouteAnalysis = EnemyAiTactics.AnalyzePathToTarget(
                 context,
                 nearestOpponent,
                 desiredMaxRange: context.SelfState.AttackRange,
                 desiredMinRange: Math.Min(2, context.SelfState.AttackRange),
                 preferFlank: true);
-            if (playerApproachCell.HasValue)
+            if (playerRouteAnalysis.HasOpenRoute)
             {
-                return EnemyAiDecision.Move(playerApproachCell.Value);
+                return playerRouteAnalysis.MoveCell.HasValue
+                    ? EnemyAiDecision.Move(playerRouteAnalysis.MoveCell.Value, nearestOpponent.ObjectId)
+                    : EnemyAiDecision.Wait();
             }
 
-            if (obstacleTarget != null
-                && GetManhattanDistance(context.Self.Cell, obstacleTarget.Cell) <= context.SelfState.AttackRange)
+            if (playerRouteAnalysis.BlockingObstacle != null
+                && GetManhattanDistance(context.Self.Cell, playerRouteAnalysis.BlockingObstacle.Cell) <= context.SelfState.AttackRange)
             {
-                return EnemyAiDecision.Attack(obstacleTarget.ObjectId);
+                return EnemyAiDecision.Attack(playerRouteAnalysis.BlockingObstacle.ObjectId);
+            }
+
+            if (playerRouteAnalysis.BlockingObstacle != null)
+            {
+                Vector2I? obstacleApproachCell = EnemyAiTactics.FindBestApproachCell(
+                    context,
+                    playerRouteAnalysis.BlockingObstacle,
+                    desiredMaxRange: context.SelfState.AttackRange,
+                    desiredMinRange: 1,
+                    preferFlank: false);
+                if (obstacleApproachCell.HasValue)
+                {
+                    return EnemyAiDecision.Move(obstacleApproachCell.Value, playerRouteAnalysis.BlockingObstacle.ObjectId);
+                }
             }
         }
 
-        BoardObject? moveTarget = nearestOpponent ?? obstacleTarget;
-        if (moveTarget == null)
+        BoardObject? obstacleTarget = FindNearestDestructibleObstacle(context);
+        if (obstacleTarget == null)
         {
             return EnemyAiDecision.Wait();
         }
 
-        Vector2I? nextCell = moveTarget.ObjectType == BoardObjectType.Unit
-            ? EnemyAiTactics.FindBestApproachCell(
-                context,
-                moveTarget,
-                desiredMaxRange: context.SelfState.AttackRange,
-                desiredMinRange: Math.Min(2, context.SelfState.AttackRange),
-                preferFlank: true)
-            : context.Pathfinder
-                .FindReachableCells(context.Self.ObjectId, context.Self.Cell, context.SelfState.MovePointsPerTurn)
-                .Where(cell => cell != context.Self.Cell)
-                .OrderBy(cell => GetManhattanDistance(cell, moveTarget.Cell))
-                .ThenBy(cell => cell.Y)
-                .ThenBy(cell => cell.X)
-                .Select(cell => (Vector2I?)cell)
-                .FirstOrDefault();
+        if (GetManhattanDistance(context.Self.Cell, obstacleTarget.Cell) <= context.SelfState.AttackRange)
+        {
+            return EnemyAiDecision.Attack(obstacleTarget.ObjectId);
+        }
 
-        return nextCell.HasValue ? EnemyAiDecision.Move(nextCell.Value) : EnemyAiDecision.Wait();
+        Vector2I? nextCell = EnemyAiTactics.FindBestApproachCell(
+            context,
+            obstacleTarget,
+            desiredMaxRange: context.SelfState.AttackRange,
+            desiredMinRange: 1,
+            preferFlank: false);
+
+        return nextCell.HasValue ? EnemyAiDecision.Move(nextCell.Value, obstacleTarget.ObjectId) : EnemyAiDecision.Wait();
     }
 
     private static BoardObject? FindNearestDestructibleObstacle(EnemyAiContext context)

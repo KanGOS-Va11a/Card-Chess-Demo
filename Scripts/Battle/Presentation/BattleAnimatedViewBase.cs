@@ -90,6 +90,66 @@ private static readonly FontFile TelegraphFont = GD.Load<FontFile>("res://Assets
 		await ToSignal(_boardMoveTween, Tween.SignalName.Finished);
 	}
 
+	public async System.Threading.Tasks.Task TweenBoardPositionWithSpriteSpinAsync(
+		Vector2 localCenter,
+		double duration,
+		float spinDegrees = 360.0f)
+	{
+		if (duration <= 0.0d)
+		{
+			SetBoardPosition(localCenter);
+			return;
+		}
+
+		_animatedSprite ??= GetNodeOrNull<AnimatedSprite2D>("AnimatedSprite2D");
+		if (_animatedSprite == null)
+		{
+			await TweenBoardPositionAsync(localCenter, duration);
+			return;
+		}
+
+		if (_animatedSprite.SpriteFrames == null)
+		{
+			_animatedSprite.SpriteFrames = BuildFallbackFrames();
+			ConfigureAnimatedSprite(_animatedSprite);
+			ApplySpriteFacing();
+		}
+
+		Vector2 originalPosition = _animatedSprite.Position;
+		bool originalCentered = _animatedSprite.Centered;
+		float originalRotationDegrees = _animatedSprite.RotationDegrees;
+		bool adjustedCentering = false;
+
+		Texture2D? frameTexture = CaptureCurrentFrameTexture() ?? CaptureAnimationFrameTexture("idle", 0);
+		if (!originalCentered && frameTexture != null)
+		{
+			Vector2 halfSize = frameTexture.GetSize() * 0.5f;
+			_animatedSprite.Centered = true;
+			_animatedSprite.Position = originalPosition + halfSize;
+			adjustedCentering = true;
+		}
+
+		_boardMoveTween?.Kill();
+		_boardMoveTween = CreateTween();
+		_boardMoveTween.SetParallel();
+		_boardMoveTween.TweenProperty(this, nameof(BoardAnchor), localCenter, duration)
+			.SetEase(Tween.EaseType.InOut)
+			.SetTrans(Tween.TransitionType.Sine);
+		_boardMoveTween.TweenProperty(_animatedSprite, "rotation_degrees", originalRotationDegrees + spinDegrees, duration)
+			.SetEase(Tween.EaseType.InOut)
+			.SetTrans(Tween.TransitionType.Linear);
+		await ToSignal(_boardMoveTween, Tween.SignalName.Finished);
+
+		_boardAnchor = localCenter;
+		ApplyVisualPosition();
+		_animatedSprite.RotationDegrees = originalRotationDegrees;
+		if (adjustedCentering)
+		{
+			_animatedSprite.Centered = originalCentered;
+			_animatedSprite.Position = originalPosition;
+		}
+	}
+
 	public virtual void PlayIdle() => PlayCue("idle");
 	public virtual void PlayMove() => PlayCue("move");
 	public virtual void PlayAction() => PlayCue("action");

@@ -412,7 +412,7 @@ VignetteStrength = 0.26
 [node name="WallLayer" type="TileMapLayer" parent="." unique_id=1507794473]
 modulate = Color(0.72, 0.8, 0.94, 1)
 y_sort_enabled = true
-tile_map_data = PackedByteArray("AAD9/wAAAQAAAAEAAAD9//3/AQAAAAEAAAD9//7/AQAAAAEAAAD9////AQAAAAEAAAD9//n/AQAAAAEAAAD9//r/AQAAAAEAAAD9//v/AQAAAAEAAAD9//z/AQAAAAEAAAACAAAAAQAAAAEAADACAP//AQAAAAEAADACAP7/AQAAAAEAADACAP3/AQAAAAEAADACAPz/AQAAAAEAADACAPv/AQAAAAEAADACAPr/AQAAAAEAADACAPn/AQAAAAEAADABAAEAAQADAAMAAAAAAAEAAQADAAMAAAD//wEAAQADAAMAAAD+/wEAAQADAAMAAAD9/wEAAQAAAAIAAAACAAEAAQACAAIAAAD+//z/AQABAAAAAAABAPz/AAACAAEAADABAAAAAAAGAAAAAAD+////AAADAAYAAAD///7/AAADAAYAAAABAP7/AAACAAIAAAD+/wAAAAACAAYAADABAP//AAADAAQAAAABAP3/AAALAAEAAAD+//7/AAALAAEAAGD///r/AAACAAEAAGAAAPv/AAABAAEAAAAAAPr/AAAOAAEAAAD9//j/AQAAAAEAAAD9//f/AQAAAAEAAAD9//b/AQAAAAEAAAACAPj/AQACAAEAAAACAPf/AQACAAEAAAACAPb/AQACAAEAAAA=")
+tile_map_data = PackedByteArray("AAD9/wAAAQAAAAEAAAD9//3/AQAAAAEAAAD9//7/AQAAAAEAAAD9////AQAAAAEAAAD9//n/AQAAAAEAAAD9//r/AQAAAAEAAAD9//v/AQAAAAEAAAD9//z/AQAAAAEAAAACAAAAAQAAAAEAADACAP//AQAAAAEAADACAP7/AQAAAAEAADACAP3/AQAAAAEAADACAPz/AQAAAAEAADACAPv/AQAAAAEAADACAPr/AQAAAAEAADACAPn/AQAAAAEAADABAAEAAQADAAMAAAAAAAEAAQADAAMAAAD//wEAAQADAAMAAAD+/wEAAQADAAMAAAD9/wEAAQAAAAIAAAACAAEAAQACAAIAAAABAPz/AAACAAEAADD///r/AAACAAEAAGAAAPv/AAABAAEAAAAAAPr/AAAOAAEAAAD9//j/AQAAAAEAAAD9//f/AQAAAAEAAAD9//b/AQAAAAEAAAACAPj/AQACAAEAAAACAPf/AQACAAEAAAACAPb/AQACAAEAAAABAP//AAAEAAIAAAABAAAAAAAFAAIAAAD+////AAAOAAQAAAA=")
 tile_set = SubResource("TileSet_0mp48")
 
 [node name="GroundLayer" type="TileMapLayer" parent="." unique_id=498475698]
@@ -430,7 +430,6 @@ tile_set = ExtResource("99_player_spawn_tiles")
 
 [node name="InteractionLayer" type="TileMapLayer" parent="WorldObjects" unique_id=1059592307]
 y_sort_enabled = true
-tile_map_data = PackedByteArray()
 tile_set = ExtResource("22_interaction_tiles")
 
 [node name="GridInteractables" type="Node2D" parent="WorldObjects" unique_id=1059592308]
@@ -438,33 +437,33 @@ y_sort_enabled = true
 
 [node name="Cabinet01" parent="WorldObjects/GridInteractables" unique_id=1059592309 instance=ExtResource("23_cabinet01")]
 position = Vector2(24, -72)
+InteractionId = "scene01_cabinet_01"
 UseGridPlacement = true
 Cell = Vector2i(1, -5)
-InteractionId = "scene01_cabinet_01"
 
 [node name="Door02" parent="WorldObjects" unique_id=688908958 instance=ExtResource("21_door02")]
 position = Vector2(-24, -168)
+InteractionId = "scene01_door_02"
 UseGridPlacement = true
 Cell = Vector2i(-2, -11)
-InteractionId = "scene01_door_02"
 
 [node name="Door03" parent="WorldObjects" unique_id=1311460087 instance=ExtResource("21_door02")]
 position = Vector2(24, -168)
+InteractionId = "scene01_door_03"
 UseGridPlacement = true
 Cell = Vector2i(1, -11)
-InteractionId = "scene01_door_03"
 
 [node name="Door04" parent="WorldObjects" unique_id=221917355 instance=ExtResource("21_door02")]
 position = Vector2(8, -168)
+InteractionId = "scene01_door_04"
 UseGridPlacement = true
 Cell = Vector2i(0, -11)
-InteractionId = "scene01_door_04"
 
 [node name="Door05" parent="WorldObjects" unique_id=1749598901 instance=ExtResource("21_door02")]
 position = Vector2(-8, -168)
+InteractionId = "scene01_door_05"
 UseGridPlacement = true
 Cell = Vector2i(-1, -11)
-InteractionId = "scene01_door_05"
 
 [node name="CanvasModulate" type="CanvasModulate" parent="." unique_id=435870026]
 visible = false

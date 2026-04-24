@@ -108,14 +108,18 @@ public partial class SceneDoor : InteractableTemplate
 		globalSession?.SetPendingSceneTransfer(targetScenePath, TargetSpawnId);
 
 		_isTransitioning = true;
-		Error result = NextScene != null
-			? GetTree().ChangeSceneToPacked(NextScene)
-			: GetTree().ChangeSceneToFile(NextScenePath.Trim());
-
-		if (result != Error.Ok)
+		if (!MapSceneTransitionHelper.TryChangeSceneWithDissolve(
+			this,
+			NextScene,
+			NextScenePath,
+			FadeOutSeconds,
+			BlackScreenHoldSeconds,
+			FadeInSeconds,
+			out string failureReason,
+			HandleDeferredSceneFailure))
 		{
 			_isTransitioning = false;
-			GD.PushError($"SceneDoor: scene change failed, error={result}");
+			GD.PushError($"SceneDoor: {failureReason}");
 		}
 	}
 
@@ -130,6 +134,12 @@ public partial class SceneDoor : InteractableTemplate
 	}
 
 	private void HandleDeferredBattleFailure(string failureReason)
+	{
+		_isTransitioning = false;
+		GD.PushError($"SceneDoor: {failureReason}");
+	}
+
+	private void HandleDeferredSceneFailure(string failureReason)
 	{
 		_isTransitioning = false;
 		GD.PushError($"SceneDoor: {failureReason}");

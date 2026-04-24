@@ -7,12 +7,14 @@ namespace CardChessDemo.UI.Dialogue;
 
 public partial class DialogueSequencePanel : CanvasLayer
 {
-	private const float PanelWidth = 300.0f;
+	private const float MinPanelWidth = 236.0f;
+	private const float MaxPanelWidth = 300.0f;
 	private const float MinPanelHeight = 58.0f;
-	private const float MaxPanelHeight = 108.0f;
-	private const float PanelBottom = 174.0f;
-	private const float HorizontalPadding = 20.0f;
+	private const float HorizontalPadding = 22.0f;
 	private const float VerticalPadding = 20.0f;
+	private const float ScreenSideMargin = 10.0f;
+	private const float ScreenBottomMargin = 6.0f;
+	private const float ScreenTopMargin = 8.0f;
 
 	private Panel _panel = null!;
 	private Label _speakerLabel = null!;
@@ -51,6 +53,7 @@ public partial class DialogueSequencePanel : CanvasLayer
 		_speakerLabel = GetNode<Label>("Panel/Margin/VBox/SpeakerLabel");
 		_contentLabel = GetNode<Label>("Panel/Margin/VBox/ContentLabel");
 		ConfigureLayout();
+		UpdatePanelSize();
 		SetProcessUnhandledInput(true);
 	}
 
@@ -120,33 +123,49 @@ public partial class DialogueSequencePanel : CanvasLayer
 
 	private void UpdatePanelSize()
 	{
+		Vector2 viewportSize = GetViewport()?.GetVisibleRect().Size ?? Vector2.Zero;
+		float panelWidth = Mathf.Clamp(viewportSize.X - ScreenSideMargin * 2.0f, MinPanelWidth, MaxPanelWidth);
+		float contentWidth = Mathf.Max(80.0f, panelWidth - HorizontalPadding);
+
 		Font? contentFont = _contentLabel.GetThemeFont("font");
-		if (contentFont == null)
+		Font? speakerFont = _speakerLabel.GetThemeFont("font");
+		if (contentFont == null || speakerFont == null)
 		{
 			return;
 		}
 
 		int speakerFontSize = _speakerLabel.GetThemeFontSize("font_size");
 		int contentFontSize = _contentLabel.GetThemeFontSize("font_size");
-		float contentWidth = Mathf.Max(32.0f, PanelWidth - HorizontalPadding);
+		Vector2 speakerSize = speakerFont.GetMultilineStringSize(
+			_speakerLabel.Text ?? string.Empty,
+			HorizontalAlignment.Left,
+			contentWidth,
+			speakerFontSize);
 		Vector2 contentSize = contentFont.GetMultilineStringSize(
 			_contentLabel.Text ?? string.Empty,
 			HorizontalAlignment.Left,
 			contentWidth,
 			contentFontSize);
 
-		float speakerHeight = speakerFontSize + 4.0f;
-		float desiredHeight = Mathf.Clamp(contentSize.Y + speakerHeight + VerticalPadding, MinPanelHeight, MaxPanelHeight);
-		_panel.OffsetBottom = PanelBottom;
-		_panel.OffsetTop = PanelBottom - desiredHeight;
+		_speakerLabel.CustomMinimumSize = new Vector2(contentWidth, 0.0f);
+		_contentLabel.CustomMinimumSize = new Vector2(contentWidth, 0.0f);
+
+		float speakerHeight = Mathf.Max(speakerFontSize + 4.0f, speakerSize.Y);
+		float maxHeight = Mathf.Max(MinPanelHeight, viewportSize.Y - ScreenTopMargin - ScreenBottomMargin);
+		float desiredHeight = Mathf.Clamp(contentSize.Y + speakerHeight + VerticalPadding, MinPanelHeight, maxHeight);
+		float panelBottom = viewportSize.Y - ScreenBottomMargin;
+		_panel.OffsetLeft = ScreenSideMargin;
+		_panel.OffsetRight = ScreenSideMargin + panelWidth;
+		_panel.OffsetBottom = panelBottom;
+		_panel.OffsetTop = panelBottom - desiredHeight;
 	}
 
 	private void ConfigureLayout()
 	{
-		float contentWidth = Mathf.Max(32.0f, PanelWidth - HorizontalPadding);
+		_speakerLabel.AutowrapMode = TextServer.AutowrapMode.WordSmart;
 		_contentLabel.AutowrapMode = TextServer.AutowrapMode.WordSmart;
 		_contentLabel.SizeFlagsHorizontal = Control.SizeFlags.ExpandFill;
-		_contentLabel.CustomMinimumSize = new Vector2(contentWidth, 24.0f);
+		_contentLabel.CustomMinimumSize = new Vector2(0.0f, 24.0f);
 		_contentLabel.ClipText = false;
 
 		if (GetNodeOrNull<Control>("Panel/Margin/VBox") is Control vbox)

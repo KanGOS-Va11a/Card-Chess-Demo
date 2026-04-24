@@ -12,6 +12,8 @@ public sealed class DeckBuildSnapshot
 
 	public string BuildName { get; set; } = "default";
 
+	public int Revision { get; set; }
+
 	public bool TryValidate(out string failureReason)
 	{
 		if (CardIds.Any(string.IsNullOrWhiteSpace))
@@ -37,6 +39,7 @@ public sealed class DeckBuildSnapshot
 			["build_name"] = BuildName,
 			["card_ids"] = ToVariantArray(CardIds),
 			["relic_ids"] = ToVariantArray(RelicIds),
+			["revision"] = Revision,
 		};
 	}
 
@@ -52,6 +55,7 @@ public sealed class DeckBuildSnapshot
 			BuildName = dictionary.TryGetValue("build_name", out Variant buildName) ? buildName.AsString() : "default",
 			CardIds = dictionary.TryGetValue("card_ids", out Variant cardIds) ? ToStringArray(cardIds) : Array.Empty<string>(),
 			RelicIds = dictionary.TryGetValue("relic_ids", out Variant relicIds) ? ToStringArray(relicIds) : Array.Empty<string>(),
+			Revision = dictionary.TryGetValue("revision", out Variant revision) ? Math.Max(0, revision.AsInt32()) : 0,
 		};
 	}
 

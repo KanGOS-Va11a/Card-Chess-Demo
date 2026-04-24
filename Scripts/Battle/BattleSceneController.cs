@@ -66,31 +66,36 @@ public partial class BattleSceneController : Node2D
 	private const int DrawnRevolverBasicAttackCharges = 6;
 	private const string BattleBackgroundTexturePath = "res://Assets/Background/94180512_p2_master1200.jpg";
 	private const string BattleReturnTransitionOverlayScenePath = "res://Scene/Transitions/BattleReturnTransitionOverlay.tscn";
+	private const string AreaTitleOverlayScenePath = "res://Scene/UI/AreaTitleOverlay.tscn";
 	private const string MainMenuScenePath = "res://Scene/UI/MainMenu.tscn";
 	private const string BossRustCaptainEncounterId = "boss_rust_captain";
+	private const double InitialBattlePhaseOverlayDelaySeconds = 0.35d;
+	private const double RollSpinMovePresentationSeconds = 0.20d;
+	private const string PlayerPhaseOverlayText = "\u2014\u2014\u73A9\u5BB6\u884C\u52A8\u2014\u2014";
+	private const string EnemyPhaseOverlayText = "\u2014\u2014\u654C\u65B9\u884C\u52A8\u2014\u2014";
 	private static readonly ArakawaAbilityDefinition BuildWallAbility = new("build_wall", "\u9020\u7269", 1);
 	private static readonly ArakawaAbilityDefinition EnhanceCardAbility = new("enhance_card", "\u5F3A\u5316\u5361\u724C", 1);
 	private static readonly ArakawaAbilityDefinition EnhanceWeaponAbility = new("enhance_weapon", "\u5F3A\u5316\u6B66\u5668", 1);
 	private static readonly IReadOnlyDictionary<string, BattleCardEnhancementDefinition> PrototypeCardEnhancements =
 		new Dictionary<string, BattleCardEnhancementDefinition>(StringComparer.Ordinal)
 		{
-			["cross_slash"] = new BattleCardEnhancementDefinition("+", "婵犵數濮烽弫鍛婃叏閻戣棄鏋侀柛娑橈攻閸欏繘鏌ｉ幋锝嗩棄闁哄绶氶弻娑樷槈濮楀牊鏁鹃梺鍛婄懃缁绘﹢寮婚敐澶婄闁挎繂妫Λ鍕⒑閸濆嫷鍎庣紒鑸靛哺瀵鈽夊Ο閿嬵潔濠殿喗顨呴悧濠囧极妤ｅ啯鈷戦柛娑橈功閹冲啰绱掔紒姗堣€跨€殿喖顭烽弫鎰緞婵犲嫷鍚呴梻浣瑰缁诲倸螞椤撶倣娑㈠礋椤栨稈鎷洪梺鍛婄箓鐎氱兘宕曟惔锝囩＜闁兼悂娼ч崫铏光偓娈垮枛椤兘骞冮姀銈呯閻忓繑鐗楃€氫粙姊虹拠鏌ュ弰婵炰匠鍕彾濠电姴浼ｉ敐澶樻晩闁告挆鍜冪床闂備浇顕栭崹搴ㄥ礃閿濆棗鐦辩紓鍌氬€风欢锟犲闯椤曗偓瀹曞綊骞庨挊澶岊唹闂侀潧绻掓慨顓炍ｉ崼銉︾厪闊洦娲栧暩濡炪倖鎸搁幖顐﹀煘閹达附鍊烽柛娆忣樈濡偟绱撴担铏瑰笡閻㈩垪鈧磭鏆︽繝闈涱儏缁犵粯銇勯弮鍥嗘帡骞忓ú顏呯厸濠㈣泛鑻禒锕€顭块悷鐗堫棦閽樻繈鏌ㄩ弬娆炬綗濞存粍绮撻弻鐔衡偓娑欘焽缁犳牗銇勯妷锝呯仼闁宠鍨块弫宥夊礋椤掍焦鐦撻柣搴ゎ潐濞叉粓宕伴弽顓溾偓浣糕槈濮楀棙鍍垫俊鎻掓湰閻楁洟寮查鍫熲拻闁稿本鐟чˇ锕傛煙鐠囇呯瘈闁靛棗鍟村畷濂稿Ψ閵壯嶇幢闂備胶绮濠氬储瑜忕划鍫熷緞閹邦厾鍘电紓鍌欓檷閸ㄥ綊寮搁悢鍏肩厓闂佸灝顑呴悘瀵糕偓娈垮枛閻栧ジ骞冨▎鎾崇骇闁规惌鍘介ˉ瀣繆閻愵亜鈧呮媼閿濆洨涓嶉柟鎹愵嚙缁犳牗淇婇妶鍌氫壕濡炪値鍋呯换鍫ャ€侀弴銏狀潊闁绘鍋ｉ崑鏍⒑鐠囨彃顒㈡い鏃€鐗犲畷浼村冀椤撴稈鍋撻敃鍌涘€婚柦妯侯槹閻庮剟姊洪悷鏉库挃缂侇噮鍨跺畷鎴﹀箛閻楀牏鍘剧紒鐐緲瀹曨剚鏅堕鈧弻宥堫檨闁告挻鐩畷鎴﹀Χ閸滀焦缍庡┑鐐叉▕娴滄繈藟閸喓绠鹃柟杈剧秮閸濇椽鎳栭弽顓熲拻濞达絼璀﹂悞鐐叏濮楀牏鐣遍柍璇茬Ч瀵挳鎮╅悽鐢靛姽闂備礁婀遍崕銈夈€冮崱娑樺惞闁告劦鍠楅悡鍐煕濠靛棗顏╅柡鍡欏枛閺屻劌鈽夊▎鎴犵厜濠殿喖锕ㄥ▍锝囨閹烘嚦鐔煎传閸曟垶娲熷娲川婵犲啫闉嶉梺鑽ゅ暱閺呮盯鎮惧畡鎵虫斀閻庯綆鈧厞鍥ㄧ厱闁靛鍨哄▍鍥煥濞戞瑧绠為柟顔筋殜閻涱噣宕归鐓庮潛闂備礁缍婇弨閬嶅垂閸ф鍋傛い鎺戝閺佸棝鏌涚仦缁㈡當濞存粎鍋撶换娑㈠醇濠靛牅铏庨梺鍝勵儐缁嬫帡濡甸崟顖ｆ晣闁绘ɑ褰冮獮瀣倵濞堝灝娅橀柛瀣躬閻涱喖螣閼测晝锛滃┑鈽嗗灥濡椼劌效濡ゅ懏鈷掑ù锝堟娴滃綊鏌嶅畡鎵ⅵ鐎规洘绮岄埢搴ㄥ箻瀹曞洤濮︽俊鐐€栫敮鎺楀磹閸涘﹦顩烽弶鍫涘妽閸欏繐鈹戦悩鎻掓殲闁靛洦绻冩穱濠囶敃閵忕姵娈梺瀹犳椤︽澘顭囪箛娑樜╅柟鎵虫櫅閳ь剚绻傞～蹇涙惞閸︻厾鐓撻梺鍓茬厛閸ｎ噣宕濇径瀣瘈闁汇垽娼ф禒婊堟煥閺囨ê鈧繈骞冮幆褏鏆嬮柟浣冩珪閺傗偓闂佽鍑界紞鍡樼閻愪警鏁婇柟鐑樺焾濞撳鏌曢崼婵囶棡妞ゃ儱妫涢幃顔尖枎閹惧鍘?2", damageDelta: 2),
-			["quick_cut"] = new BattleCardEnhancementDefinition("+", "婵犵數濮烽弫鍛婃叏閻戣棄鏋侀柛娑橈攻閸欏繘鏌ｉ幋锝嗩棄闁哄绶氶弻娑樷槈濮楀牊鏁鹃梺鍛婄懃缁绘﹢寮婚敐澶婄闁挎繂妫Λ鍕⒑閸濆嫷鍎庣紒鑸靛哺瀵鈽夊Ο閿嬵潔濠殿喗顨呴悧濠囧极妤ｅ啯鈷戦柛娑橈功閹冲啰绱掔紒姗堣€跨€殿喖顭烽弫鎰緞婵犲嫷鍚呴梻浣瑰缁诲倸螞椤撶倣娑㈠礋椤栨稈鎷洪梺鍛婄箓鐎氱兘宕曟惔锝囩＜闁兼悂娼ч崫铏光偓娈垮枛椤兘骞冮姀銈呯閻忓繑鐗楃€氫粙姊虹拠鏌ュ弰婵炰匠鍕彾濠电姴浼ｉ敐澶樻晩闁告挆鍜冪床闂備浇顕栭崹搴ㄥ礃閿濆棗鐦辩紓鍌氬€风欢锟犲闯椤曗偓瀹曞綊骞庨挊澶岊唹闂侀潧绻掓慨顓炍ｉ崼銉︾厪闊洦娲栧暩濡炪倖鎸搁幖顐﹀煘閹达附鍊烽柛娆忣樈濡偟绱撴担铏瑰笡閻㈩垪鈧磭鏆︽繝闈涱儏缁犵粯銇勯弮鍥嗘帡骞忓ú顏呯厸濠㈣泛鑻禒锕€顭块悷鐗堫棦閽樻繈鏌ㄩ弬娆炬綗濞存粍绮撻弻鐔衡偓娑欘焽缁犳牗銇勯妷锝呯仼闁宠鍨块弫宥夊礋椤掍焦鐦撻柣搴ゎ潐濞叉粓宕伴弽顓溾偓浣糕槈濮楀棙鍍垫俊鎻掓湰閻楁洟寮查鍫熲拻闁稿本鐟чˇ锕傛煙鐠囇呯瘈闁靛棗鍟村畷濂稿Ψ閵壯嶇幢闂備胶绮濠氬储瑜忕划鍫熷緞閹邦厾鍘电紓鍌欓檷閸ㄥ綊寮搁悢鍏肩厓闂佸灝顑呴悘瀵糕偓娈垮枛閻栧ジ骞冨▎鎾崇骇闁规惌鍘介ˉ瀣繆閻愵亜鈧呮媼閿濆洨涓嶉柟鎹愵嚙缁犳牗淇婇妶鍌氫壕濡炪値鍋呯换鍫ャ€侀弴銏狀潊闁绘鍋ｉ崑鏍⒑鐠囨彃顒㈡い鏃€鐗犲畷浼村冀椤撴稈鍋撻敃鍌涘€婚柦妯侯槹閻庮剟姊洪悷鏉库挃缂侇噮鍨跺畷鎴﹀箛閻楀牏鍘剧紒鐐緲瀹曨剚鏅堕鈧弻宥堫檨闁告挻鐩畷鎴﹀Χ閸滀焦缍庡┑鐐叉▕娴滄繈藟閸喓绠鹃柟杈剧秮閸濇椽鎳栭弽顓熲拻濞达絼璀﹂悞鐐叏濮楀牏鐣遍柍璇茬Ч瀵挳鎮╅悽鐢靛姽闂備礁婀遍崕銈夈€冮崱娑樺惞闁告劦鍠楅悡鍐煕濠靛棗顏╅柡鍡欏枛閺屻劌鈽夊▎鎴犵厜濠殿喖锕ㄥ▍锝囨閹烘嚦鐔煎传閸曟垶娲熷娲川婵犲啫闉嶉梺鑽ゅ暱閺呮盯鎮惧畡鎵虫斀閻庯綆鈧厞鍥ㄧ厱闁靛鍨哄▍鍥煥濞戞瑧绠為柟顔筋殜閻涱噣宕归鐓庮潛闂備礁缍婇弨閬嶅垂閸ф鍋傛い鎺戝閺佸棝鏌涚仦缁㈡當濞存粎鍋撶换娑㈠醇濠靛牅铏庨梺鍝勵儐缁嬫帡濡甸崟顖ｆ晣闁绘ɑ褰冮獮瀣倵濞堝灝娅橀柛瀣躬閻涱喖螣閼测晝锛滃┑鈽嗗灥濡椼劌效濡ゅ懏鈷掑ù锝堟娴滃綊鏌嶅畡鎵ⅵ鐎规洘绮岄埢搴ㄥ箻瀹曞洤濮︽俊鐐€栫敮鎺楀磹閸涘﹦顩烽弶鍫涘妽閸欏繐鈹戦悩鎻掓殲闁靛洦绻冩穱濠囶敃閵忕姵娈梺瀹犳椤︽澘顭囪箛娑樜╅柟鎵虫櫅閳ь剚绻傞～蹇涙惞閸︻厾鐓撻梺鍓茬厛閸ｎ噣宕濇径瀣瘈闁汇垽娼ф禒婊堟煥閺囨ê鈧繈骞冮幆褏鏆嬮柟浣冩珪閺傗偓闂佽鍑界紞鍡樼閻愪警鏁婇柟鐑樺焾濞撳鏌曢崼婵囶棡妞ゃ儱妫涢幃顔尖枎閹惧鍘?1", damageDelta: 1),
-			["line_shot"] = new BattleCardEnhancementDefinition("+", "婵犵數濮烽弫鍛婃叏閻戣棄鏋侀柛娑橈攻閸欏繘鏌ｉ幋锝嗩棄闁哄绶氶弻娑樷槈濮楀牊鏁鹃梺鍛婄懃缁绘﹢寮婚敐澶婄闁挎繂妫Λ鍕⒑閸濆嫷鍎庣紒鑸靛哺瀵鈽夊Ο閿嬵潔濠殿喗顨呴悧濠囧极妤ｅ啯鈷戦柛娑橈功閹冲啰绱掔紒姗堣€跨€殿喖顭烽弫鎰緞婵犲嫷鍚呴梻浣瑰缁诲倸螞椤撶倣娑㈠礋椤栨稈鎷洪梺鍛婄箓鐎氱兘宕曟惔锝囩＜闁兼悂娼ч崫铏光偓娈垮枛椤兘骞冮姀銈呯閻忓繑鐗楃€氫粙姊虹拠鏌ュ弰婵炰匠鍕彾濠电姴浼ｉ敐澶樻晩闁告挆鍜冪床闂備浇顕栭崹搴ㄥ礃閿濆棗鐦辩紓鍌氬€风欢锟犲闯椤曗偓瀹曞綊骞庨挊澶岊唹闂侀潧绻掓慨顓炍ｉ崼銉︾厪闊洦娲栧暩濡炪倖鎸搁幖顐﹀煘閹达附鍊烽柛娆忣樈濡偟绱撴担铏瑰笡閻㈩垪鈧磭鏆︽繝闈涱儏缁犵粯銇勯弮鍥嗘帡骞忓ú顏呯厸濠㈣泛鑻禒锕€顭块悷鐗堫棦閽樻繈鏌ㄩ弬娆炬綗濞存粍绮撻弻鐔衡偓娑欘焽缁犳牗銇勯妷锝呯仼闁宠鍨块弫宥夊礋椤掍焦鐦撻柣搴ゎ潐濞叉粓宕伴弽顓溾偓浣糕槈濮楀棙鍍垫俊鎻掓湰閻楁洟寮查鍫熲拻闁稿本鐟чˇ锕傛煙鐠囇呯瘈闁靛棗鍟村畷濂稿Ψ閵壯嶇幢闂備胶绮濠氬储瑜忕划鍫熷緞閹邦厾鍘电紓鍌欓檷閸ㄥ綊寮搁悢鍏肩厓闂佸灝顑呴悘瀵糕偓娈垮枛閻栧ジ骞冨▎鎾崇骇闁规惌鍘介ˉ瀣繆閻愵亜鈧呮媼閿濆洨涓嶉柟鎹愵嚙缁犳牗淇婇妶鍌氫壕濡炪値鍋呯换鍫ャ€侀弴銏狀潊闁绘鍋ｉ崑鏍⒑鐠囨彃顒㈡い鏃€鐗犲畷浼村冀椤撴稈鍋撻敃鍌涘€婚柦妯侯槹閻庮剟姊洪悷鏉库挃缂侇噮鍨跺畷鎴﹀箛閻楀牏鍘剧紒鐐緲瀹曨剚鏅堕鈧弻宥堫檨闁告挻鐩畷鎴﹀Χ閸滀焦缍庡┑鐐叉▕娴滄繈藟閸喓绠鹃柟杈剧秮閸濇椽鎳栭弽顓熲拻濞达絼璀﹂悞鐐叏濮楀牏鐣遍柍璇茬Ч瀵挳鎮╅悽鐢靛姽闂備礁婀遍崕銈夈€冮崱娑樺惞闁告劦鍠楅悡鍐煕濠靛棗顏╅柡鍡欏枛閺屻劌鈽夊▎鎴犵厜濠殿喖锕ㄥ▍锝囨閹烘嚦鐔煎传閸曟垶娲熷娲川婵犲啫闉嶉梺鑽ゅ暱閺呮盯鎮惧畡鎵虫斀閻庯綆鈧厞鍥ㄧ厱闁靛鍨哄▍鍥煥濞戞瑧绠為柟顔筋殜閻涱噣宕归鐓庮潛闂備礁缍婇弨閬嶅垂閸ф鍋傛い鎺戝閺佸棝鏌涚仦缁㈡當濞存粎鍋撶换娑㈠醇濠靛牅铏庨梺鍝勵儐缁嬫帡濡甸崟顖ｆ晣闁绘ɑ褰冮獮瀣倵濞堝灝娅橀柛瀣躬閻涱喖螣閼测晝锛滃┑鈽嗗灥濡椼劌效濡ゅ懏鈷掑ù锝堟娴滃綊鏌嶅畡鎵ⅵ鐎规洘绮岄埢搴ㄥ箻瀹曞洤濮︽俊鐐€栫敮鎺楀磹閸涘﹦顩烽弶鍫涘妽閸欏繐鈹戦悩鎻掓殲闁靛洦绻冩穱濠囶敃閵忕姵娈梺瀹犳椤︽澘顭囪箛娑樜╅柟鎵虫櫅閳ь剚绻傞～蹇涙惞閸︻厾鐓撻梺鍓茬厛閸ｎ噣宕濇径瀣瘈闁汇垽娼ф禒婊堟煥閺囨ê鈧繈骞冮幆褏鏆嬮柟浣冩珪閺傗偓闂佽鍑界紞鍡樼閻愪警鏁婇柟鐑樺焾濞撳鏌曢崼婵囶棡妞ゃ儱妫涢幃顔尖枎閹惧鍘?2", damageDelta: 2),
-			["heavy_shot"] = new BattleCardEnhancementDefinition("+", "婵犵數濮烽弫鍛婃叏閻戣棄鏋侀柛娑橈攻閸欏繘鏌ｉ幋锝嗩棄闁哄绶氶弻娑樷槈濮楀牊鏁鹃梺鍛婄懃缁绘﹢寮婚敐澶婄闁挎繂妫Λ鍕⒑閸濆嫷鍎庣紒鑸靛哺瀵鈽夊Ο閿嬵潔濠殿喗顨呴悧濠囧极妤ｅ啯鈷戦柛娑橈功閹冲啰绱掔紒姗堣€跨€殿喖顭烽弫鎰緞婵犲嫷鍚呴梻浣瑰缁诲倸螞椤撶倣娑㈠礋椤栨稈鎷洪梺鍛婄箓鐎氱兘宕曟惔锝囩＜闁兼悂娼ч崫铏光偓娈垮枛椤兘骞冮姀銈呯閻忓繑鐗楃€氫粙姊虹拠鏌ュ弰婵炰匠鍕彾濠电姴浼ｉ敐澶樻晩闁告挆鍜冪床闂備浇顕栭崹搴ㄥ礃閿濆棗鐦辩紓鍌氬€风欢锟犲闯椤曗偓瀹曞綊骞庨挊澶岊唹闂侀潧绻掓慨顓炍ｉ崼銉︾厪闊洦娲栧暩濡炪倖鎸搁幖顐﹀煘閹达附鍊烽柛娆忣樈濡偟绱撴担铏瑰笡閻㈩垪鈧磭鏆︽繝闈涱儏缁犵粯銇勯弮鍥嗘帡骞忓ú顏呯厸濠㈣泛鑻禒锕€顭块悷鐗堫棦閽樻繈鏌ㄩ弬娆炬綗濞存粍绮撻弻鐔衡偓娑欘焽缁犳牗銇勯妷锝呯仼闁宠鍨块弫宥夊礋椤掍焦鐦撻柣搴ゎ潐濞叉粓宕伴弽顓溾偓浣糕槈濮楀棙鍍垫俊鎻掓湰閻楁洟寮查鍫熲拻闁稿本鐟чˇ锕傛煙鐠囇呯瘈闁靛棗鍟村畷濂稿Ψ閵壯嶇幢闂備胶绮濠氬储瑜忕划鍫熷緞閹邦厾鍘电紓鍌欓檷閸ㄥ綊寮搁悢鍏肩厓闂佸灝顑呴悘瀵糕偓娈垮枛閻栧ジ骞冨▎鎾崇骇闁规惌鍘介ˉ瀣繆閻愵亜鈧呮媼閿濆洨涓嶉柟鎹愵嚙缁犳牗淇婇妶鍌氫壕濡炪値鍋呯换鍫ャ€侀弴銏狀潊闁绘鍋ｉ崑鏍⒑鐠囨彃顒㈡い鏃€鐗犲畷浼村冀椤撴稈鍋撻敃鍌涘€婚柦妯侯槹閻庮剟姊洪悷鏉库挃缂侇噮鍨跺畷鎴﹀箛閻楀牏鍘剧紒鐐緲瀹曨剚鏅堕鈧弻宥堫檨闁告挻鐩畷鎴﹀Χ閸滀焦缍庡┑鐐叉▕娴滄繈藟閸喓绠鹃柟杈剧秮閸濇椽鎳栭弽顓熲拻濞达絼璀﹂悞鐐叏濮楀牏鐣遍柍璇茬Ч瀵挳鎮╅悽鐢靛姽闂備礁婀遍崕銈夈€冮崱娑樺惞闁告劦鍠楅悡鍐煕濠靛棗顏╅柡鍡欏枛閺屻劌鈽夊▎鎴犵厜濠殿喖锕ㄥ▍锝囨閹烘嚦鐔煎传閸曟垶娲熷娲川婵犲啫闉嶉梺鑽ゅ暱閺呮盯鎮惧畡鎵虫斀閻庯綆鈧厞鍥ㄧ厱闁靛鍨哄▍鍥煥濞戞瑧绠為柟顔筋殜閻涱噣宕归鐓庮潛闂備礁缍婇弨閬嶅垂閸ф鍋傛い鎺戝閺佸棝鏌涚仦缁㈡當濞存粎鍋撶换娑㈠醇濠靛牅铏庨梺鍝勵儐缁嬫帡濡甸崟顖ｆ晣闁绘ɑ褰冮獮瀣倵濞堝灝娅橀柛瀣躬閻涱喖螣閼测晝锛滃┑鈽嗗灥濡椼劌效濡ゅ懏鈷掑ù锝堟娴滃綊鏌嶅畡鎵ⅵ鐎规洘绮岄埢搴ㄥ箻瀹曞洤濮︽俊鐐€栫敮鎺楀磹閸涘﹦顩烽弶鍫涘妽閸欏繐鈹戦悩鎻掓殲闁靛洦绻冩穱濠囶敃閵忕姵娈梺瀹犳椤︽澘顭囪箛娑樜╅柟鎵虫櫅閳ь剚绻傞～蹇涙惞閸︻厾鐓撻梺鍓茬厛閸ｎ噣宕濇径瀣瘈闁汇垽娼ф禒婊堟煥閺囨ê鈧繈骞冮幆褏鏆嬮柟浣冩珪閺傗偓闂佽鍑界紞鍡樼閻愪警鏁婇柟鐑樺焾濞撳鏌曢崼婵囶棡妞ゃ儱妫涢幃顔尖枎閹惧鍘?2", damageDelta: 2),
-			["battle_read"] = new BattleCardEnhancementDefinition("+", "闂傚倸鍊搁崐鎼佸磹閹间礁纾归柟闂寸绾惧綊鏌熼梻瀵割槮缁炬儳缍婇弻鐔兼⒒鐎靛壊妲紒鐐劤缂嶅﹪寮婚悢鍏尖拻閻庨潧澹婂Σ顔剧磼閻愵剙鍔ょ紓宥咃躬瀵鎮㈤崗灏栨嫽闁诲酣娼ф竟濠偽ｉ鍓х＜闁绘劦鍓欓崝銈囩磽瀹ュ拑韬€殿喖顭烽幃銏ゅ礂鐏忔牗瀚介梺璇查叄濞佳勭珶婵犲伣锝夘敊閸撗咃紲闂佺粯鍔﹂崜娆撳礉閵堝洨纾界€广儱鎷戦煬顒傗偓娈垮枛椤兘寮幇顓炵窞濠电姴瀚烽崥鍛存⒒娴ｇ懓顕滅紒璇插€块獮澶娾槈閵忕姷顔掔紓鍌欑劍椤洭宕㈤柆宥嗏拺闂傚牊绋撴晶鏇㈡煙閸愭煡鍙勬い銏℃椤㈡﹢濮€閿涘嫬骞愰梺璇茬箳閸嬫稒鏅堕挊澹濊櫣鈧稒菧娴滄粓鏌曡箛濠傚⒉缂佲偓鐎ｎ喗鐓涘ù锝囨嚀婵秶鈧娲栧畷顒勫煝鎼粹垾鐔煎箒瀹ュ棙鐨戠紒杈ㄦ崌瀹曟帒顫濋钘変壕闁绘垼濮ら崵鍕煠缁嬭法浠涢柛娆忕箻濮婃椽宕归鍛壋缂備胶濞€缁犳牠寮诲鍫闂佸憡鎸鹃崰鏍ь嚕婵犳艾鐏崇€规洖娲﹀▓鏇㈡⒑闁偛鑻晶瀵糕偓瑙勬磻閸楀啿顕ｆ禒瀣垫晣闁绘灏欓妶锕傛⒒娴ｈ櫣銆婇柛鎾寸箞瀹曟瑩鎮烽幏鏃撶稻閵堬綁宕橀埞鐐闂備線娼荤€靛矂宕㈤挊澶嗘瀺闁哄洨鍋愰弨鑺ャ亜閺冨倸浜鹃柡鍡忔櫊閺岀喖鐛崹顔句患闂佸疇妫勯ˇ鍨叏閳ь剟鏌ｅΟ鍨毢闁绘稈鏅滄穱濠囨倷椤忓嫧鍋撻弽顓熷亱婵°倕鎳庨弰銉╂煕閹伴潧鏋涢柛鎴犲█閺屾稑鈽夐崡鐐茬闂佸搫鍟悧濠囧磻閹扮増鈷掗柛顐ゅ枔閳笺儲绻涘畝濠侀偗婵﹨娅ｇ槐鎺戭潨閸℃鏆︽繝鐢靛仜瀵墎鎹㈤崱娑樜﹂柟閭﹀幗婵挳鏌涢幘鍐茬骇閻庨潧鐭傚娲濞戞艾顣哄┑鈽嗗亝椤ㄥ﹤鐣烽崨濠勭瘈闁搞儯鍔庨崢閬嶆煟鎼搭垳绉甸柛瀣噽娴滄悂顢橀姀锛勫帗闁荤喐鐟ョ€氼剟鎮橀幘顔界厱闁靛ň鏅濋悾娲煙椤旂晫鎳囬柟绋匡攻瀵板嫭寰勬繝鍌滀喊闂傚倸鍊搁崐椋庣矆娓氣偓楠炴牠顢曢敂钘夊壒婵犮垼娉涢惉鑲╃矆婵犲伅褰掓晲婢跺棗浜炬繛鎴炴皑閻ｉ箖姊绘担绋款棌闁稿鎳庣叅闁哄稁鍘介崐宄扳攽閻樻彃顏柛鐘冲姍閹﹢鎮欓幓鎺嗘寖闂佺粯绻傞悥濂稿蓟閿熺姴鐐婇柕澶堝劤娴犻箖姊洪幎鑺ユ暠闁搞劌鐏濋～蹇旂節濮橆剟鍞堕梺缁樻閵嗏偓濠殿喖娲娲偡閺夋寧鍊梺鍛婃⒐閻熲晠鐛崘銊庢棃鍩€椤掑嫸缍栨繝闈涱儛閺佸啴鏌曡箛鏇炐ラ柕鍫櫍濮婄粯鎷呴搹鐟扮婵炴挻纰嶉〃濠傜暦閹惰姤鏅查柛娑卞灡濞堥箖姊洪崜鎻掍簼婵炶绠撳顐﹀幢濞戞瑧鍘撻悷婊勭矒瀹曟粌鈽夊顒€鐏婇梺鍓插亖閸庨亶鏌嬮崶銊х瘈闁靛骏绱曠粻鎾剁磽瀹ュ拑韬€殿噮鍋婇獮鍥级閸ф鏁规繝鐢靛█濞佳囨偋閸曨垰纾婚柨婵嗩槹閳锋帒霉閿濆洤鍔嬮柛銈傚亾闂備礁顓介弶鍨瀷缂傚倸鍊归幐濠氬Χ閿濆绀冮柕濞у啯鎲?1", drawCountDelta: 1),
-			["meditate"] = new BattleCardEnhancementDefinition("+", "闂傚倸鍊搁崐鎼佸磹閹间礁纾归柟闂寸绾惧綊鏌熼梻瀵割槮缁炬儳缍婇弻鐔兼⒒鐎靛壊妲紒鐐劤缂嶅﹪寮婚悢鍏尖拻閻庨潧澹婂Σ顔剧磼閻愵剙鍔ょ紓宥咃躬瀵鎮㈤崗灏栨嫽闁诲酣娼ф竟濠偽ｉ鍓х＜闁绘劦鍓欓崝銈囩磽瀹ュ拑韬€殿喖顭烽幃銏ゅ礂鐏忔牗瀚介梺璇查叄濞佳勭珶婵犲伣锝夘敊閸撗咃紲闂佺粯鍔﹂崜娆撳礉閵堝洨纾界€广儱鎷戦煬顒傗偓娈垮枛椤兘寮幇顓炵窞濠电姴瀚烽崥鍛存⒒娴ｇ懓顕滅紒璇插€块獮澶娾槈閵忕姷顔掔紓鍌欑劍椤洭宕㈤柆宥嗏拺闂傚牊绋撴晶鏇㈡煙閸愭煡鍙勬い銏℃椤㈡﹢濮€閿涘嫬骞愰梺璇茬箳閸嬫稒鏅堕挊澹濊櫣鈧稒菧娴滄粓鏌曡箛濠傚⒉缂佲偓鐎ｎ喗鐓涘ù锝囨嚀婵秶鈧娲栧畷顒勫煝鎼粹垾鐔煎箒瀹ュ棙鐨戠紒杈ㄦ崌瀹曟帒顫濋钘変壕闁绘垼濮ら崵鍕煠缁嬭法浠涢柛娆忕箻濮婃椽宕归鍛壋缂備胶濞€缁犳牠寮诲鍫闂佸憡鎸鹃崰鏍ь嚕婵犳艾鐏崇€规洖娲﹀▓鏇㈡⒑闁偛鑻晶瀵糕偓瑙勬磻閸楀啿顕ｆ禒瀣垫晣闁绘灏欓妶锕傛⒒娴ｈ櫣銆婇柛鎾寸箞瀹曟瑩鎮烽幏鏃撶稻閵堬綁宕橀埞鐐闂備線娼荤€靛矂宕㈤挊澶嗘瀺闁哄洨鍋愰弨鑺ャ亜閺冨倸浜鹃柡鍡忔櫊閺岀喖鐛崹顔句患闂佸疇妫勯ˇ鍨叏閳ь剟鏌ｅΟ鍨毢闁绘稈鏅滄穱濠囨倷椤忓嫧鍋撻弽顓熷亱婵°倕鎳庨弰銉╂煕閹伴潧鏋涢柛鎴犲█閺屾稑鈽夐崡鐐茬闂佸搫鍟悧濠囧磻閹扮増鈷掗柛顐ゅ枔閳笺儲绻涘畝濠侀偗婵﹨娅ｇ槐鎺戭潨閸℃鏆︽繝鐢靛仜瀵墎鎹㈤崱娑樜﹂柟閭﹀幗婵挳鏌涢幘鍐茬骇閻庨潧鐭傚娲濞戞艾顣哄┑鈽嗗亝椤ㄥ﹤鐣烽崨濠勭瘈闁搞儯鍔庨崢閬嶆煟鎼搭垳绉甸柛瀣噽娴滄悂顢橀姀锛勫帗闁荤喐鐟ョ€氼剟鎮橀幘顔界厱闁靛ň鏅濋悾娲煙椤旂晫鎳囬柟绋匡攻瀵板嫭寰勬繝鍌滀喊闂傚倸鍊搁崐椋庣矆娓氣偓楠炴牠顢曢敂钘夊壒婵犮垼娉涢惉鑲╃矆婵犲伅褰掓晲婢跺棗浜炬繛鎴炴皑閻ｉ箖姊绘担绋款棌闁稿鎳庣叅闁哄稁鍘介崐宄扳攽閻樻彃顏柛鐘冲姍閹﹢鎮欓幓鎺嗘寖闂佺粯绻傞悥濂稿蓟閿熺姴鐐婇柕澶堝劤娴犻箖姊洪幎鑺ユ暠闁搞劌鐏濋～蹇旂節濮橆剟鍞堕梺缁樻閵嗏偓濠殿喖娲娲偡閺夋寧鍊梺鍛婃⒐閻熲晠鐛崘銊庢棃鍩€椤掑嫸缍栨繝闈涱儛閺佸啴鏌曡箛鏇炐ラ柕鍫櫍濮婄粯鎷呴搹鐟扮婵炴挻纰嶉〃濠傜暦閹惰姤鏅查柛娑卞灡濞堥箖姊洪崜鎻掍簼婵炶绠撳顐﹀幢濞戞瑧鍘撻悷婊勭矒瀹曟粌鈽夊顒€鐏婇梺鍓插亖閸庨亶鏌嬮崶銊х瘈闁靛骏绱曠粻鎾剁磽瀹ュ拑韬€殿噮鍋婇獮鍥级閸ф鏁规繝鐢靛█濞佳囨偋閸曨垰纾婚柨婵嗩槹閳锋帒霉閿濆洤鍔嬮柛銈傚亾闂備礁顓介弶鍨瀷缂傚倸鍊归幐濠氬Χ閿濆绀冮柕濞у啯鎲?1", drawCountDelta: 1),
-			["surge"] = new BattleCardEnhancementDefinition("+", "闂傚倸鍊搁崐鎼佸磹閹间礁纾归柟闂寸绾惧綊鏌熼梻瀵割槮缁炬儳缍婇弻鐔兼⒒鐎靛壊妲紒鐐劤缂嶅﹪寮婚悢鍏尖拻閻庨潧澹婂Σ顔剧磼閻愵剙鍔ょ紓宥咃躬瀵鎮㈤崗灏栨嫽闁诲酣娼ф竟濠偽ｉ鍓х＜闁绘劦鍓欓崝銈囩磽瀹ュ拑韬€殿喖顭烽幃銏ゅ礂鐏忔牗瀚介梺璇查叄濞佳勭珶婵犲伣锝夘敊閸撗咃紲闂佺粯鍔﹂崜娆撳礉閵堝洨纾界€广儱鎷戦煬顒傗偓娈垮枛椤兘寮幇顓炵窞濠电姴瀚烽崥鍛存⒒娴ｇ懓顕滅紒璇插€块獮澶娾槈閵忕姷顔掔紓鍌欑劍椤洭宕㈤柆宥嗏拺闂傚牊绋撴晶鏇㈡煙閸愭煡鍙勬い銏℃椤㈡﹢濮€閿涘嫬骞愰梺璇茬箳閸嬫稒鏅堕挊澹濊櫣鈧稒菧娴滄粓鏌曡箛濠傚⒉缂佲偓鐎ｎ喗鐓涘ù锝囨嚀婵秶鈧娲栧畷顒勫煝鎼粹垾鐔煎箒瀹ュ棗鍝烘慨濠傤煼瀹曟帒鈻庨幒鎴濆腐婵＄偑鍊ら崢濂告偋韫囨稑绠栨い鏇楀亾妞ゃ垺娲熼弫鍐焵椤掑倻鐭嗗鑸靛姇缁犺绻涢敐搴″濠德ゅ亹缁辨帡鎮╅棃娑欑亪闂佸搫鐬奸崰鏍ь潖閼姐倐鍋撻棃娑橆棌婵″樊鍠栭埞鎴﹀煡閸℃ぞ绨奸梺鎸庢磸閸ㄤ粙鐛崘顓滀汗闁圭儤鍨归悾鎶芥⒑閸︻厼鍔嬮柛銊ф暬閳ユ牗寰勬繛鐐杸闂佺粯鍔樼亸娆愭櫠閿斿墽纾奸柣妯虹－婢ь亝銇勯銏㈢閻撱倖銇勮箛鎾村婵☆偄鍟埞鎴︽倷閺夋垹浠稿┑顔角滈崝鎴﹀箖閸ф绀嬫い鏍ㄧ▓閹疯櫣绱撴担鍓插剰閻忓繐鎳樺銊х磼濡偐顔曢梺鑲┾拡閸撴瑩寮告惔銊︾厽闁挎繂鎳庡Σ缁樸亜椤愶絿鐭掗柛鈹惧亾濡炪倖甯掔€氼剟寮伴妷鈺傜厓鐟滄粓宕滃璺何﹂柛鏇ㄥ灠缁犳娊鏌涢埄鍐︿沪濠㈣娲樻穱濠囨倷椤忓嫧鍋撻妶鍡欘洸婵犲﹤鐗嗛悿顕€鎮楀☉娅偐鎹㈤崱娑欑厱妞ゆ劧绲剧粈鈧Δ鐘靛亼閸ㄧ儤绌辨繝鍥ч柛灞剧煯婢规洘淇婇悙顏勨偓銈夊磻閸曨個娲敇閻戝棙缍庡┑鐐叉▕娴滄粎绮昏ぐ鎺撶厽闁归偊鍘肩徊缁樸亜椤掆偓閻楀繒妲愰幘璇茬＜婵ɑ鐦烽姀銈嗙叆闁哄洢鍔嬮柇顖炴煟濞戝崬娅嶇€规洘锕㈡俊鍛婃償閿濆懏鐏堥梺鍦劜缁绘繃淇婇崼鏇炵倞闁冲搫鍋嗗鎾绘⒒閸屾艾鈧兘鎳楅崼鏇椻偓锕傚醇閵夈儱鐝樺銈嗗笒鐎氥劑鍩€椤掆偓閸熸潙鐣烽崡鐐╂婵☆垱妞垮Λ鐔兼⒒娓氣偓閳ь剛鍋涢懟顖涙櫠鐎涙ɑ鍙忓┑鐘插鐢盯鏌熷畡鐗堝殗闁圭厧缍婇幃鐑藉箥椤曞懎浠归梻鍌氬€风粈渚€骞夐垾鎰佹綎闁荤喐鍣村ú顏勫唨妞ゆ挆鍕珨闂備焦瀵х换鍌炈囬鐐寸厑闁搞儺鍓氶悡娑㈡煕閵夘垳鍒板ù婊呭亾缁绘繈濮€閿濆懐鍘梺鍛婃⒐閻楃姴鐣烽幇鐗堝€婚柤鎭掑劤閸樹粙姊洪悷閭﹀殶闁稿孩鍔欓幃鐐寸鐎ｎ偆鍘卞┑鈽嗗灠閸氬寮抽浣瑰弿濠电姴鍟妵婵堚偓瑙勬磸閸斿秶鎹㈠┑瀣闁靛瀵屽鏃堟⒒閸屾瑧鍔嶉悗绗涘厾楦跨疀濞戞锛熼梻鍌氱墛缁嬫捇寮抽敃鍌涚厵闁绘鐗婄欢鑼磼閻樺磭鈯曢柕鍥у楠炴鎹勯悜妯尖偓濠氭倵?1", energyGainDelta: 1),
-			["draw_spark"] = new BattleCardEnhancementDefinition("+", "闂傚倸鍊搁崐鎼佸磹閹间礁纾归柟闂寸绾惧綊鏌熼梻瀵割槮缁炬儳缍婇弻鐔兼⒒鐎靛壊妲紒鐐劤缂嶅﹪寮婚悢鍏尖拻閻庨潧澹婂Σ顔剧磼閻愵剙鍔ょ紓宥咃躬瀵鎮㈤崗灏栨嫽闁诲酣娼ф竟濠偽ｉ鍓х＜闁绘劦鍓欓崝銈囩磽瀹ュ拑韬€殿喖顭烽幃銏ゅ礂鐏忔牗瀚介梺璇查叄濞佳勭珶婵犲伣锝夘敊閸撗咃紲闂佺粯鍔﹂崜娆撳礉閵堝洨纾界€广儱鎷戦煬顒傗偓娈垮枛椤兘寮幇顓炵窞濠电姴瀚烽崥鍛存⒒娴ｇ懓顕滅紒璇插€块獮澶娾槈閵忕姷顔掔紓鍌欑劍椤洭宕㈤柆宥嗏拺闂傚牊绋撴晶鏇㈡煙閸愭煡鍙勬い銏℃椤㈡﹢濮€閿涘嫬骞愰梺璇茬箳閸嬫稒鏅堕挊澹濊櫣鈧稒菧娴滄粓鏌曡箛濠傚⒉缂佲偓鐎ｎ喗鐓涘ù锝囨嚀婵秶鈧娲栧畷顒勫煝鎼粹垾鐔煎箒瀹ュ棙鐨戠紒杈ㄦ崌瀹曟帒顫濋钘変壕闁绘垼濮ら崵鍕煠缁嬭法浠涢柛娆忕箻濮婃椽宕归鍛壋缂備胶濞€缁犳牠寮诲鍫闂佸憡鎸鹃崰鏍ь嚕婵犳艾鐏崇€规洖娲﹀▓鏇㈡⒑闁偛鑻晶瀵糕偓瑙勬磻閸楀啿顕ｆ禒瀣垫晣闁绘灏欓妶锕傛⒒娴ｈ櫣銆婇柛鎾寸箞瀹曟瑩鎮烽幏鏃撶稻閵堬綁宕橀埞鐐闂備線娼荤€靛矂宕㈤挊澶嗘瀺闁哄洨鍋愰弨鑺ャ亜閺冨倸浜鹃柡鍡忔櫊閺岀喖鐛崹顔句患闂佸疇妫勯ˇ鍨叏閳ь剟鏌ｅΟ鍨毢闁绘稈鏅滄穱濠囨倷椤忓嫧鍋撻弽顓熷亱婵°倕鎳庨弰銉╂煕閹伴潧鏋涢柛鎴犲█閺屾稑鈽夐崡鐐茬闂佸搫鍟悧濠囧磻閹扮増鈷掗柛顐ゅ枔閳笺儲绻涘畝濠侀偗婵﹨娅ｇ槐鎺戭潨閸℃鏆︽繝鐢靛仜瀵墎鎹㈤崱娑樜﹂柟閭﹀幗婵挳鏌涢幘鍐茬骇閻庨潧鐭傚娲濞戞艾顣哄┑鈽嗗亝椤ㄥ﹤鐣烽崨濠勭瘈闁搞儯鍔庨崢閬嶆煟鎼搭垳绉甸柛瀣噽娴滄悂顢橀姀锛勫帗闁荤喐鐟ョ€氼剟鎮橀幘顔界厱闁靛ň鏅濋悾娲煙椤旂晫鎳囬柟绋匡攻瀵板嫭寰勬繝鍌滀喊闂傚倸鍊搁崐椋庣矆娓氣偓楠炴牠顢曢敂钘夊壒婵犮垼娉涢惉鑲╃矆婵犲伅褰掓晲婢跺棗浜炬繛鎴炴皑閻ｉ箖姊绘担绋款棌闁稿鎳庣叅闁哄稁鍘介崐宄扳攽閻樻彃顏柛鐘冲姍閹﹢鎮欓幓鎺嗘寖闂佺粯绻傞悥濂稿蓟閿熺姴鐐婇柕澶堝劤娴犻箖姊洪幎鑺ユ暠闁搞劌鐏濋～蹇旂節濮橆剟鍞堕梺缁樻閵嗏偓濠殿喖娲娲偡閺夋寧鍊梺鍛婃⒐閻熲晠鐛崘銊庢棃鍩€椤掑嫸缍栨繝闈涱儛閺佸啴鏌曡箛鏇炐ラ柕鍫櫍濮婄粯鎷呴搹鐟扮婵炴挻纰嶉〃濠傜暦閹惰姤鏅查柛娑卞灡濞堥箖姊洪崜鎻掍簼婵炶绠撳顐﹀幢濞戞瑧鍘撻悷婊勭矒瀹曟粌鈽夊顒€鐏婇梺鍓插亖閸庨亶鏌嬮崶銊х瘈闁靛骏绱曠粻鎾剁磽瀹ュ拑韬€殿噮鍋婇獮鍥级閸ф鏁规繝鐢靛█濞佳囨偋閸曨垰纾婚柨婵嗩槹閳锋帒霉閿濆洤鍔嬮柛銈傚亾闂備礁顓介弶鍨瀷缂傚倸鍊归幐濠氬Χ閿濆绀冮柕濞у啯鎲?1", drawCountDelta: 1),
-			["quick_plan"] = new BattleCardEnhancementDefinition("+", "闂傚倸鍊搁崐鎼佸磹閹间礁纾归柟闂寸绾惧綊鏌熼梻瀵割槮缁炬儳缍婇弻鐔兼⒒鐎靛壊妲紒鐐劤缂嶅﹪寮婚悢鍏尖拻閻庨潧澹婂Σ顔剧磼閻愵剙鍔ょ紓宥咃躬瀵鎮㈤崗灏栨嫽闁诲酣娼ф竟濠偽ｉ鍓х＜闁绘劦鍓欓崝銈囩磽瀹ュ拑韬€殿喖顭烽幃銏ゅ礂鐏忔牗瀚介梺璇查叄濞佳勭珶婵犲伣锝夘敊閸撗咃紲闂佺粯鍔﹂崜娆撳礉閵堝洨纾界€广儱鎷戦煬顒傗偓娈垮枛椤兘寮幇顓炵窞濠电姴瀚烽崥鍛存⒒娴ｇ懓顕滅紒璇插€块獮澶娾槈閵忕姷顔掔紓鍌欑劍椤洭宕㈤柆宥嗏拺闂傚牊绋撴晶鏇㈡煙閸愭煡鍙勬い銏℃椤㈡﹢濮€閿涘嫬骞愰梺璇茬箳閸嬫稒鏅堕挊澹濊櫣鈧稒菧娴滄粓鏌曡箛濠傚⒉缂佲偓鐎ｎ喗鐓涘ù锝囨嚀婵秶鈧娲栧畷顒勫煝鎼粹垾鐔煎箒瀹ュ棙鐨戠紒杈ㄦ崌瀹曟帒顫濋钘変壕闁绘垼濮ら崵鍕煠缁嬭法浠涢柛娆忕箻濮婃椽宕归鍛壋缂備胶濞€缁犳牠寮诲鍫闂佸憡鎸鹃崰鏍ь嚕婵犳艾鐏崇€规洖娲﹀▓鏇㈡⒑闁偛鑻晶瀵糕偓瑙勬磻閸楀啿顕ｆ禒瀣垫晣闁绘灏欓妶锕傛⒒娴ｈ櫣銆婇柛鎾寸箞瀹曟瑩鎮烽幏鏃撶稻閵堬綁宕橀埞鐐闂備線娼荤€靛矂宕㈤挊澶嗘瀺闁哄洨鍋愰弨鑺ャ亜閺冨倸浜鹃柡鍡忔櫊閺岀喖鐛崹顔句患闂佸疇妫勯ˇ鍨叏閳ь剟鏌ｅΟ鍨毢闁绘稈鏅滄穱濠囨倷椤忓嫧鍋撻弽顓熷亱婵°倕鎳庨弰銉╂煕閹伴潧鏋涢柛鎴犲█閺屾稑鈽夐崡鐐茬闂佸搫鍟悧濠囧磻閹扮増鈷掗柛顐ゅ枔閳笺儲绻涘畝濠侀偗婵﹨娅ｇ槐鎺戭潨閸℃鏆︽繝鐢靛仜瀵墎鎹㈤崱娑樜﹂柟閭﹀幗婵挳鏌涢幘鍐茬骇閻庨潧鐭傚娲濞戞艾顣哄┑鈽嗗亝椤ㄥ﹤鐣烽崨濠勭瘈闁搞儯鍔庨崢閬嶆煟鎼搭垳绉甸柛瀣噽娴滄悂顢橀姀锛勫帗闁荤喐鐟ョ€氼剟鎮橀幘顔界厱闁靛ň鏅濋悾娲煙椤旂晫鎳囬柟绋匡攻瀵板嫭寰勬繝鍌滀喊闂傚倸鍊搁崐椋庣矆娓氣偓楠炴牠顢曢敂钘夊壒婵犮垼娉涢惉鑲╃矆婵犲伅褰掓晲婢跺棗浜炬繛鎴炴皑閻ｉ箖姊绘担绋款棌闁稿鎳庣叅闁哄稁鍘介崐宄扳攽閻樻彃顏柛鐘冲姍閹﹢鎮欓幓鎺嗘寖闂佺粯绻傞悥濂稿蓟閿熺姴鐐婇柕澶堝劤娴犻箖姊洪幎鑺ユ暠闁搞劌鐏濋～蹇旂節濮橆剟鍞堕梺缁樻閵嗏偓濠殿喖娲娲偡閺夋寧鍊梺鍛婃⒐閻熲晠鐛崘銊庢棃鍩€椤掑嫸缍栨繝闈涱儛閺佸啴鏌曡箛鏇炐ラ柕鍫櫍濮婄粯鎷呴搹鐟扮婵炴挻纰嶉〃濠傜暦閹惰姤鏅查柛娑卞灡濞堥箖姊洪崜鎻掍簼婵炶绠撳顐﹀幢濞戞瑧鍘撻悷婊勭矒瀹曟粌鈽夊顒€鐏婇梺鍓插亖閸庨亶鏌嬮崶銊х瘈闁靛骏绱曠粻鎾剁磽瀹ュ拑韬€殿噮鍋婇獮鍥级閸ф鏁规繝鐢靛█濞佳囨偋閸曨垰纾婚柨婵嗩槹閳锋帒霉閿濆洤鍔嬮柛銈傚亾闂備礁顓介弶鍨瀷缂傚倸鍊归幐濠氬Χ閿濆绀冮柕濞у啯鎲?1", drawCountDelta: 1),
-			["burning_edge"] = new BattleCardEnhancementDefinition("+", "婵犵數濮烽弫鍛婃叏閻戣棄鏋侀柛娑橈攻閸欏繘鏌ｉ幋锝嗩棄闁哄绶氶弻娑樷槈濮楀牊鏁鹃梺鍛婄懃缁绘﹢寮婚敐澶婄闁挎繂妫Λ鍕⒑閸濆嫷鍎庣紒鑸靛哺瀵鈽夊Ο閿嬵潔濠殿喗顨呴悧濠囧极妤ｅ啯鈷戦柛娑橈功閹冲啰绱掔紒姗堣€跨€殿喖顭烽弫鎰緞婵犲嫷鍚呴梻浣瑰缁诲倸螞椤撶倣娑㈠礋椤栨稈鎷洪梺鍛婄箓鐎氱兘宕曟惔锝囩＜闁兼悂娼ч崫铏光偓娈垮枛椤兘骞冮姀銈呯閻忓繑鐗楃€氫粙姊虹拠鏌ュ弰婵炰匠鍕彾濠电姴浼ｉ敐澶樻晩闁告挆鍜冪床闂備浇顕栭崹搴ㄥ礃閿濆棗鐦辩紓鍌氬€风欢锟犲闯椤曗偓瀹曞綊骞庨挊澶岊唹闂侀潧绻掓慨顓炍ｉ崼銉︾厪闊洦娲栧暩濡炪倖鎸搁幖顐﹀煘閹达附鍊烽柛娆忣樈濡偟绱撴担铏瑰笡閻㈩垪鈧磭鏆︽繝闈涱儏缁犵粯銇勯弮鍥嗘帡骞忓ú顏呯厸濠㈣泛鑻禒锕€顭块悷鐗堫棦閽樻繈鏌ㄩ弬娆炬綗濞存粍绮撻弻鐔衡偓娑欘焽缁犳牗銇勯妷锝呯仼闁宠鍨块弫宥夊礋椤掍焦鐦撻柣搴ゎ潐濞叉粓宕伴弽顓溾偓浣糕槈濮楀棙鍍垫俊鎻掓湰閻楁洟寮查鍫熲拻闁稿本鐟чˇ锕傛煙鐠囇呯瘈闁靛棗鍟村畷濂稿Ψ閵壯嶇幢闂備胶绮濠氬储瑜忕划鍫熷緞閹邦厾鍘电紓鍌欓檷閸ㄥ綊寮搁悢鍏肩厓闂佸灝顑呴悘瀵糕偓娈垮枛閻栧ジ骞冨▎鎾崇骇闁规惌鍘介ˉ瀣繆閻愵亜鈧呮媼閿濆洨涓嶉柟鎹愵嚙缁犳牗淇婇妶鍌氫壕濡炪値鍋呯换鍫ャ€侀弴銏狀潊闁绘鍋ｉ崑鏍⒑鐠囨彃顒㈡い鏃€鐗犲畷浼村冀椤撴稈鍋撻敃鍌涘€婚柦妯侯槹閻庮剟姊洪悷鏉库挃缂侇噮鍨跺畷鎴﹀箛閻楀牏鍘剧紒鐐緲瀹曨剚鏅堕鈧弻宥堫檨闁告挻鐩畷鎴﹀Χ閸滀焦缍庡┑鐐叉▕娴滄繈藟閸喓绠鹃柟杈剧秮閸濇椽鎳栭弽顓熲拻濞达絼璀﹂悞鐐叏濮楀牏鐣遍柍璇茬Ч瀵挳鎮╅悽鐢靛姽闂備礁婀遍崕銈夈€冮崱娑樺惞闁告劦鍠楅悡鍐煕濠靛棗顏╅柡鍡欏枛閺屻劌鈽夊▎鎴犵厜濠殿喖锕ㄥ▍锝囨閹烘嚦鐔煎传閸曟垶娲熷娲川婵犲啫闉嶉梺鑽ゅ暱閺呮盯鎮惧畡鎵虫斀閻庯綆鈧厞鍥ㄧ厱闁靛鍨哄▍鍥煥濞戞瑧绠為柟顔筋殜閻涱噣宕归鐓庮潛闂備礁缍婇弨閬嶅垂閸ф鍋傛い鎺戝閺佸棝鏌涚仦缁㈡當濞存粎鍋撶换娑㈠醇濠靛牅铏庨梺鍝勵儐缁嬫帡濡甸崟顖ｆ晣闁绘ɑ褰冮獮瀣倵濞堝灝娅橀柛瀣躬閻涱喖螣閼测晝锛滃┑鈽嗗灥濡椼劌效濡ゅ懏鈷掑ù锝堟娴滃綊鏌嶅畡鎵ⅵ鐎规洘绮岄埢搴ㄥ箻瀹曞洤濮︽俊鐐€栫敮鎺楀磹閸涘﹦顩烽弶鍫涘妽閸欏繐鈹戦悩鎻掓殲闁靛洦绻冩穱濠囶敃閵忕姵娈梺瀹犳椤︽澘顭囪箛娑樜╅柟鎵虫櫅閳ь剚绻傞～蹇涙惞閸︻厾鐓撻梺鍓茬厛閸ｎ噣宕濇径瀣瘈闁汇垽娼ф禒婊堟煥閺囨ê鈧繈骞冮幆褏鏆嬮柟浣冩珪閺傗偓闂佽鍑界紞鍡樼閻愪警鏁婇柟鐑樺焾濞撳鏌曢崼婵囶棡妞ゃ儱妫涢幃顔尖枎閹惧鍘?2", damageDelta: 2),
-			["hook_shot"] = new BattleCardEnhancementDefinition("+", "婵犵數濮烽弫鍛婃叏閻戣棄鏋侀柛娑橈攻閸欏繘鏌ｉ幋锝嗩棄闁哄绶氶弻娑樷槈濮楀牊鏁鹃梺鍛婄懃缁绘﹢寮婚敐澶婄闁挎繂妫Λ鍕⒑閸濆嫷鍎庣紒鑸靛哺瀵鈽夊Ο閿嬵潔濠殿喗顨呴悧濠囧极妤ｅ啯鈷戦柛娑橈功閹冲啰绱掔紒姗堣€跨€殿喖顭烽弫鎰緞婵犲嫷鍚呴梻浣瑰缁诲倸螞椤撶倣娑㈠礋椤栨稈鎷洪梺鍛婄箓鐎氱兘宕曟惔锝囩＜闁兼悂娼ч崫铏光偓娈垮枛椤兘骞冮姀銈呯閻忓繑鐗楃€氫粙姊虹拠鏌ュ弰婵炰匠鍕彾濠电姴浼ｉ敐澶樻晩闁告挆鍜冪床闂備浇顕栭崹搴ㄥ礃閿濆棗鐦辩紓鍌氬€风欢锟犲闯椤曗偓瀹曞綊骞庨挊澶岊唹闂侀潧绻掓慨顓炍ｉ崼銉︾厪闊洦娲栧暩濡炪倖鎸搁幖顐﹀煘閹达附鍊烽柛娆忣樈濡偟绱撴担铏瑰笡閻㈩垪鈧磭鏆︽繝闈涱儏缁犵粯銇勯弮鍥嗘帡骞忓ú顏呯厸濠㈣泛鑻禒锕€顭块悷鐗堫棦閽樻繈鏌ㄩ弬娆炬綗濞存粍绮撻弻鐔衡偓娑欘焽缁犳牗銇勯妷锝呯仼闁宠鍨块弫宥夊礋椤掍焦鐦撻柣搴ゎ潐濞叉粓宕伴弽顓溾偓浣糕槈濮楀棙鍍垫俊鎻掓湰閻楁洟寮查鍫熲拻闁稿本鐟чˇ锕傛煙鐠囇呯瘈闁靛棗鍟村畷濂稿Ψ閵壯嶇幢闂備胶绮濠氬储瑜忕划鍫熷緞閹邦厾鍘电紓鍌欓檷閸ㄥ綊寮搁悢鍏肩厓闂佸灝顑呴悘瀵糕偓娈垮枛閻栧ジ骞冨▎鎾崇骇闁规惌鍘介ˉ瀣繆閻愵亜鈧呮媼閿濆洨涓嶉柟鎹愵嚙缁犳牗淇婇妶鍌氫壕濡炪値鍋呯换鍫ャ€侀弴銏狀潊闁绘鍋ｉ崑鏍⒑鐠囨彃顒㈡い鏃€鐗犲畷浼村冀椤撴稈鍋撻敃鍌涘€婚柦妯侯槹閻庮剟姊洪悷鏉库挃缂侇噮鍨跺畷鎴﹀箛閻楀牏鍘剧紒鐐緲瀹曨剚鏅堕鈧弻宥堫檨闁告挻鐩畷鎴﹀Χ閸滀焦缍庡┑鐐叉▕娴滄繈藟閸喓绠鹃柟杈剧秮閸濇椽鎳栭弽顓熲拻濞达絼璀﹂悞鐐叏濮楀牏鐣遍柍璇茬Ч瀵挳鎮╅悽鐢靛姽闂備礁婀遍崕銈夈€冮崱娑樺惞闁告劦鍠楅悡鍐煕濠靛棗顏╅柡鍡欏枛閺屻劌鈽夊▎鎴犵厜濠殿喖锕ㄥ▍锝囨閹烘嚦鐔煎传閸曟垶娲熷娲川婵犲啫闉嶉梺鑽ゅ暱閺呮盯鎮惧畡鎵虫斀閻庯綆鈧厞鍥ㄧ厱闁靛鍨哄▍鍥煥濞戞瑧绠為柟顔筋殜閻涱噣宕归鐓庮潛闂備礁缍婇弨閬嶅垂閸ф鍋傛い鎺戝閺佸棝鏌涚仦缁㈡當濞存粎鍋撶换娑㈠醇濠靛牅铏庨梺鍝勵儐缁嬫帡濡甸崟顖ｆ晣闁绘ɑ褰冮獮瀣倵濞堝灝娅橀柛瀣躬閻涱喖螣閼测晝锛滃┑鈽嗗灥濡椼劌效濡ゅ懏鈷掑ù锝堟娴滃綊鏌嶅畡鎵ⅵ鐎规洘绮岄埢搴ㄥ箻瀹曞洤濮︽俊鐐€栫敮鎺楀磹閸涘﹦顩烽弶鍫涘妽閸欏繐鈹戦悩鎻掓殲闁靛洦绻冩穱濠囶敃閵忕姵娈梺瀹犳椤︽澘顭囪箛娑樜╅柟鎵虫櫅閳ь剚绻傞～蹇涙惞閸︻厾鐓撻梺鍓茬厛閸ｎ噣宕濇径瀣瘈闁汇垽娼ф禒婊堟煥閺囨ê鈧繈骞冮幆褏鏆嬮柟浣冩珪閺傗偓闂佽鍑界紞鍡樼閻愪警鏁婇柟鐑樺焾濞撳鏌曢崼婵囶棡妞ゃ儱妫涢幃顔尖枎閹惧鍘?2", damageDelta: 2),
-			["deep_focus"] = new BattleCardEnhancementDefinition("+", "闂傚倸鍊搁崐鎼佸磹閹间礁纾归柟闂寸绾惧綊鏌熼梻瀵割槮缁炬儳缍婇弻鐔兼⒒鐎靛壊妲紒鐐劤缂嶅﹪寮婚悢鍏尖拻閻庨潧澹婂Σ顔剧磼閻愵剙鍔ょ紓宥咃躬瀵鎮㈤崗灏栨嫽闁诲酣娼ф竟濠偽ｉ鍓х＜闁绘劦鍓欓崝銈囩磽瀹ュ拑韬€殿喖顭烽幃銏ゅ礂鐏忔牗瀚介梺璇查叄濞佳勭珶婵犲伣锝夘敊閸撗咃紲闂佺粯鍔﹂崜娆撳礉閵堝洨纾界€广儱鎷戦煬顒傗偓娈垮枛椤兘寮幇顓炵窞濠电姴瀚烽崥鍛存⒒娴ｇ懓顕滅紒璇插€块獮澶娾槈閵忕姷顔掔紓鍌欑劍椤洭宕㈤柆宥嗏拺闂傚牊绋撴晶鏇㈡煙閸愭煡鍙勬い銏℃椤㈡﹢濮€閿涘嫬骞愰梺璇茬箳閸嬫稒鏅堕挊澹濊櫣鈧稒菧娴滄粓鏌曡箛濠傚⒉缂佲偓鐎ｎ喗鐓涘ù锝囨嚀婵秶鈧娲栧畷顒勫煝鎼粹垾鐔煎箒瀹ュ棙鐨戠紒杈ㄦ崌瀹曟帒顫濋钘変壕闁绘垼濮ら崵鍕煠缁嬭法浠涢柛娆忕箻濮婃椽宕归鍛壋缂備胶濞€缁犳牠寮诲鍫闂佸憡鎸鹃崰鏍ь嚕婵犳艾鐏崇€规洖娲﹀▓鏇㈡⒑闁偛鑻晶瀵糕偓瑙勬磻閸楀啿顕ｆ禒瀣垫晣闁绘灏欓妶锕傛⒒娴ｈ櫣銆婇柛鎾寸箞瀹曟瑩鎮烽幏鏃撶稻閵堬綁宕橀埞鐐闂備線娼荤€靛矂宕㈤挊澶嗘瀺闁哄洨鍋愰弨鑺ャ亜閺冨倸浜鹃柡鍡忔櫊閺岀喖鐛崹顔句患闂佸疇妫勯ˇ鍨叏閳ь剟鏌ｅΟ鍨毢闁绘稈鏅滄穱濠囨倷椤忓嫧鍋撻弽顓熷亱婵°倕鎳庨弰銉╂煕閹伴潧鏋涢柛鎴犲█閺屾稑鈽夐崡鐐茬闂佸搫鍟悧濠囧磻閹扮増鈷掗柛顐ゅ枔閳笺儲绻涘畝濠侀偗婵﹨娅ｇ槐鎺戭潨閸℃鏆︽繝鐢靛仜瀵墎鎹㈤崱娑樜﹂柟閭﹀幗婵挳鏌涢幘鍐茬骇閻庨潧鐭傚娲濞戞艾顣哄┑鈽嗗亝椤ㄥ﹤鐣烽崨濠勭瘈闁搞儯鍔庨崢閬嶆煟鎼搭垳绉甸柛瀣噽娴滄悂顢橀姀锛勫帗闁荤喐鐟ョ€氼剟鎮橀幘顔界厱闁靛ň鏅濋悾娲煙椤旂晫鎳囬柟绋匡攻瀵板嫭寰勬繝鍌滀喊闂傚倸鍊搁崐椋庣矆娓氣偓楠炴牠顢曢敂钘夊壒婵犮垼娉涢惉鑲╃矆婵犲伅褰掓晲婢跺棗浜炬繛鎴炴皑閻ｉ箖姊绘担绋款棌闁稿鎳庣叅闁哄稁鍘介崐宄扳攽閻樻彃顏柛鐘冲姍閹﹢鎮欓幓鎺嗘寖闂佺粯绻傞悥濂稿蓟閿熺姴鐐婇柕澶堝劤娴犻箖姊洪幎鑺ユ暠闁搞劌鐏濋～蹇旂節濮橆剟鍞堕梺缁樻閵嗏偓濠殿喖娲娲偡閺夋寧鍊梺鍛婃⒐閻熲晠鐛崘銊庢棃鍩€椤掑嫸缍栨繝闈涱儛閺佸啴鏌曡箛鏇炐ラ柕鍫櫍濮婄粯鎷呴搹鐟扮婵炴挻纰嶉〃濠傜暦閹惰姤鏅查柛娑卞灡濞堥箖姊洪崜鎻掍簼婵炶绠撳顐﹀幢濞戞瑧鍘撻悷婊勭矒瀹曟粌鈽夊顒€鐏婇梺鍓插亖閸庨亶鏌嬮崶銊х瘈闁靛骏绱曠粻鎾剁磽瀹ュ拑韬€殿噮鍋婇獮鍥级閸ф鏁规繝鐢靛█濞佳囨偋閸曨垰纾婚柨婵嗩槹閳锋帒霉閿濆洤鍔嬮柛銈傚亾闂備礁顓介弶鍨瀷缂傚倸鍊归幐濠氬Χ閿濆绀冮柕濞у啯鎲?1", drawCountDelta: 1),
-			["spark_charge"] = new BattleCardEnhancementDefinition("+", "闂傚倸鍊搁崐鎼佸磹閹间礁纾归柟闂寸绾惧綊鏌熼梻瀵割槮缁炬儳缍婇弻鐔兼⒒鐎靛壊妲紒鐐劤缂嶅﹪寮婚悢鍏尖拻閻庨潧澹婂Σ顔剧磼閻愵剙鍔ょ紓宥咃躬瀵鎮㈤崗灏栨嫽闁诲酣娼ф竟濠偽ｉ鍓х＜闁绘劦鍓欓崝銈囩磽瀹ュ拑韬€殿喖顭烽幃銏ゅ礂鐏忔牗瀚介梺璇查叄濞佳勭珶婵犲伣锝夘敊閸撗咃紲闂佺粯鍔﹂崜娆撳礉閵堝洨纾界€广儱鎷戦煬顒傗偓娈垮枛椤兘寮幇顓炵窞濠电姴瀚烽崥鍛存⒒娴ｇ懓顕滅紒璇插€块獮澶娾槈閵忕姷顔掔紓鍌欑劍椤洭宕㈤柆宥嗏拺闂傚牊绋撴晶鏇㈡煙閸愭煡鍙勬い銏℃椤㈡﹢濮€閿涘嫬骞愰梺璇茬箳閸嬫稒鏅堕挊澹濊櫣鈧稒菧娴滄粓鏌曡箛濠傚⒉缂佲偓鐎ｎ喗鐓涘ù锝囨嚀婵秶鈧娲栧畷顒勫煝鎼粹垾鐔煎箒瀹ュ棗鍝烘慨濠傤煼瀹曟帒鈻庨幒鎴濆腐婵＄偑鍊ら崢濂告偋韫囨稑绠栨い鏇楀亾妞ゃ垺娲熼弫鍐焵椤掑倻鐭嗗鑸靛姇缁犺绻涢敐搴″濠德ゅ亹缁辨帡鎮╅棃娑欑亪闂佸搫鐬奸崰鏍ь潖閼姐倐鍋撻棃娑橆棌婵″樊鍠栭埞鎴﹀煡閸℃ぞ绨奸梺鎸庢磸閸ㄤ粙鐛崘顓滀汗闁圭儤鍨归悾鎶芥⒑閸︻厼鍔嬮柛銊ф暬閳ユ牗寰勬繛鐐杸闂佺粯鍔樼亸娆愭櫠閿斿墽纾奸柣妯虹－婢ь亝銇勯銏㈢閻撱倖銇勮箛鎾村婵☆偄鍟埞鎴︽倷閺夋垹浠稿┑顔角滈崝鎴﹀箖閸ф绀嬫い鏍ㄧ▓閹疯櫣绱撴担鍓插剰閻忓繐鎳樺銊х磼濡偐顔曢梺鑲┾拡閸撴瑩寮告惔銊︾厽闁挎繂鎳庡Σ缁樸亜椤愶絿鐭掗柛鈹惧亾濡炪倖甯掔€氼剟寮伴妷鈺傜厓鐟滄粓宕滃璺何﹂柛鏇ㄥ灠缁犳娊鏌涢埄鍐︿沪濠㈣娲樻穱濠囨倷椤忓嫧鍋撻妶鍡欘洸婵犲﹤鐗嗛悿顕€鎮楀☉娅偐鎹㈤崱娑欑厱妞ゆ劧绲剧粈鈧Δ鐘靛亼閸ㄧ儤绌辨繝鍥ч柛灞剧煯婢规洘淇婇悙顏勨偓銈夊磻閸曨個娲敇閻戝棙缍庡┑鐐叉▕娴滄粎绮昏ぐ鎺撶厽闁归偊鍘肩徊缁樸亜椤掆偓閻楀繒妲愰幘璇茬＜婵ɑ鐦烽姀銈嗙叆闁哄洢鍔嬮柇顖炴煟濞戝崬娅嶇€规洘锕㈡俊鍛婃償閿濆懏鐏堥梺鍦劜缁绘繃淇婇崼鏇炵倞闁冲搫鍋嗗鎾绘⒒閸屾艾鈧兘鎳楅崼鏇椻偓锕傚醇閵夈儱鐝樺銈嗗笒鐎氥劑鍩€椤掆偓閸熸潙鐣烽崡鐐╂婵☆垱妞垮Λ鐔兼⒒娓氣偓閳ь剛鍋涢懟顖涙櫠鐎涙ɑ鍙忓┑鐘插鐢盯鏌熷畡鐗堝殗闁圭厧缍婇幃鐑藉箥椤曞懎浠归梻鍌氬€风粈渚€骞夐垾鎰佹綎闁荤喐鍣村ú顏勫唨妞ゆ挆鍕珨闂備焦瀵х换鍌炈囬鐐寸厑闁搞儺鍓氶悡娑㈡煕閵夘垳鍒板ù婊呭亾缁绘繈濮€閿濆懐鍘梺鍛婃⒐閻楃姴鐣烽幇鐗堝€婚柤鎭掑劤閸樹粙姊洪悷閭﹀殶闁稿孩鍔欓幃鐐寸鐎ｎ偆鍘卞┑鈽嗗灠閸氬寮抽浣瑰弿濠电姴鍟妵婵堚偓瑙勬磸閸斿秶鎹㈠┑瀣闁靛瀵屽鏃堟⒒閸屾瑧鍔嶉悗绗涘厾楦跨疀濞戞锛熼梻鍌氱墛缁嬫捇寮抽敃鍌涚厵闁绘鐗婄欢鑼磼閻樺磭鈯曢柕鍥у楠炴鎹勯悜妯尖偓濠氭倵?1", energyGainDelta: 1),
-			["burst_drive"] = new BattleCardEnhancementDefinition("+", "闂傚倸鍊搁崐鎼佸磹閹间礁纾归柟闂寸绾惧綊鏌熼梻瀵割槮缁炬儳缍婇弻鐔兼⒒鐎靛壊妲紒鐐劤缂嶅﹪寮婚悢鍏尖拻閻庨潧澹婂Σ顔剧磼閻愵剙鍔ょ紓宥咃躬瀵鎮㈤崗灏栨嫽闁诲酣娼ф竟濠偽ｉ鍓х＜闁绘劦鍓欓崝銈囩磽瀹ュ拑韬€殿喖顭烽幃銏ゅ礂鐏忔牗瀚介梺璇查叄濞佳勭珶婵犲伣锝夘敊閸撗咃紲闂佺粯鍔﹂崜娆撳礉閵堝洨纾界€广儱鎷戦煬顒傗偓娈垮枛椤兘寮幇顓炵窞濠电姴瀚烽崥鍛存⒒娴ｇ懓顕滅紒璇插€块獮澶娾槈閵忕姷顔掔紓鍌欑劍椤洭宕㈤柆宥嗏拺闂傚牊绋撴晶鏇㈡煙閸愭煡鍙勬い銏℃椤㈡﹢濮€閿涘嫬骞愰梺璇茬箳閸嬫稒鏅堕挊澹濊櫣鈧稒菧娴滄粓鏌曡箛濠傚⒉缂佲偓鐎ｎ喗鐓涘ù锝囨嚀婵秶鈧娲栧畷顒勫煝鎼粹垾鐔煎箒瀹ュ棗鍝烘慨濠傤煼瀹曟帒鈻庨幒鎴濆腐婵＄偑鍊ら崢濂告偋韫囨稑绠栨い鏇楀亾妞ゃ垺娲熼弫鍐焵椤掑倻鐭嗗鑸靛姇缁犺绻涢敐搴″濠德ゅ亹缁辨帡鎮╅棃娑欑亪闂佸搫鐬奸崰鏍ь潖閼姐倐鍋撻棃娑橆棌婵″樊鍠栭埞鎴﹀煡閸℃ぞ绨奸梺鎸庢磸閸ㄤ粙鐛崘顓滀汗闁圭儤鍨归悾鎶芥⒑閸︻厼鍔嬮柛銊ф暬閳ユ牗寰勬繛鐐杸闂佺粯鍔樼亸娆愭櫠閿斿墽纾奸柣妯虹－婢ь亝銇勯銏㈢閻撱倖銇勮箛鎾村婵☆偄鍟埞鎴︽倷閺夋垹浠稿┑顔角滈崝鎴﹀箖閸ф绀嬫い鏍ㄧ▓閹疯櫣绱撴担鍓插剰閻忓繐鎳樺銊х磼濡偐顔曢梺鑲┾拡閸撴瑩寮告惔銊︾厽闁挎繂鎳庡Σ缁樸亜椤愶絿鐭掗柛鈹惧亾濡炪倖甯掔€氼剟寮伴妷鈺傜厓鐟滄粓宕滃璺何﹂柛鏇ㄥ灠缁犳娊鏌涢埄鍐︿沪濠㈣娲樻穱濠囨倷椤忓嫧鍋撻妶鍡欘洸婵犲﹤鐗嗛悿顕€鎮楀☉娅偐鎹㈤崱娑欑厱妞ゆ劧绲剧粈鈧Δ鐘靛亼閸ㄧ儤绌辨繝鍥ч柛灞剧煯婢规洘淇婇悙顏勨偓銈夊磻閸曨個娲敇閻戝棙缍庡┑鐐叉▕娴滄粎绮昏ぐ鎺撶厽闁归偊鍘肩徊缁樸亜椤掆偓閻楀繒妲愰幘璇茬＜婵ɑ鐦烽姀銈嗙叆闁哄洢鍔嬮柇顖炴煟濞戝崬娅嶇€规洘锕㈡俊鍛婃償閿濆懏鐏堥梺鍦劜缁绘繃淇婇崼鏇炵倞闁冲搫鍋嗗鎾绘⒒閸屾艾鈧兘鎳楅崼鏇椻偓锕傚醇閵夈儱鐝樺銈嗗笒鐎氥劑鍩€椤掆偓閸熸潙鐣烽崡鐐╂婵☆垱妞垮Λ鐔兼⒒娓氣偓閳ь剛鍋涢懟顖涙櫠鐎涙ɑ鍙忓┑鐘插鐢盯鏌熷畡鐗堝殗闁圭厧缍婇幃鐑藉箥椤曞懎浠归梻鍌氬€风粈渚€骞夐垾鎰佹綎闁荤喐鍣村ú顏勫唨妞ゆ挆鍕珨闂備焦瀵х换鍌炈囬鐐寸厑闁搞儺鍓氶悡娑㈡煕閵夘垳鍒板ù婊呭亾缁绘繈濮€閿濆懐鍘梺鍛婃⒐閻楃姴鐣烽幇鐗堝€婚柤鎭掑劤閸樹粙姊洪悷閭﹀殶闁稿孩鍔欓幃鐐寸鐎ｎ偆鍘卞┑鈽嗗灠閸氬寮抽浣瑰弿濠电姴鍟妵婵堚偓瑙勬磸閸斿秶鎹㈠┑瀣闁靛瀵屽鏃堟⒒閸屾瑧鍔嶉悗绗涘厾楦跨疀濞戞锛熼梻鍌氱墛缁嬫捇寮抽敃鍌涚厵闁绘鐗婄欢鑼磼閻樺磭鈯曢柕鍥у楠炴鎹勯悜妯尖偓濠氭倵?1", energyGainDelta: 1),
-			["guard_up"] = new BattleCardEnhancementDefinition("+", "闂傚倸鍊搁崐鎼佸磹閹间礁纾归柟闂寸绾惧綊鏌熼梻瀵割槮缁炬儳缍婇弻鐔兼⒒鐎靛壊妲紒鐐劤缂嶅﹪寮婚悢鍏尖拻閻庨潧澹婂Σ顔剧磼閻愵剙鍔ょ紓宥咃躬瀵鎮㈤崗灏栨嫽闁诲酣娼ф竟濠偽ｉ鍓х＜闁绘劦鍓欓崝銈囩磽瀹ュ拑韬€殿喖顭烽幃銏ゅ礂鐏忔牗瀚介梺璇查叄濞佳勭珶婵犲伣锝夘敊閸撗咃紲闂佺粯鍔﹂崜娆撳礉閵堝洨纾界€广儱鎷戦煬顒傗偓娈垮枛椤兘寮幇顓炵窞濠电姴瀚烽崥鍛存⒒娴ｇ懓顕滅紒璇插€块獮澶娾槈閵忕姷顔掔紓鍌欑劍椤洭宕㈤柆宥嗏拺闂傚牊绋撴晶鏇㈡煙閸愭煡鍙勬い銏℃椤㈡﹢濮€閿涘嫬骞愰梺璇茬箳閸嬫稒鏅堕挊澹濊櫣鈧稒菧娴滄粓鏌曡箛濠傚⒉缂佲偓鐎ｎ喗鐓涘ù锝囨嚀婵秶鈧娲栧畷顒勫煝鎼粹檧鏋庨柟瀛樼箖閻忓酣姊婚崒姘偓鎼佸磹妞嬪孩顐芥慨妯挎硾閻掑灚銇勯幒鎴濃偓鍛婄濠婂牊鐓犳繛鑼额嚙閻忥妇鈧娲忛崹浠嬬嵁閺嶃劍濯撮柛锔诲幖楠炴姊绘担渚敯婵炲拑缍佸畷鎴濃槈椤兘鍋撻崨鎼晢闁告洦鍓涢崢闈浳旈悩闈涗粶闁诲繑绻堥幃姗€鍩￠崨顔惧帗闁荤喐鐟ョ€氼剟鎮橀埡鍛厓鐟滄粓宕滈妸褏绀婇柛鈩冾焽椤╂煡鏌ｉ幇顓犲闁搞儺鍓欑痪褎绻涢崱娆忎壕閻庨潧鐭傚娲濞戞艾顣哄┑鈽嗗亝閻熝勭閹间焦顥堟繛鎴炲笚閺傗偓婵＄偑鍊栭悧顓犲緤娴犲宓侀柡宥庡幖绾偓闂備緡鍓欑粔鐢告偂閺囩喍绻嗛柕鍫濇噹閺嗘瑥霉濠婂啰绉洪柡宀嬬節閸┾偓妞ゆ帊鑳堕々鐑芥倵閿濆骸浜為柛妯圭矙濮婇缚銇愰幒鎴滃枈闂佸憡鎸婚惄顖炵嵁濡ゅ懏鍋愰柣銏㈡暩閿涙繈鎮楅獮鍨姎婵☆偅顨婇幃姗€骞橀鐣屽幐闁诲繒鍋涙晶浠嬪煡婢跺浜滄い鎰剁悼缁犵偞銇勯姀鈽嗘畷鐎垫澘瀚换婵嬪磼濮樺吋顥嶅┑鐘殿暜缁辨洟宕戦幋锕€纾归柕鍫濐槸閸屻劑鏌ｉ幘宕囩槏婵炲樊浜滃洿婵犮垼娉涢敃锕傚储濞差亝鐓欓柛蹇氬亹閺嗘﹢鏌涢弬璺ㄧ伇缂侇喖顭烽弫鎰板幢濞嗘垹妲囬梻浣稿閻撳牓宕戦崟顒佸弿闁割偆鍠嗘禍婊堟煏婢舵ê鐏ｇ紒鈾€鍋撴繝娈垮枛閿曘儱顪冩禒瀣疇闁跨喓濮村洿闂佸憡渚楅崰姘跺焵椤掑嫮鐣烘慨濠冩そ閹筹繝濡堕崨顔锯偓顓㈡⒑缁嬪灝顒㈠┑鐐诧躬瀹曟椽鍩€椤掍降浜滈柟鍝勭Ф椤︼箓鏌涢妶搴″闂囧绻濇繝鍌涘櫣濞寸姾椴搁〃銉╂倷閺夋垹浼屾繝娈垮枓閸嬫捇姊洪棃娑氬闁瑰啿閰ｉ幊鎾诲垂椤旇鏂€闂佺粯鍔栧娆撴倶閿曞倹鐓熼柣鏃€绻傚ú銈夊磼閵婏负浜滈煫鍥ㄦ尵婢ф盯鏌嶉柨瀣伌闁哄本鐩獮姗€寮堕幋鐘点偡濠电偛鐡ㄧ划宥囨崲閸曨厽顫曢柟鐑樻⒐鐎氭岸鏌熺紒妯哄潑闁稿鎹囧畷绋课旈埀顒勫及閵夆晜鐓冪憸婊堝礈濮樿泛桅闁告洦鍨扮粻鎶芥煕閳╁啨浠﹀瑙勬礋濮婄粯鎷呮笟顖涙暞濡炪倖娲樼划搴∥ｉ幇鏉垮嵆闁绘ɑ褰冮悘濠囨煟鎼搭垳绉靛ù婊冪埣瀹曘儳鈧綆鍠楅悡鏇㈡煃閳轰礁鏆欏┑顔兼搐闇夋繝濠傚缁犵偞鎱ㄦ繝鍐┿仢鐎规洏鍔嶇换婵嬪磼濮樺吋缍傞梻鍌欑閹碱偊宕愭搴㈩偨婵ê澧庡畵?2", shieldGainDelta: 2),
-			["brace"] = new BattleCardEnhancementDefinition("+", "闂傚倸鍊搁崐鎼佸磹閹间礁纾归柟闂寸绾惧綊鏌熼梻瀵割槮缁炬儳缍婇弻鐔兼⒒鐎靛壊妲紒鐐劤缂嶅﹪寮婚悢鍏尖拻閻庨潧澹婂Σ顔剧磼閻愵剙鍔ょ紓宥咃躬瀵鎮㈤崗灏栨嫽闁诲酣娼ф竟濠偽ｉ鍓х＜闁绘劦鍓欓崝銈囩磽瀹ュ拑韬€殿喖顭烽幃銏ゅ礂鐏忔牗瀚介梺璇查叄濞佳勭珶婵犲伣锝夘敊閸撗咃紲闂佺粯鍔﹂崜娆撳礉閵堝洨纾界€广儱鎷戦煬顒傗偓娈垮枛椤兘寮幇顓炵窞濠电姴瀚烽崥鍛存⒒娴ｇ懓顕滅紒璇插€块獮澶娾槈閵忕姷顔掔紓鍌欑劍椤洭宕㈤柆宥嗏拺闂傚牊绋撴晶鏇㈡煙閸愭煡鍙勬い銏℃椤㈡﹢濮€閿涘嫬骞愰梺璇茬箳閸嬫稒鏅堕挊澹濊櫣鈧稒菧娴滄粓鏌曡箛濠傚⒉缂佲偓鐎ｎ喗鐓涘ù锝囨嚀婵秶鈧娲栧畷顒勫煝鎼粹檧鏋庨柟瀛樼箖閻忓酣姊婚崒姘偓鎼佸磹妞嬪孩顐芥慨妯挎硾閻掑灚銇勯幒鎴濃偓鍛婄濠婂牊鐓犳繛鑼额嚙閻忥妇鈧娲忛崹浠嬬嵁閺嶃劍濯撮柛锔诲幖楠炴姊绘担渚敯婵炲拑缍佸畷鎴濃槈椤兘鍋撻崨鎼晢闁告洦鍓涢崢闈浳旈悩闈涗粶闁诲繑绻堥幃姗€鍩￠崨顔惧帗闁荤喐鐟ョ€氼剟鎮橀埡鍛厓鐟滄粓宕滈妸褏绀婇柛鈩冾焽椤╂煡鏌ｉ幇顓犲闁搞儺鍓欑痪褎绻涢崱娆忎壕閻庨潧鐭傚娲濞戞艾顣哄┑鈽嗗亝閻熝勭閹间焦顥堟繛鎴炲笚閺傗偓婵＄偑鍊栭悧顓犲緤娴犲宓侀柡宥庡幖绾偓闂備緡鍓欑粔鐢告偂閺囩喍绻嗛柕鍫濇噹閺嗘瑥霉濠婂啰绉洪柡宀嬬節閸┾偓妞ゆ帊鑳堕々鐑芥倵閿濆骸浜為柛妯圭矙濮婇缚銇愰幒鎴滃枈闂佸憡鎸婚惄顖炵嵁濡ゅ懏鍋愰柣銏㈡暩閿涙繈鎮楅獮鍨姎婵☆偅顨婇幃姗€骞橀鐣屽幐闁诲繒鍋涙晶浠嬪煡婢跺浜滄い鎰剁悼缁犵偞銇勯姀鈽嗘畷鐎垫澘瀚换婵嬪磼濮樺吋顥嶅┑鐘殿暜缁辨洟宕戦幋锕€纾归柕鍫濐槸閸屻劑鏌ｉ幘宕囩槏婵炲樊浜滃洿婵犮垼娉涢敃锕傚储濞差亝鐓欓柛蹇氬亹閺嗘﹢鏌涢弬璺ㄧ伇缂侇喖顭烽弫鎰板幢濞嗘垹妲囬梻浣稿閻撳牓宕戦崟顒佸弿闁割偆鍠嗘禍婊堟煏婢舵ê鐏ｇ紒鈾€鍋撴繝娈垮枛閿曘儱顪冩禒瀣疇闁跨喓濮村洿闂佸憡渚楅崰姘跺焵椤掑嫮鐣烘慨濠冩そ閹筹繝濡堕崨顔锯偓顓㈡⒑缁嬪灝顒㈠┑鐐诧躬瀹曟椽鍩€椤掍降浜滈柟鍝勭Ф椤︼箓鏌涢妶搴″闂囧绻濇繝鍌涘櫣濞寸姾椴搁〃銉╂倷閺夋垹浼屾繝娈垮枓閸嬫捇姊洪棃娑氬闁瑰啿閰ｉ幊鎾诲垂椤旇鏂€闂佺粯鍔栧娆撴倶閿曞倹鐓熼柣鏃€绻傚ú銈夊磼閵婏负浜滈煫鍥ㄦ尵婢ф盯鏌嶉柨瀣伌闁哄本鐩獮姗€寮堕幋鐘点偡濠电偛鐡ㄧ划宥囨崲閸曨厽顫曢柟鐑樻⒐鐎氭岸鏌熺紒妯哄潑闁稿鎹囧畷绋课旈埀顒勫及閵夆晜鐓冪憸婊堝礈濮樿泛桅闁告洦鍨扮粻鎶芥煕閳╁啨浠﹀瑙勬礋濮婄粯鎷呮笟顖涙暞濡炪倖娲樼划搴∥ｉ幇鏉垮嵆闁绘ɑ褰冮悘濠囨煟鎼搭垳绉靛ù婊冪埣瀹曘儳鈧綆鍠楅悡鏇㈡煃閳轰礁鏆欏┑顔兼搐闇夋繝濠傚缁犵偞鎱ㄦ繝鍐┿仢鐎规洏鍔嶇换婵嬪磼濮樺吋缍傞梻鍌欑閹碱偊宕愭搴㈩偨婵ê澧庡畵?3", shieldGainDelta: 3),
-			["quick_guard"] = new BattleCardEnhancementDefinition("+", "闂傚倸鍊搁崐鎼佸磹閹间礁纾归柟闂寸绾惧綊鏌熼梻瀵割槮缁炬儳缍婇弻鐔兼⒒鐎靛壊妲紒鐐劤缂嶅﹪寮婚悢鍏尖拻閻庨潧澹婂Σ顔剧磼閻愵剙鍔ょ紓宥咃躬瀵鎮㈤崗灏栨嫽闁诲酣娼ф竟濠偽ｉ鍓х＜闁绘劦鍓欓崝銈囩磽瀹ュ拑韬€殿喖顭烽幃銏ゅ礂鐏忔牗瀚介梺璇查叄濞佳勭珶婵犲伣锝夘敊閸撗咃紲闂佺粯鍔﹂崜娆撳礉閵堝洨纾界€广儱鎷戦煬顒傗偓娈垮枛椤兘寮幇顓炵窞濠电姴瀚烽崥鍛存⒒娴ｇ懓顕滅紒璇插€块獮澶娾槈閵忕姷顔掔紓鍌欑劍椤洭宕㈤柆宥嗏拺闂傚牊绋撴晶鏇㈡煙閸愭煡鍙勬い銏℃椤㈡﹢濮€閿涘嫬骞愰梺璇茬箳閸嬫稒鏅堕挊澹濊櫣鈧稒菧娴滄粓鏌曡箛濠傚⒉缂佲偓鐎ｎ喗鐓涘ù锝囨嚀婵秶鈧娲栧畷顒勫煝鎼粹檧鏋庨柟瀛樼箖閻忓酣姊婚崒姘偓鎼佸磹妞嬪孩顐芥慨妯挎硾閻掑灚銇勯幒鎴濃偓鍛婄濠婂牊鐓犳繛鑼额嚙閻忥妇鈧娲忛崹浠嬬嵁閺嶃劍濯撮柛锔诲幖楠炴姊绘担渚敯婵炲拑缍佸畷鎴濃槈椤兘鍋撻崨鎼晢闁告洦鍓涢崢闈浳旈悩闈涗粶闁诲繑绻堥幃姗€鍩￠崨顔惧帗闁荤喐鐟ョ€氼剟鎮橀埡鍛厓鐟滄粓宕滈妸褏绀婇柛鈩冾焽椤╂煡鏌ｉ幇顓犲闁搞儺鍓欑痪褎绻涢崱娆忎壕閻庨潧鐭傚娲濞戞艾顣哄┑鈽嗗亝閻熝勭閹间焦顥堟繛鎴炲笚閺傗偓婵＄偑鍊栭悧顓犲緤娴犲宓侀柡宥庡幖绾偓闂備緡鍓欑粔鐢告偂閺囩喍绻嗛柕鍫濇噹閺嗘瑥霉濠婂啰绉洪柡宀嬬節閸┾偓妞ゆ帊鑳堕々鐑芥倵閿濆骸浜為柛妯圭矙濮婇缚銇愰幒鎴滃枈闂佸憡鎸婚惄顖炵嵁濡ゅ懏鍋愰柣銏㈡暩閿涙繈鎮楅獮鍨姎婵☆偅顨婇幃姗€骞橀鐣屽幐闁诲繒鍋涙晶浠嬪煡婢跺浜滄い鎰剁悼缁犵偞銇勯姀鈽嗘畷鐎垫澘瀚换婵嬪磼濮樺吋顥嶅┑鐘殿暜缁辨洟宕戦幋锕€纾归柕鍫濐槸閸屻劑鏌ｉ幘宕囩槏婵炲樊浜滃洿婵犮垼娉涢敃锕傚储濞差亝鐓欓柛蹇氬亹閺嗘﹢鏌涢弬璺ㄧ伇缂侇喖顭烽弫鎰板幢濞嗘垹妲囬梻浣稿閻撳牓宕戦崟顒佸弿闁割偆鍠嗘禍婊堟煏婢舵ê鐏ｇ紒鈾€鍋撴繝娈垮枛閿曘儱顪冩禒瀣疇闁跨喓濮村洿闂佸憡渚楅崰姘跺焵椤掑嫮鐣烘慨濠冩そ閹筹繝濡堕崨顔锯偓顓㈡⒑缁嬪灝顒㈠┑鐐诧躬瀹曟椽鍩€椤掍降浜滈柟鍝勭Ф椤︼箓鏌涢妶搴″闂囧绻濇繝鍌涘櫣濞寸姾椴搁〃銉╂倷閺夋垹浼屾繝娈垮枓閸嬫捇姊洪棃娑氬闁瑰啿閰ｉ幊鎾诲垂椤旇鏂€闂佺粯鍔栧娆撴倶閿曞倹鐓熼柣鏃€绻傚ú銈夊磼閵婏负浜滈煫鍥ㄦ尵婢ф盯鏌嶉柨瀣伌闁哄本鐩獮姗€寮堕幋鐘点偡濠电偛鐡ㄧ划宥囨崲閸曨厽顫曢柟鐑樻⒐鐎氭岸鏌熺紒妯哄潑闁稿鎹囧畷绋课旈埀顒勫及閵夆晜鐓冪憸婊堝礈濮樿泛桅闁告洦鍨扮粻鎶芥煕閳╁啨浠﹀瑙勬礋濮婄粯鎷呮笟顖涙暞濡炪倖娲樼划搴∥ｉ幇鏉垮嵆闁绘ɑ褰冮悘濠囨煟鎼搭垳绉靛ù婊冪埣瀹曘儳鈧綆鍠楅悡鏇㈡煃閳轰礁鏆欏┑顔兼搐闇夋繝濠傚缁犵偞鎱ㄦ繝鍐┿仢鐎规洏鍔嶇换婵嬪磼濮樺吋缍傞梻鍌欑閹碱偊宕愭搴㈩偨婵ê澧庡畵?2", shieldGainDelta: 2),
+			["cross_slash"] = new BattleCardEnhancementDefinition("+", string.Empty, damageDelta: 2),
+			["quick_cut"] = new BattleCardEnhancementDefinition("+", string.Empty, damageDelta: 1),
+			["line_shot"] = new BattleCardEnhancementDefinition("+", string.Empty, damageDelta: 2),
+			["heavy_shot"] = new BattleCardEnhancementDefinition("+", string.Empty, damageDelta: 2),
+			["battle_read"] = new BattleCardEnhancementDefinition("+", string.Empty, drawCountDelta: 1),
+			["meditate"] = new BattleCardEnhancementDefinition("+", string.Empty, drawCountDelta: 1),
+			["surge"] = new BattleCardEnhancementDefinition("+", string.Empty, energyGainDelta: 1),
+			["draw_spark"] = new BattleCardEnhancementDefinition("+", string.Empty, drawCountDelta: 1),
+			["quick_plan"] = new BattleCardEnhancementDefinition("+", string.Empty, drawCountDelta: 1),
+			["burning_edge"] = new BattleCardEnhancementDefinition("+", string.Empty, damageDelta: 2),
+			["hook_shot"] = new BattleCardEnhancementDefinition("+", string.Empty, damageDelta: 2),
+			["deep_focus"] = new BattleCardEnhancementDefinition("+", string.Empty, drawCountDelta: 1),
+			["spark_charge"] = new BattleCardEnhancementDefinition("+", string.Empty, energyGainDelta: 1),
+			["burst_drive"] = new BattleCardEnhancementDefinition("+", string.Empty, energyGainDelta: 1),
+			["guard_up"] = new BattleCardEnhancementDefinition("+", string.Empty, shieldGainDelta: 2),
+			["brace"] = new BattleCardEnhancementDefinition("+", string.Empty, shieldGainDelta: 3),
+			["quick_guard"] = new BattleCardEnhancementDefinition("+", string.Empty, shieldGainDelta: 2),
 		};
 	[Export] public PackedScene? ForcedBattleRoomScene { get; set; }
 	[Export] public PackedScene[] BattleRoomScenes { get; set; } = Array.Empty<PackedScene>();
@@ -162,6 +167,8 @@ public partial class BattleSceneController : Node2D
 	private Tween? _cameraResetTween;
 	private Tween? _cameraCinematicTween;
 	private bool _isCameraCinematicBusy;
+	private CanvasLayer? _battlePhaseOverlay;
+	private bool _isPhaseTransitionBusy;
 	private readonly List<string> _currentTurnActionLogEntries = new();
 	private readonly List<string> _previousTurnActionLogEntries = new();
 	private readonly List<PendingDelayedCardEffect> _pendingDelayedCardEffects = new();
@@ -321,8 +328,51 @@ public partial class BattleSceneController : Node2D
 		GlobalSession.PlayerRuntimeChanged += OnPlayerRuntimeChanged;
 		GlobalSession.ArakawaRuntimeChanged += OnArakawaRuntimeChanged;
 		ConfigureCameraForBattle();
+		_ = ShowInitialBattlePhaseOverlayAsync();
 
 		GD.Print($"BattleSceneController: layout={layout.LayoutId}, size={layout.BoardSize}, objects={Registry.Count}");
+	}
+
+	private async Task ShowInitialBattlePhaseOverlayAsync()
+	{
+		if (TurnState?.IsPlayerTurn != true)
+		{
+			return;
+		}
+
+		_isPhaseTransitionBusy = true;
+		try
+		{
+			await ToSignal(GetTree(), SceneTree.SignalName.ProcessFrame);
+			await ToSignal(GetTree(), SceneTree.SignalName.ProcessFrame);
+
+			while (CardChessDemo.UI.PagedTutorialPopup.IsVisible(this))
+			{
+				if (!IsInsideTree() || _battleResultCommitted || _battleFailureSequenceStarted)
+				{
+					return;
+				}
+
+				await ToSignal(GetTree(), SceneTree.SignalName.ProcessFrame);
+			}
+
+			SceneTreeTimer delayTimer = GetTree().CreateTimer(InitialBattlePhaseOverlayDelaySeconds);
+			await ToSignal(delayTimer, SceneTreeTimer.SignalName.Timeout);
+
+			if (!IsInsideTree()
+				|| _battleResultCommitted
+				|| _battleFailureSequenceStarted
+				|| TurnState?.IsPlayerTurn != true)
+			{
+				return;
+			}
+
+			await ShowBattlePhaseOverlayCoreAsync(PlayerPhaseOverlayText);
+		}
+		finally
+		{
+			_isPhaseTransitionBusy = false;
+		}
 	}
 
 	private Sprite2D? EnsureBattleBackground(Node2D roomContainer)
@@ -546,7 +596,7 @@ public partial class BattleSceneController : Node2D
 				.Select(cell => cell.Cell));
 		}
 
-		if (_isPlayerMoveResolving)
+		if (_isPlayerMoveResolving || _isPhaseTransitionBusy)
 		{
 			overlay.SetReachableCells(Array.Empty<Vector2I>());
 			overlay.SetAttackTargetCells(Array.Empty<Vector2I>());
@@ -636,12 +686,7 @@ public partial class BattleSceneController : Node2D
 
 	public override void _UnhandledInput(InputEvent @event)
 	{
-		if (_battleFailureSequenceStarted)
-		{
-			return;
-		}
-
-		if (_isPlayerMoveResolving)
+		if (IsBattleInputLocked())
 		{
 			return;
 		}
@@ -914,12 +959,7 @@ public partial class BattleSceneController : Node2D
 
 	private void OnEndTurnRequested()
 	{
-		if (_battleFailureSequenceStarted)
-		{
-			return;
-		}
-
-		if (_isPlayerMoveResolving)
+		if (IsBattleInputLocked())
 		{
 			return;
 		}
@@ -929,12 +969,7 @@ public partial class BattleSceneController : Node2D
 
 	private void OnAttackRequested()
 	{
-		if (_battleFailureSequenceStarted || TurnState == null)
-		{
-			return;
-		}
-
-		if (_isPlayerMoveResolving)
+		if (IsBattleInputLocked() || TurnState == null)
 		{
 			return;
 		}
@@ -957,12 +992,7 @@ public partial class BattleSceneController : Node2D
 
 	private void OnCardRequested(string cardInstanceId)
 	{
-		if (_battleFailureSequenceStarted || TurnState == null || _playerDeck == null || StateManager == null)
-		{
-			return;
-		}
-
-		if (_isPlayerMoveResolving)
+		if (IsBattleInputLocked() || TurnState == null || _playerDeck == null || StateManager == null)
 		{
 			return;
 		}
@@ -1012,12 +1042,7 @@ public partial class BattleSceneController : Node2D
 
 	private void OnMeditateRequested()
 	{
-		if (_battleFailureSequenceStarted || _playerDeck == null || TurnState == null)
-		{
-			return;
-		}
-
-		if (_isPlayerMoveResolving)
+		if (IsBattleInputLocked() || _playerDeck == null || TurnState == null)
 		{
 			return;
 		}
@@ -1039,12 +1064,7 @@ public partial class BattleSceneController : Node2D
 
 	private async void OnDefendRequested()
 	{
-		if (_battleFailureSequenceStarted || TurnState == null || StateManager == null || _actionService == null)
-		{
-			return;
-		}
-
-		if (_isPlayerMoveResolving)
+		if (IsBattleInputLocked() || TurnState == null || StateManager == null || _actionService == null)
 		{
 			return;
 		}
@@ -1076,12 +1096,7 @@ public partial class BattleSceneController : Node2D
 
 	private void OnRetreatRequested()
 	{
-		if (_battleFailureSequenceStarted || TurnState == null || GlobalSession == null)
-		{
-			return;
-		}
-
-		if (_isPlayerMoveResolving)
+		if (IsBattleInputLocked() || TurnState == null || GlobalSession == null)
 		{
 			return;
 		}
@@ -1110,7 +1125,7 @@ public partial class BattleSceneController : Node2D
 
 	private void OnArakawaWheelRequested()
 	{
-		if (!CanUseArakawaThisTurn())
+		if (IsBattleInputLocked() || !CanUseArakawaThisTurn())
 		{
 			_isArakawaWheelOpen = false;
 			CancelArakawaAbilityMode();
@@ -1138,7 +1153,7 @@ public partial class BattleSceneController : Node2D
 
 	private void OnArakawaAbilityRequested(string abilityId)
 	{
-		if (!CanUseArakawaThisTurn())
+		if (IsBattleInputLocked() || !CanUseArakawaThisTurn())
 		{
 			_isArakawaWheelOpen = false;
 			return;
@@ -1163,6 +1178,11 @@ public partial class BattleSceneController : Node2D
 
 	private void OnArakawaCancelRequested()
 	{
+		if (IsBattleInputLocked())
+		{
+			return;
+		}
+
 		_isArakawaWheelOpen = false;
 		GameAudio.Instance?.PlayUiCancel();
 		CancelArakawaAbilityMode();
@@ -1170,12 +1190,13 @@ public partial class BattleSceneController : Node2D
 
 	private bool CanPlayerMoveThisTurn()
 	{
-		return TurnState?.CanMove != false;
+		return !_isPhaseTransitionBusy && TurnState?.CanMove != false;
 	}
 
 	private bool CanUseArakawaThisTurn()
 	{
 		return !_battleFailureSequenceStarted
+			&& !_isPhaseTransitionBusy
 			&& TurnState?.IsPlayerTurn == true
 			&& GlobalSession != null
 			&& GlobalSession.ArakawaCurrentEnergy > 0;
@@ -1183,7 +1204,10 @@ public partial class BattleSceneController : Node2D
 
 	private bool CanAttemptRetreatThisTurn()
 	{
-		if (TurnState?.CanRetreat != true || GlobalSession == null || StateManager?.GetPrimaryPlayerState() is not BattleObjectState playerState)
+		if (_isPhaseTransitionBusy
+			|| TurnState?.CanRetreat != true
+			|| GlobalSession == null
+			|| StateManager?.GetPrimaryPlayerState() is not BattleObjectState playerState)
 		{
 			return false;
 		}
@@ -1484,8 +1508,12 @@ public partial class BattleSceneController : Node2D
 			_playerDeck.DrawCards(cardInstance.Definition.DrawCount);
 		}
 
-		StateManager.SyncAllFromRegistry();
-		_pieceViewManager.Sync(Registry, StateManager, CurrentRoom);
+		bool deferImmediatePresentationSync = string.Equals(cardInstance.Definition.CardId, RollCardId, StringComparison.Ordinal);
+		if (!deferImmediatePresentationSync)
+		{
+			StateManager.SyncAllFromRegistry();
+			_pieceViewManager.Sync(Registry, StateManager, CurrentRoom);
+		}
 		TurnState.MarkActed(!cardInstance.Definition.IsQuick);
 
 		if (!cardInstance.Definition.IsQuick)
@@ -1574,6 +1602,12 @@ public partial class BattleSceneController : Node2D
 			StartBattleFailureSequence();
 			return;
 		}
+		await ShowBattlePhaseOverlayAsync(EnemyPhaseOverlayText);
+		if (_battleFailureSequenceStarted || TurnState.Phase != TurnPhase.TurnPost)
+		{
+			return;
+		}
+
 		TurnState.BeginEnemyTurn();
 		_actionService?.ResolveTurnStart(BoardObjectFaction.Enemy, TurnState.TurnIndex);
 		if (_enemyTurnResolver != null)
@@ -1593,6 +1627,12 @@ public partial class BattleSceneController : Node2D
 		}
 
 		_actionService?.ResolveTurnEnd(BoardObjectFaction.Enemy, TurnState.TurnIndex);
+		await ShowBattlePhaseOverlayAsync(PlayerPhaseOverlayText);
+		if (_battleFailureSequenceStarted || _battleResultCommitted)
+		{
+			return;
+		}
+
 		TurnState.AdvanceToNextTurn();
 		AdvanceBattleActionLogTurn(TurnState.TurnIndex);
 		if (_playerCounterStanceActive && TurnState.TurnIndex >= _playerCounterStanceExpiresOnTurnIndex)
@@ -2782,6 +2822,63 @@ public partial class BattleSceneController : Node2D
 		}
 	}
 
+	private bool IsBattleInputLocked()
+	{
+		return _battleFailureSequenceStarted || _isPlayerMoveResolving || _isPhaseTransitionBusy;
+	}
+
+	private async Task ShowBattlePhaseOverlayAsync(string titleText)
+	{
+		_isPhaseTransitionBusy = true;
+		try
+		{
+			await ShowBattlePhaseOverlayCoreAsync(titleText);
+		}
+		finally
+		{
+			_isPhaseTransitionBusy = false;
+		}
+	}
+
+	private async Task ShowBattlePhaseOverlayCoreAsync(string titleText)
+	{
+		if (string.IsNullOrWhiteSpace(titleText))
+		{
+			return;
+		}
+
+		if (_battlePhaseOverlay != null && IsInstanceValid(_battlePhaseOverlay))
+		{
+			_battlePhaseOverlay.QueueFree();
+			_battlePhaseOverlay = null;
+		}
+
+		if (GD.Load<PackedScene>(AreaTitleOverlayScenePath) is not PackedScene overlayScene
+			|| overlayScene.Instantiate() is not CardChessDemo.UI.AreaTitleOverlay overlay)
+		{
+			return;
+		}
+
+		overlay.Name = "BattlePhaseOverlay";
+		overlay.TitleText = titleText;
+		overlay.FontSize = 16;
+		overlay.VerticalOffsetPixels = -12;
+		overlay.FadeInSeconds = 0.12d;
+		overlay.HoldSeconds = 0.85d;
+		overlay.FadeOutSeconds = 0.32d;
+		overlay.TreeExited += () =>
+		{
+			if (_battlePhaseOverlay == overlay)
+			{
+				_battlePhaseOverlay = null;
+			}
+		};
+
+		_battlePhaseOverlay = overlay;
+		AddChild(overlay);
+		await ToSignal(overlay, CardChessDemo.UI.AreaTitleOverlay.SignalName.PlaybackFinished);
+	}
+
 	private async Task ShowBattleResultOverlayAsync(BattleResult result)
 	{
 		CanvasLayer overlayLayer = new() { Layer = 120 };
@@ -3788,20 +3885,53 @@ public partial class BattleSceneController : Node2D
 	private bool TryApplyRollCard(string attackerId, Vector2I? targetCell, out string failureReason)
 	{
 		failureReason = string.Empty;
-		if (_actionService == null || targetCell == null)
+		if (QueryService == null || Registry == null || StateManager == null || _pieceViewManager == null || CurrentRoom == null || targetCell == null)
 		{
 			failureReason = "Roll target cell is missing.";
 			return false;
 		}
 
-		if (!_actionService.TryMoveObject(attackerId, targetCell.Value, out failureReason, ignoreTerrainEffects: true))
+		if (!Registry.TryGet(attackerId, out BoardObject? attackerObject) || attackerObject == null)
+		{
+			failureReason = "Roll attacker was not found.";
+			return false;
+		}
+
+		Vector2I startCell = attackerObject.Cell;
+		if (!QueryService.TryMoveObject(attackerId, targetCell.Value, out failureReason))
 		{
 			return false;
 		}
 
-		AppendBattleActionLog($"{ResolveObjectDisplayName(attackerId)}->({targetCell.Value.X},{targetCell.Value.Y}) 移动");
-		_pieceViewManager?.PlayIdle(attackerId);
+		_actionService?.RegisterExternalPresentationDuration(RollSpinMovePresentationSeconds);
+		_isPlayerMoveResolving = true;
+		_ = PlayRollCardPresentationAsync(attackerId, startCell, targetCell.Value);
+		AppendBattleActionLog($"{ResolveObjectDisplayName(attackerId)}->({targetCell.Value.X},{targetCell.Value.Y}) 翻滚");
 		return true;
+	}
+
+	private async Task PlayRollCardPresentationAsync(string attackerId, Vector2I startCell, Vector2I targetCell)
+	{
+		try
+		{
+			if (_pieceViewManager == null || CurrentRoom == null)
+			{
+				return;
+			}
+
+			await _pieceViewManager.PlayRollMoveAsync(attackerId, startCell, targetCell, CurrentRoom, RollSpinMovePresentationSeconds);
+		}
+		finally
+		{
+			if (Registry != null && StateManager != null && CurrentRoom != null)
+			{
+				StateManager.SyncAllFromRegistry();
+				_pieceViewManager?.Sync(Registry, StateManager, CurrentRoom);
+				_pieceViewManager?.PlayIdle(attackerId);
+			}
+
+			_isPlayerMoveResolving = false;
+		}
 	}
 
 	private bool TryApplyAlertGuardCard(string attackerId, out string failureReason)
@@ -3828,7 +3958,7 @@ public partial class BattleSceneController : Node2D
 		int appliedShield = SumImpactAmount(result, CombatImpactType.ShieldGain);
 		if (appliedShield > 0)
 		{
-			AppendBattleActionLog($"{ResolveObjectDisplayName(attackerId)}->{ResolveObjectDisplayName(attackerId)} 鐠€锔藉劆+{appliedShield}");
+			AppendBattleActionLog($"{ResolveObjectDisplayName(attackerId)}->{ResolveObjectDisplayName(attackerId)} 閻犫偓閿旇棄鍔?{appliedShield}");
 		}
 
 		return true;
@@ -3870,7 +4000,7 @@ public partial class BattleSceneController : Node2D
 
 		_playerDeck.DrawCards(1);
 		_playerDeck.GainEnergy(1);
-		AppendBattleActionLog($"{ResolveObjectDisplayName(attackerId)}->{ResolveObjectDisplayName(attackerId)} 閸戠粯娼冮幒鐘层仛");
+		AppendBattleActionLog($"{ResolveObjectDisplayName(attackerId)}->{ResolveObjectDisplayName(attackerId)} 抽1 回1");
 		return true;
 	}
 
@@ -3920,7 +4050,7 @@ public partial class BattleSceneController : Node2D
 		int shieldAmount = SumImpactAmount(shieldResult, CombatImpactType.ShieldGain);
 		if (shieldAmount > 0)
 		{
-			AppendBattleActionLog($"{ResolveObjectDisplayName(attackerId)}->{ResolveObjectDisplayName(attackerId)} 护盾+{shieldAmount}");
+			AppendBattleActionLog($"{ResolveObjectDisplayName(attackerId)}->{ResolveObjectDisplayName(attackerId)} 鎶ょ浘+{shieldAmount}");
 		}
 
 		return true;
@@ -3937,7 +4067,7 @@ public partial class BattleSceneController : Node2D
 
 		_playerDeck.ModifyEnergyRegenInterval(-1);
 		TurnState.ConfigureEnergyRechargeInterval(_playerDeck.EnergyRegenIntervalTurns);
-		AppendBattleActionLog($"{ResolveObjectDisplayName(attackerId)}->优化");
+		AppendBattleActionLog($"{ResolveObjectDisplayName(attackerId)}->浼樺寲");
 		return true;
 	}
 
@@ -3996,7 +4126,7 @@ public partial class BattleSceneController : Node2D
 			if (healAmount > 0)
 			{
 				applied = true;
-				AppendBattleActionLog($"{ResolveObjectDisplayName(attackerId)}->{ResolveObjectDisplayName(obstacle.ObjectId)} 治疗{healAmount}");
+				AppendBattleActionLog($"{ResolveObjectDisplayName(attackerId)}->{ResolveObjectDisplayName(obstacle.ObjectId)} 娌荤枟{healAmount}");
 			}
 		}
 
@@ -4038,12 +4168,12 @@ public partial class BattleSceneController : Node2D
 		List<string> segments = new();
 		if (healAmount > 0)
 		{
-			segments.Add($"治疗{healAmount}");
+			segments.Add($"娌荤枟{healAmount}");
 		}
 
 		if (shieldAmount > 0)
 		{
-			segments.Add($"护盾+{shieldAmount}");
+			segments.Add($"鎶ょ浘+{shieldAmount}");
 		}
 
 		if (segments.Count > 0)
@@ -4080,7 +4210,7 @@ public partial class BattleSceneController : Node2D
 		int damageAmount = SumImpactAmount(result, CombatImpactType.HealthDamage, CombatImpactType.ShieldDamage);
 		if (damageAmount > 0)
 		{
-			AppendBattleActionLog($"{ResolveObjectDisplayName(attackerId)}->{ResolveObjectDisplayName(targetObject.ObjectId)} 绾句胶鍌ㄩ幑鏇犲{damageAmount}");
+			AppendBattleActionLog($"{ResolveObjectDisplayName(attackerId)}->{ResolveObjectDisplayName(targetObject.ObjectId)} 磁索伤害{damageAmount}");
 		}
 
 		if (targetObject.IsDestroyed || !Registry.TryGet(attackerId, out BoardObject? attackerObject) || attackerObject == null)

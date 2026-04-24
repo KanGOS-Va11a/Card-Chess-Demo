@@ -112,7 +112,10 @@ public sealed class EnemyTurnResolver
         switch (decision.DecisionType)
         {
             case EnemyAiDecisionType.Move:
-                await _actionService.TryMoveObjectAsync(enemyId, decision.MoveCell);
+                if (await _actionService.TryMoveObjectAsync(enemyId, decision.MoveCell))
+                {
+                    await TryExecuteFollowUpAttackAsync(enemyId, decision.TargetObjectId);
+                }
                 break;
 
             case EnemyAiDecisionType.Attack:
@@ -156,5 +159,68 @@ public sealed class EnemyTurnResolver
         }
 
         await _awaitHost.ToSignal(_awaitHost.GetTree().CreateTimer(seconds), SceneTreeTimer.SignalName.Timeout);
+    }
+
+    private async Task TryExecuteFollowUpAttackAsync(string enemyId, string preferredTargetObjectId)
+    {
+        if (!_registry.TryGet(enemyId, out BoardObject? enemyObject) || enemyObject == null)
+        {
+            return;
+        }
+
+        BattleObjectState? enemyState = _stateManager.Get(enemyId);
+        if (enemyState == null)
+        {
+            return;
+        }
+
+        EnemyAiContext postMoveContext = new(
+            enemyObject,
+            enemyState,
+            _registry,
+            _stateManager,
+            _queryService,
+            _pathfinder,
+            _room,
+            _targetingService,
+            _actionService);
+
+        BoardObject? followUpTarget = TryResolvePreferredFollowUpTarget(enemyId, preferredTargetObjectId)
+            ?? EnemyAiTactics.FindOpponentAttackTargetInRange(postMoveContext);
+        if (followUpTarget == null)
+        {
+            return;
+        }
+
+        if (await _actionService.TryAttackObjectAsync(enemyId, followUpTarget.ObjectId, allowKillKnockback: false))
+        {
+            int attackRange = _stateManager.Get(enemyId)?.AttackRange ?? 1;
+            _attackResolvedCallback?.Invoke(enemyId, followUpTarget.ObjectId, attackRange);
+        }
+    }
+
+    private BoardObject? TryResolvePreferredFollowUpTarget(string enemyId, string preferredTargetObjectId)
+    {
+        if (string.IsNullOrWhiteSpace(preferredTargetObjectId))
+        {
+            return null;
+        }
+
+        if (!_registry.TryGet(enemyId, out BoardObject? enemyObject) || enemyObject == null)
+        {
+            return null;
+        }
+
+        if (!_registry.TryGet(preferredTargetObjectId, out BoardObject? targetObject) || targetObject == null)
+        {
+            return null;
+        }
+
+        if (!_actionService.CanAttack(enemyId, preferredTargetObjectId, out _))
+        {
+            return null;
+        }
+
+        return targetObject;
     }
 }

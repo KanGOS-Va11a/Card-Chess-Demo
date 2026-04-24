@@ -7,6 +7,10 @@ namespace CardChessDemo.UI;
 public partial class MainMenuController : Control
 {
 	private const string Scene01Path = "res://Scene/Maps/Scene01.tscn";
+	private const float PanelSideMargin = 12.0f;
+	private const float PanelMinWidth = 216.0f;
+	private const float PanelMaxWidth = 280.0f;
+	private const float ContentHorizontalPadding = 24.0f;
 
 	private Button _continueButton = null!;
 	private Button _newGameButton = null!;
@@ -14,12 +18,14 @@ public partial class MainMenuController : Control
 	private Label _titleLabel = null!;
 	private Label _subtitleLabel = null!;
 	private Label _hintLabel = null!;
+	private Panel _panel = null!;
 	private GlobalGameSession? _session;
 
 	public override void _Ready()
 	{
 		GetTree().Paused = false;
 		_session = GetNodeOrNull<GlobalGameSession>("/root/GlobalGameSession");
+		_panel = GetNode<Panel>("Center/Panel");
 		_titleLabel = GetNode<Label>("Center/Panel/Margin/Content/Title");
 		_subtitleLabel = GetNode<Label>("Center/Panel/Margin/Content/Subtitle");
 		_hintLabel = GetNode<Label>("Center/Panel/Margin/Content/Hint");
@@ -32,17 +38,32 @@ public partial class MainMenuController : Control
 		_subtitleLabel.Text = string.Empty;
 		_hintLabel.Visible = false;
 		_hintLabel.Text = string.Empty;
+		_titleLabel.AutowrapMode = TextServer.AutowrapMode.WordSmart;
+		_subtitleLabel.AutowrapMode = TextServer.AutowrapMode.WordSmart;
+		_hintLabel.AutowrapMode = TextServer.AutowrapMode.WordSmart;
 
 		_continueButton.Text = "\u7EE7\u7EED\u6E38\u620F";
 		_newGameButton.Text = "\u8FDB\u5165\u6E38\u620F";
 		_settingsButton.Text = "\u8BBE\u7F6E";
 		RefreshContinueAvailability();
+		UpdateResponsiveLayout();
 
 		_continueButton.Pressed += OnContinuePressed;
 		_newGameButton.Pressed += OnNewGamePressed;
 		_settingsButton.Pressed += OnSettingsPressed;
+		Resized += UpdateResponsiveLayout;
 
 		GameAudio.Instance?.PlayMapMusic();
+	}
+
+	public override void _ExitTree()
+	{
+		if (!IsNodeReady())
+		{
+			return;
+		}
+
+		Resized -= UpdateResponsiveLayout;
 	}
 
 	private void OnContinuePressed()
@@ -104,5 +125,23 @@ public partial class MainMenuController : Control
 		bool hasSave = _session?.HasPrimarySave() == true;
 		_continueButton.Disabled = !hasSave;
 		_continueButton.TooltipText = hasSave ? string.Empty : "\u6682\u65E0\u5B58\u6863";
+	}
+
+	private void UpdateResponsiveLayout()
+	{
+		if (!IsNodeReady())
+		{
+			return;
+		}
+
+		float viewportWidth = GetViewportRect().Size.X;
+		float panelWidth = Mathf.Clamp(viewportWidth - PanelSideMargin * 2.0f, PanelMinWidth, PanelMaxWidth);
+		_panel.CustomMinimumSize = new Vector2(panelWidth, 132.0f);
+
+		float textWidth = Mathf.Max(96.0f, panelWidth - ContentHorizontalPadding);
+		Vector2 wrappedSize = new(textWidth, 0.0f);
+		_titleLabel.CustomMinimumSize = wrappedSize;
+		_subtitleLabel.CustomMinimumSize = wrappedSize;
+		_hintLabel.CustomMinimumSize = wrappedSize;
 	}
 }

@@ -29,6 +29,7 @@ public sealed class BattleDeckConstructionService
 		BattleDeckValidationResult result = new()
 		{
 			EffectiveMinDeckSize = Math.Max(1, _rules.MinDeckSize + progression.DeckMinCardCountDelta),
+			EffectiveMaxDeckSize = Math.Max(1, _rules.MaxDeckSize + progression.DeckMaxCardCountDelta),
 			EffectivePointBudget = Math.Max(0, _rules.BasePointBudget + progression.DeckPointBudgetBonus),
 			EffectiveMaxCopiesPerCard = Math.Max(1, _rules.BaseMaxCopiesPerCard + progression.DeckMaxCopiesPerCardBonus),
 			EffectiveCycleCardLimit = Math.Max(0, _rules.BaseCycleCardLimit),
@@ -44,6 +45,7 @@ public sealed class BattleDeckConstructionService
 			BattleCardTemplate? template = _library.FindTemplate(cardId);
 			if (template == null)
 			{
+				result.HasAvailabilityViolation = true;
 				result.Errors.Add($"Card '{cardId}' was not found in BattleCardLibrary.");
 				continue;
 			}
@@ -52,6 +54,7 @@ public sealed class BattleDeckConstructionService
 			bool canCarryOverlimit = !canCarryNormally && template.CanCarryOverlimit(progression);
 			if (!canCarryNormally && !canCarryOverlimit)
 			{
+				result.HasAvailabilityViolation = true;
 				result.Errors.Add($"Card '{cardId}' is not available for the current progression snapshot.");
 				continue;
 			}
@@ -83,16 +86,25 @@ public sealed class BattleDeckConstructionService
 
 		if (result.TotalCardCount < result.EffectiveMinDeckSize)
 		{
+			result.HasMinDeckSizeViolation = true;
 			result.Errors.Add($"Deck size is below minimum. Need {result.EffectiveMinDeckSize}, got {result.TotalCardCount}.");
+		}
+
+		if (result.TotalCardCount > result.EffectiveMaxDeckSize)
+		{
+			result.HasMaxDeckSizeViolation = true;
+			result.Errors.Add($"Deck size exceeds maximum. Max {result.EffectiveMaxDeckSize}, got {result.TotalCardCount}.");
 		}
 
 		if (result.TotalBuildPoints > result.EffectivePointBudget)
 		{
+			result.HasPointBudgetViolation = true;
 			result.Errors.Add($"Deck impact budget exceeded. Budget {result.EffectivePointBudget}, got {result.TotalBuildPoints}.");
 		}
 
 		if (result.UsedOverlimitCarrySlots > result.EffectiveOverlimitCarrySlots)
 		{
+			result.HasOverlimitCarryViolation = true;
 			result.Errors.Add($"Overlimit carry slots exceeded. Slots {result.EffectiveOverlimitCarrySlots}, used {result.UsedOverlimitCarrySlots}.");
 		}
 
@@ -100,6 +112,7 @@ public sealed class BattleDeckConstructionService
 			&& cycleCounts.TryGetValue("cycle", out int cycleCount)
 			&& cycleCount > result.EffectiveCycleCardLimit)
 		{
+			result.HasCycleLimitViolation = true;
 			result.Errors.Add($"Cycle-tagged cards exceed limit. Max {result.EffectiveCycleCardLimit}, got {cycleCount}.");
 		}
 
@@ -107,6 +120,7 @@ public sealed class BattleDeckConstructionService
 			&& cycleCounts.TryGetValue("quick_cycle", out int quickCycleCount)
 			&& quickCycleCount > result.EffectiveQuickCycleCardLimit)
 		{
+			result.HasQuickCycleLimitViolation = true;
 			result.Errors.Add($"Quick-cycle cards exceed limit. Max {result.EffectiveQuickCycleCardLimit}, got {quickCycleCount}.");
 		}
 
@@ -114,6 +128,7 @@ public sealed class BattleDeckConstructionService
 			&& cycleCounts.TryGetValue("energy_positive", out int energyPositiveCount)
 			&& energyPositiveCount > result.EffectiveEnergyPositiveCardLimit)
 		{
+			result.HasEnergyPositiveLimitViolation = true;
 			result.Errors.Add($"Energy-positive cards exceed limit. Max {result.EffectiveEnergyPositiveCardLimit}, got {energyPositiveCount}.");
 		}
 
@@ -126,6 +141,7 @@ public sealed class BattleDeckConstructionService
 				: Math.Min(result.EffectiveMaxCopiesPerCard, Math.Max(1, template.MaxCopiesInDeck));
 			if (copies > maxCopies)
 			{
+				result.HasCopyLimitViolation = true;
 				result.Errors.Add($"Card '{cardId}' exceeds copy limit. Max {maxCopies}, got {copies}.");
 			}
 		}
@@ -137,11 +153,13 @@ public sealed class BattleDeckConstructionService
 
 		if (!snapshot.TryValidate(out string failureReason))
 		{
+			result.HasSnapshotSchemaViolation = true;
 			result.Errors.Add(failureReason);
 		}
 
 		if (!progression.TryValidate(out failureReason))
 		{
+			result.HasSnapshotSchemaViolation = true;
 			result.Errors.Add(failureReason);
 		}
 

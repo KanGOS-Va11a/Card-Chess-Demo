@@ -23,15 +23,11 @@ public sealed class ScoutFlankerEnemyAiStrategy : IEnemyAiStrategy
             return EnemyAiDecision.Attack(attackTarget.ObjectId);
         }
 
-        Vector2I? nextCell = EnemyAiTactics.FindBestApproachCell(
+        return EnemyAiTactics.DecideChasePlayerOrBreakBlockingObstacle(
             context,
             nearestOpponent,
             desiredMaxRange: context.SelfState.AttackRange,
             desiredMinRange: 1,
             preferFlank: true);
-
-        return nextCell.HasValue
-            ? EnemyAiDecision.Move(nextCell.Value)
-            : EnemyAiDecision.Wait();
     }
 }

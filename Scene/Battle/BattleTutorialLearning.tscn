@@ -1,0 +1,87 @@
+[gd_scene format=3]
+
+[ext_resource type="Script" path="res://Scripts/Battle/BattleSceneController.cs" id="1_hq08r"]
+[ext_resource type="Script" path="res://Scripts/Battle/Visual/BattleBoardOverlay.cs" id="2_7r48u"]
+[ext_resource type="PackedScene" path="res://Scene/Battle/Rooms/Debug/GruntDebugRoomA.tscn" id="3_oxbdf"]
+[ext_resource type="PackedScene" path="res://Scene/Battle/Rooms/Debug/GruntDebugRoomB.tscn" id="4_fypyy"]
+[ext_resource type="Resource" path="res://Resources/Battle/Rooms/DebugBattleRoomPool.tres" id="5_4mo8r"]
+[ext_resource type="Resource" path="res://Resources/Battle/Presentation/DefaultBattlePrefabLibrary.tres" id="6_prefab"]
+[ext_resource type="Resource" path="res://Resources/Battle/Enemies/DefaultBattleEnemyLibrary.tres" id="6_enemy"]
+[ext_resource type="PackedScene" path="res://Scene/Battle/UI/BattleHud_Tutorial.tscn" id="7_hud"]
+[ext_resource type="Resource" path="res://Resources/Battle/Encounters/DebugBattleEncounterLibrary.tres" id="8_encounter"]
+[ext_resource type="Script" path="res://Scripts/Battle/Visual/BattleFloatingTextLayer.cs" id="9_float"]
+[ext_resource type="Script" path="res://Scripts/Battle/UI/BattleTutorialIntroOverlay.cs" id="10_intro"]
+
+[node name="Battle" type="Node2D"]
+script = ExtResource("1_hq08r")
+BattleRoomScenes = [ExtResource("3_oxbdf"), ExtResource("4_fypyy")]
+BattleRoomPools = ExtResource("5_4mo8r")
+BattlePrefabLibrary = ExtResource("6_prefab")
+BattleEnemyLibrary = ExtResource("6_enemy")
+EncounterLibrary = ExtResource("8_encounter")
+EncounterId = "scene03_learning_enemy"
+RandomSeed = 20260424
+
+[node name="Camera2D" type="Camera2D" parent="."]
+position = Vector2(160, 90)
+
+[node name="RoomContainer" type="Node2D" parent="."]
+position = Vector2(32, 26)
+
+[node name="BoardOverlay" type="Node2D" parent="RoomContainer"]
+script = ExtResource("2_7r48u")
+
+[node name="PieceRoot" type="Node2D" parent="RoomContainer"]
+y_sort_enabled = true
+
+[node name="KillFxRoot" type="Node2D" parent="RoomContainer"]
+
+[node name="FloatingTextLayer" type="Node2D" parent="RoomContainer"]
+script = ExtResource("9_float")
+
+[node name="OverlayRoot" type="Node2D" parent="."]
+
+[node name="BattleHud" parent="." instance=ExtResource("7_hud")]
+
+[node name="BattleTutorialIntro" type="Node" parent="."]
+script = ExtResource("10_intro")
+TutorialPresetId = "learning_battle"
+
+[node name="BattleFailOverlay" type="Control" parent="."]
+visible = false
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+
+[node name="Flash" type="ColorRect" parent="BattleFailOverlay"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+color = Color(0.45, 0.04, 0.06, 0)
+
+[node name="DefeatLabel" type="Label" parent="BattleFailOverlay"]
+visible = false
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -54.0
+offset_top = -10.0
+offset_right = 54.0
+offset_bottom = 10.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_font_sizes/font_size = 16
+text = "失败"
+horizontal_alignment = 1
+vertical_alignment = 1

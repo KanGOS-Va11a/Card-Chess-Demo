@@ -106,7 +106,7 @@ public partial class MazeEnemySpawnController : Node
 			_anchors.Add(new AnchorState
 			{
 				Anchor = anchor,
-				SourcePath = sceneRoot.GetPathTo(anchor).ToString(),
+				SourcePath = sceneRoot.IsAncestorOf(anchor) ? sceneRoot.GetPathTo(anchor).ToString() : string.Empty,
 				AnchorCell = anchor.GetAnchorCell(),
 				CooldownRemainingSeconds = 0.0d,
 			});
@@ -115,7 +115,8 @@ public partial class MazeEnemySpawnController : Node
 
 	private void HandleBattleReturn(MapResumeContext resumeContext, BattleResult lastBattleResult)
 	{
-		if (!lastBattleResult.DidPlayerWin && !lastBattleResult.DidPlayerRetreat)
+		MapReturnReason returnReason = ResolveReturnReason(resumeContext, lastBattleResult);
+		if (returnReason != MapReturnReason.BattleVictory && returnReason != MapReturnReason.BattleRetreat)
 		{
 			return;
 		}
@@ -129,7 +130,7 @@ public partial class MazeEnemySpawnController : Node
 		resolvedAnchor.Anchor.DeactivateManagedSpawn(HideAnchorsAtRuntime);
 		resolvedAnchor.CooldownRemainingSeconds = Math.Max(
 			resolvedAnchor.CooldownRemainingSeconds,
-			lastBattleResult.DidPlayerRetreat ? RetreatRespawnCooldownSeconds : VictoryRespawnCooldownSeconds);
+			returnReason == MapReturnReason.BattleRetreat ? RetreatRespawnCooldownSeconds : VictoryRespawnCooldownSeconds);
 		resolvedAnchor.AnchorCell = resolvedAnchor.Anchor.GetAnchorCell();
 	}
 
@@ -155,6 +156,26 @@ public partial class MazeEnemySpawnController : Node
 			.OrderBy(anchor => EnemyAiDistance(anchor.AnchorCell, playerCell))
 			.ThenBy(anchor => anchor.SourcePath, StringComparer.Ordinal)
 			.FirstOrDefault(anchor => EnemyAiDistance(anchor.AnchorCell, playerCell) <= Math.Max(0, FallbackBattleSourceDistanceTiles));
+	}
+
+	private static MapReturnReason ResolveReturnReason(MapResumeContext resumeContext, BattleResult lastBattleResult)
+	{
+		if (resumeContext.ReturnReason != MapReturnReason.None && resumeContext.ReturnReason != MapReturnReason.PendingBattle)
+		{
+			return resumeContext.ReturnReason;
+		}
+
+		if (lastBattleResult.DidPlayerRetreat)
+		{
+			return MapReturnReason.BattleRetreat;
+		}
+
+		if (lastBattleResult.DidPlayerWin)
+		{
+			return MapReturnReason.BattleVictory;
+		}
+
+		return MapReturnReason.None;
 	}
 
 	private void RefreshSpawns(bool force)

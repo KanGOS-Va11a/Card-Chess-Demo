@@ -25,16 +25,12 @@ public sealed class Scene01LearningEnemyAiStrategy : IEnemyAiStrategy
         bool isHalfHpPhase = context.SelfState.MaxHp > 0 && context.SelfState.CurrentHp * 2 <= context.SelfState.MaxHp;
         int effectiveMovePoints = context.SelfState.MovePointsPerTurn + (isHalfHpPhase ? 1 : 0);
 
-        Vector2I? nextCell = EnemyAiTactics.FindBestApproachCell(
+        return EnemyAiTactics.DecideChasePlayerOrBreakBlockingObstacle(
             context,
             nearestOpponent,
             desiredMaxRange: context.SelfState.AttackRange,
             desiredMinRange: 1,
             preferFlank: true,
             moveBudgetOverride: effectiveMovePoints);
-
-        return nextCell.HasValue
-            ? EnemyAiDecision.Move(nextCell.Value)
-            : EnemyAiDecision.Wait();
     }
 }

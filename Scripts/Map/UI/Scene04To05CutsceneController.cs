@@ -92,9 +92,18 @@ public partial class Scene04To05CutsceneController : Node
 			session.SetPendingSceneTransfer(NextScenePath, NextSpawnId);
 		}
 
-		if (!string.IsNullOrWhiteSpace(NextScenePath))
+		if (!string.IsNullOrWhiteSpace(NextScenePath)
+			&& !MapSceneTransitionHelper.TryChangeSceneWithDissolve(
+				this,
+				null,
+				NextScenePath,
+				0.22f,
+				0.05f,
+				0.22f,
+				out _,
+				reason => GD.PushError($"Scene04To05CutsceneController: {reason}")))
 		{
-			GetTree().ChangeSceneToFile(NextScenePath);
+			GD.PushError("Scene04To05CutsceneController: scene transition could not start.");
 		}
 	}
 

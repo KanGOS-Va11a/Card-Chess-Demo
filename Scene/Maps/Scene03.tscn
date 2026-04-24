@@ -25,6 +25,10 @@
 [ext_resource type="PackedScene" path="res://Scene/InteractableItem/Chest.tscn" id="28_chest"]
 [ext_resource type="PackedScene" path="res://Scene/InteractableItem/HealingStation.tscn" id="29_healstation"]
 [ext_resource type="Script" uid="uid://baeu03tnsct7m" path="res://Scripts/Map/Grid/GridInteractableAnchor.cs" id="30_grid_anchor"]
+[ext_resource type="PackedScene" path="res://Scene/Character/Enemy.tscn" id="31_enemy"]
+[ext_resource type="PackedScene" path="res://Scene/Battle/BattleTutorialLearning.tscn" id="32_learning_battle"]
+[ext_resource type="Script" path="res://Scripts/Map/UI/Scene03MenuPageTutorialController.cs" id="33_menu_tutorial"]
+[ext_resource type="Script" path="res://Scripts/Map/UI/Scene03LearningFlowController.cs" id="34_learning_flow"]
 [ext_resource type="TileSet" uid="uid://bk2oy8wp4bh0a" path="res://Resources/Map/PlayerSpawnTileSet.tres" id="99_player_spawn_tiles"]
 
 [sub_resource type="TileSetAtlasSource" id="TileSetAtlasSource_i18ty"]
@@ -344,6 +348,33 @@ Cell = Vector2i(6, 0)
 [node name="Enemy2" parent="WorldObjects/Enemies/Enemy2Anchor" unique_id=1781789759 instance=ExtResource("18_3deog")]
 BattleScene = ExtResource("21_tutorial_battle")
 
+[node name="LearningEnemyAnchor" type="Node2D" parent="WorldObjects/Enemies" unique_id=149328402]
+position = Vector2(264, 8)
+script = ExtResource("30_grid_anchor")
+TargetNodePath = NodePath("LearningEnemy")
+InteractionId = "scene03_enemy_02"
+UseGridPlacement = true
+Cell = Vector2i(16, 0)
+
+[node name="LearningEnemy" parent="WorldObjects/Enemies/LearningEnemyAnchor" unique_id=1781789760 instance=ExtResource("31_enemy")]
+EncounterId = "scene03_learning_enemy"
+BattleScene = ExtResource("32_learning_battle")
+
+[node name="AnimatedSprite2D" parent="WorldObjects/Enemies/LearningEnemyAnchor/LearningEnemy" index="0" unique_id=1523731313]
+position = Vector2(0, -4)
+scale = Vector2(1, 1)
+metadata/_edit_lock_ = true
+
+[node name="InteractionArea" parent="WorldObjects/Enemies/LearningEnemyAnchor/LearningEnemy" index="1" unique_id=2063466718]
+collision_layer = 0
+metadata/_edit_lock_ = true
+
+[node name="CollisionShape2D" parent="WorldObjects/Enemies/LearningEnemyAnchor/LearningEnemy/InteractionArea" index="0" unique_id=371344236]
+metadata/_edit_lock_ = true
+
+[node name="BodyShape" parent="WorldObjects/Enemies/LearningEnemyAnchor/LearningEnemy" index="2" unique_id=1691834079]
+metadata/_edit_lock_ = true
+
 [node name="AnimatedSprite2D" parent="WorldObjects/Enemies/Enemy2Anchor/Enemy2" index="0" unique_id=1523731312]
 position = Vector2(0, -4)
 scale = Vector2(1, 1)
@@ -399,6 +430,15 @@ TriggerSize = Vector2(48, 32)
 DialogueScriptId = "scene03_basic_story"
 TriggerInteractablePath = NodePath("WorldObjects/Enemies/Enemy2Anchor/Enemy2")
 
+[node name="TutorialLearningTrigger" parent="WorldObjects" unique_id=430653030 instance=ExtResource("25_story_trigger")]
+position = Vector2(232, -40)
+UseGridTriggerPlacement = true
+OriginCell = Vector2i(14, -3)
+TriggerSizeCells = Vector2i(3, 5)
+TriggerSize = Vector2(48, 32)
+DialogueScriptId = "scene03_learning_story"
+TriggerInteractablePath = NodePath("WorldObjects/Enemies/LearningEnemyAnchor/LearningEnemy")
+
 [node name="CanvasModulate" type="CanvasModulate" parent="." unique_id=1626774945]
 color = Color(0.8745098, 0.83137256, 0.94509804, 1)
 
@@ -411,6 +451,12 @@ script = ExtResource("1_resctl")
 
 [node name="Scene03PostBattleTutorial" type="Node" parent="." unique_id=1452553794]
 script = ExtResource("2_post_battle")
+
+[node name="Scene03MenuPageTutorial" type="Node" parent="." unique_id=1452553795]
+script = ExtResource("33_menu_tutorial")
+
+[node name="Scene03LearningFlow" type="Node" parent="." unique_id=1452553796]
+script = ExtResource("34_learning_flow")
 
 [node name="SystemFeatureOverlay" parent="." unique_id=942023797 instance=ExtResource("20_overlay")]
 PlayerPath = NodePath("")
@@ -427,3 +473,4 @@ tile_map_data = PackedByteArray("AAD1//v/BQADAAAAAAD2//v/BQADAAAAAAD3//v/BQADAAA
 tile_set = SubResource("TileSet_hkdqt")
 
 [editable path="WorldObjects/Enemies/Enemy2Anchor/Enemy2"]
+[editable path="WorldObjects/Enemies/LearningEnemyAnchor/LearningEnemy"]

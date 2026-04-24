@@ -7,9 +7,13 @@ public partial class AreaTitleOverlay : CanvasLayer
 {
 	private static readonly FontFile OverlayFont = GD.Load<FontFile>("res://Assets/Fonts/unifont_t-17.0.04.otf");
 
+	[Signal]
+	public delegate void PlaybackFinishedEventHandler();
+
 	[Export] public string TitleId { get; set; } = string.Empty;
 	[Export] public string TitleText { get; set; } = string.Empty;
 	[Export(PropertyHint.Range, "16,64,1")] public int FontSize { get; set; } = 28;
+	[Export(PropertyHint.Range, "-120,120,1")] public int VerticalOffsetPixels { get; set; }
 	[Export(PropertyHint.Range, "0.0,3.0,0.05")] public double FadeInSeconds { get; set; } = 0.18d;
 	[Export(PropertyHint.Range, "0.0,5.0,0.05")] public double HoldSeconds { get; set; } = 2.3d;
 	[Export(PropertyHint.Range, "0.0,3.0,0.05")] public double FadeOutSeconds { get; set; } = 0.55d;
@@ -33,6 +37,12 @@ public partial class AreaTitleOverlay : CanvasLayer
 		}
 
 		_titleLabel.AddThemeFontSizeOverride("font_size", FontSize);
+		if (VerticalOffsetPixels != 0)
+		{
+			_titleLabel.OffsetTop += VerticalOffsetPixels;
+			_titleLabel.OffsetBottom += VerticalOffsetPixels;
+		}
+
 		_titleLabel.Modulate = new Color(1.0f, 1.0f, 1.0f, 0.0f);
 
 		Tween tween = CreateTween();
@@ -40,6 +50,7 @@ public partial class AreaTitleOverlay : CanvasLayer
 		tween.TweenInterval(Math.Max(0.0d, HoldSeconds));
 		tween.TweenProperty(_titleLabel, "modulate", new Color(1.0f, 1.0f, 1.0f, 0.0f), Math.Max(0.01d, FadeOutSeconds));
 		await ToSignal(tween, Tween.SignalName.Finished);
+		EmitSignal(SignalName.PlaybackFinished);
 		QueueFree();
 	}
 

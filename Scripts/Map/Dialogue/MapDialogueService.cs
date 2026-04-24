@@ -254,10 +254,17 @@ public static class MapDialogueService
 		session?.ClearPendingRestorePlayerPosition();
 		session?.SetPendingSceneTransfer(action.NextScenePath.Trim(), action.NextSceneSpawnId);
 
-		Error result = context.GetTree().ChangeSceneToFile(action.NextScenePath.Trim());
-		if (result != Error.Ok)
+		if (!MapSceneTransitionHelper.TryChangeSceneWithDissolve(
+			context,
+			null,
+			action.NextScenePath,
+			0.22f,
+			0.05f,
+			0.22f,
+			out string transitionFailureReason,
+			reason => GD.PushError($"MapDialogueService: {reason}")))
 		{
-			failureReason = $"scene_change_failed:{result}";
+			failureReason = transitionFailureReason;
 			return false;
 		}
 

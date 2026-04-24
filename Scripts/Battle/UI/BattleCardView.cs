@@ -62,6 +62,7 @@ public partial class BattleCardView : Button
 	private PanelContainer _titleBanner = null!;
 	private PanelContainer _typePlate = null!;
 	private PanelContainer _descriptionPanel = null!;
+	private BattleCardAffixOverlay _affixOverlay = null!;
 
 	public string CardInstanceId { get; private set; } = string.Empty;
 
@@ -106,6 +107,7 @@ public partial class BattleCardView : Button
 		_descriptionPanel.Visible = false;
 
 		ApplyCardFrameStyle(card, isSelected, isPlayable);
+		_affixOverlay.SetAffixes(card.Definition.IsQuick, card.Definition.ExhaustsOnPlay, isSelected, isPlayable);
 		Modulate = isPlayable ? Colors.White : new Color(1.0f, 1.0f, 1.0f, 0.55f);
 		Scale = Vector2.One;
 	}
@@ -131,6 +133,7 @@ public partial class BattleCardView : Button
 		_keywordLabel = GetNode<Label>("CardPanel/Margin/Root/TypePlate/KeywordLabel");
 		_descriptionPanel = GetNode<PanelContainer>("CardPanel/Margin/Root/DescriptionPanel");
 		_descriptionLabel = GetNode<Label>("CardPanel/Margin/Root/DescriptionPanel/DescriptionLabel");
+		_affixOverlay = GetNode<BattleCardAffixOverlay>("AffixOverlay");
 	}
 
 	public void PlayEnhancementPulse()
@@ -156,10 +159,19 @@ public partial class BattleCardView : Button
 			? new Color(0.27f, 0.16f, 0.13f)
 			: new Color(0.13f, 0.18f, 0.25f);
 		Color bannerColor = new Color(0.81f, 0.82f, 0.84f);
+		Color bannerBorderColor = new Color(0.58f, 0.58f, 0.60f);
+		Color nameColor = new Color(0.10f, 0.11f, 0.13f);
 		Color descColor = new Color(0.23f, 0.20f, 0.19f);
 		Color typeColor = definition.Category == BattleCardCategory.Attack
 			? new Color(0.72f, 0.72f, 0.76f)
 			: new Color(0.64f, 0.77f, 0.90f);
+
+		if (definition.IsQuick)
+		{
+			bannerColor = new Color(0.23f, 0.50f, 0.82f);
+			bannerBorderColor = new Color(0.70f, 0.90f, 1.0f);
+			nameColor = new Color(0.96f, 0.99f, 1.0f);
+		}
 
 		if (isSelected)
 		{
@@ -171,6 +183,11 @@ public partial class BattleCardView : Button
 			frameColor = new Color(0.30f, 0.84f, 1.0f);
 			fillColor = fillColor.Lerp(new Color(0.12f, 0.22f, 0.36f), 0.40f);
 			typeColor = typeColor.Lerp(new Color(0.46f, 0.88f, 1.0f), 0.70f);
+			if (definition.IsQuick)
+			{
+				bannerColor = bannerColor.Lerp(new Color(0.34f, 0.74f, 1.0f), 0.35f);
+				bannerBorderColor = bannerBorderColor.Lerp(new Color(0.90f, 0.98f, 1.0f), 0.35f);
+			}
 		}
 
 		StyleBoxFlat panelStyle = new()
@@ -211,7 +228,7 @@ public partial class BattleCardView : Button
 		StyleBoxFlat titleStyle = new()
 		{
 			BgColor = bannerColor,
-			BorderColor = new Color(0.58f, 0.58f, 0.60f),
+			BorderColor = bannerBorderColor,
 			BorderWidthLeft = 1,
 			BorderWidthTop = 1,
 			BorderWidthRight = 1,
@@ -222,6 +239,11 @@ public partial class BattleCardView : Button
 			CornerRadiusBottomLeft = 2,
 		};
 		_titleBanner.AddThemeStyleboxOverride("panel", titleStyle);
+		_nameLabel.AddThemeColorOverride("font_color", nameColor);
+		_nameLabel.AddThemeColorOverride("font_outline_color", definition.IsQuick
+			? new Color(0.07f, 0.13f, 0.22f)
+			: new Color(0.82f, 0.84f, 0.88f, 0.0f));
+		_nameLabel.AddThemeConstantOverride("outline_size", definition.IsQuick ? 1 : 0);
 
 		StyleBoxFlat typeStyle = new()
 		{

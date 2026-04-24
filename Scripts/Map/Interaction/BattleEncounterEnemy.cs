@@ -8,7 +8,7 @@ public partial class BattleEncounterEnemy : InteractableTemplate
 	[Export] public string BattleEncounterId = "grunt_debug";
 	[Export] public PackedScene? BattleScene;
 	[Export(PropertyHint.File, "*.tscn")] public string BattleScenePath = "res://Scene/Battle/Battle.tscn";
-	[Export] public string BusyText = "战斗中...";
+	[Export] public string BusyText = "\u6218\u6597\u4E2D...";
 	[Export] public bool DisableAfterInteract = true;
 
 	private bool _isTransitioning;
@@ -22,10 +22,10 @@ public partial class BattleEncounterEnemy : InteractableTemplate
 
 		if (!CanInteract(player))
 		{
-			return "无法交战";
+			return "\u65E0\u6CD5\u4EA4\u6218";
 		}
 
-		return string.IsNullOrWhiteSpace(PromptText) ? $"挑战 {EnemyDisplayName}" : PromptText;
+		return string.IsNullOrWhiteSpace(PromptText) ? $"\u6311\u6218 {EnemyDisplayName}" : PromptText;
 	}
 
 	public override bool CanInteract(Player player)
@@ -57,25 +57,19 @@ public partial class BattleEncounterEnemy : InteractableTemplate
 
 	private bool TryStartEncounter(Player player)
 	{
-		bool disableAfterInteract = DisableAfterInteract;
-		if (disableAfterInteract)
-		{
-			IsDisabled = true;
-		}
-
 		_isTransitioning = true;
 		PromptText = BusyText;
 		if (!MapBattleTransitionHelper.TryEnterBattle(this, player, BattleScene, BattleScenePath, BattleEncounterId, out string failureReason, HandleDeferredBattleFailure))
 		{
 			_isTransitioning = false;
-			if (disableAfterInteract)
-			{
-				IsDisabled = false;
-			}
-
-			PromptText = $"失败: {failureReason}";
+			PromptText = $"\u5931\u8D25: {failureReason}";
 			GD.PushError($"BattleEncounterEnemy: {failureReason}");
 			return false;
+		}
+
+		if (DisableAfterInteract)
+		{
+			IsDisabled = true;
 		}
 
 		return true;
@@ -89,7 +83,7 @@ public partial class BattleEncounterEnemy : InteractableTemplate
 			IsDisabled = false;
 		}
 
-		PromptText = $"失败: {failureReason}";
+		PromptText = $"\u5931\u8D25: {failureReason}";
 		GD.PushError($"BattleEncounterEnemy: {failureReason}");
 	}
 
@@ -97,6 +91,8 @@ public partial class BattleEncounterEnemy : InteractableTemplate
 	{
 		Godot.Collections.Dictionary snapshot = base.BuildRuntimeSnapshot();
 		snapshot["remove_from_scene"] = false;
+		snapshot["disable_when_session_used"] = true;
+		snapshot["remove_when_session_used"] = true;
 		return snapshot;
 	}
 

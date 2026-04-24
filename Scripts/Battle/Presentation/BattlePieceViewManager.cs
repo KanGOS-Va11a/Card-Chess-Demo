@@ -135,15 +135,39 @@ public sealed class BattlePieceViewManager
             return false;
         }
 
-        view.PlayMove();
         Vector2I previousCell = cellPath[0];
         foreach (Vector2I cell in cellPath.Skip(1))
         {
             view.FaceDirection(cell - previousCell);
+            view.PlayMove();
             await view.TweenBoardPositionAsync(room.CellToLocalCenter(cell), secondsPerCell);
             previousCell = cell;
         }
 
+        view.PlayIdle();
+        return true;
+    }
+
+    public async Task<bool> PlayRollMoveAsync(
+        string objectId,
+        Vector2I fromCell,
+        Vector2I targetCell,
+        BattleRoomTemplate room,
+        double durationSeconds)
+    {
+        if (!_views.TryGetValue(objectId, out BattleAnimatedViewBase? view))
+        {
+            return false;
+        }
+
+        Vector2I direction = targetCell - fromCell;
+        if (direction != Vector2I.Zero)
+        {
+            view.FaceDirection(direction);
+        }
+
+        view.PlayMove();
+        await view.TweenBoardPositionWithSpriteSpinAsync(room.CellToLocalCenter(targetCell), durationSeconds, 360.0f);
         view.PlayIdle();
         return true;
     }

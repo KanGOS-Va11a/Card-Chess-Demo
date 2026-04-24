@@ -5,7 +5,7 @@ namespace CardChessDemo.Map;
 
 public static class MapSceneTransitionHelper
 {
-	private const string DefaultTransitionOverlayScenePath = "res://Scene/Transitions/MapBattleTransitionOverlay.tscn";
+	private const string DefaultTransitionOverlayScenePath = "res://Scene/Transitions/MapScenePixelTransitionOverlay.tscn";
 
 	public static bool TryChangeSceneWithDissolve(
 		Node contextNode,

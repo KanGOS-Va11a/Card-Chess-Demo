@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using CardChessDemo.Battle.Boundary;
 using CardChessDemo.Battle.Shared;
 using CardChessDemo.UI.Dialogue;
 using Godot;
@@ -48,9 +49,13 @@ public partial class StoryTriggerZone : InteractableTemplate
 	{
 		["scene03_basic_story"] = new[]
 		{
-			"\u65C1\u767D|\u4F60\u63A8\u5F00\u8231\u95E8\uFF0C\u8D70\u5ECA\u91CC\u6EE1\u662F\u66B4\u529B\u7834\u574F\u7559\u4E0B\u7684\u75D5\u8FF9\u3002\u8FD9\u91CC\u663E\u7136\u521A\u7ECF\u5386\u8FC7\u4E00\u573A\u52AB\u63A0\u3002",
-			"\u65C1\u767D|\u524D\u65B9\u4F20\u6765\u7C97\u91CD\u7684\u811A\u6B65\u58F0\u3002\u4E00\u540D\u642D\u8239\u5BA2\u4ECE\u7834\u635F\u7BA1\u7EBF\u540E\u6653\u51FA\u6765\uFF0C\u6B63\u6321\u5728\u4F60\u8981\u8D70\u7684\u8DEF\u4E0A\u3002",
-			"\u4E3B\u89D2|\u2026\u2026\u5148\u6D3B\u4E0B\u6765\u3002",
+			"\u65C1\u767D|\u8231\u95E8\u540E\u7684\u8D70\u5ECA\u4E00\u7247\u51CC\u4E71\uff0C\u7FFB\u5012\u7684\u67DC\u4F53\u3001\u88C2\u5F00\u7684\u7BA1\u7EBF\u548C\u6B6A\u659C\u7684\u95E8\u6846\u8BC1\u660E\u8FD9\u91CC\u521A\u88AB\u6D17\u52AB\u8FC7\u3002",
+			"\u65C1\u767D|\u4E00\u540D\u642D\u8239\u5BA2\u62FE\u8352\u5175\u6321\u5728\u524D\u9762\u3002\u60F3\u6D3B\u7740\u7A7F\u8FC7\u8FD9\u6761\u8D70\u5ECA\uff0C\u5C31\u5148\u5B66\u4F1A\u600E\u4E48\u6253\u8FD9\u573A\u4ED7\u3002",
+		},
+		["scene03_learning_story"] = new[]
+		{
+			"\u65C1\u767D|\u524D\u9762\u53C8\u51FA\u73B0\u4E86\u540C\u6837\u7684\u642D\u8239\u5BA2\u62FE\u8352\u5175\u3002\u770B\u6765\u4F60\u8FD8\u6709\u6700\u540E\u4E00\u6B21\u6478\u6E05\u5B83\u62DB\u5F0F\u7684\u673A\u4F1A\u3002",
+			"\u4E3B\u89D2|\u5982\u679C\u80FD\u628A\u5B83\u7684\u52A8\u4F5C\u8BB0\u5F55\u4E0B\u6765\u2026\u2026\u4E4B\u540E\u5C31\u80FD\u7528\u5728\u81EA\u5DF1\u8EAB\u4E0A\u3002",
 		},
 		["scene04_escape_story"] = new[]
 		{
@@ -215,6 +220,8 @@ public partial class StoryTriggerZone : InteractableTemplate
 		Godot.Collections.Dictionary snapshot = base.BuildRuntimeSnapshot();
 		snapshot["has_triggered"] = _hasTriggered;
 		snapshot["remove_from_scene"] = _removeFromScene;
+		snapshot["disable_when_session_used"] = true;
+		snapshot["remove_when_session_used"] = true;
 		return snapshot;
 	}
 
@@ -264,7 +271,11 @@ public partial class StoryTriggerZone : InteractableTemplate
 			MapDialogueFollowUpAction? action = BuildPrimaryFollowUpAction();
 			if (action != null)
 			{
-				if (action.Kind == MapDialogueFollowUpKind.TriggerInteractable
+				if (action.Kind == MapDialogueFollowUpKind.StartBattle)
+				{
+					RegisterSelfRetreatCleanupIfNeeded();
+				}
+				else if (action.Kind == MapDialogueFollowUpKind.TriggerInteractable
 					&& TryResolveTriggerTargetNode(out Node? targetNode)
 					&& targetNode is InteractableTemplate targetInteractable
 					&& (targetNode is Enemy || targetNode is BattleEncounterEnemy))
@@ -285,6 +296,7 @@ public partial class StoryTriggerZone : InteractableTemplate
 		if (TriggerOnce && DisableAfterTrigger && (actionStarted || !HasFollowUpAction()))
 		{
 			IsDisabled = true;
+			SyncPersistentStateToPendingBattleReturn();
 		}
 	}
 
@@ -295,6 +307,7 @@ public partial class StoryTriggerZone : InteractableTemplate
 		if (TriggerOnce && DisableAfterTrigger && !HasFollowUpAction())
 		{
 			IsDisabled = true;
+			SyncPersistentStateToPendingBattleReturn();
 		}
 	}
 
@@ -435,6 +448,29 @@ public partial class StoryTriggerZone : InteractableTemplate
 		}
 	}
 
+	private void RegisterSelfRetreatCleanupIfNeeded()
+	{
+		if (!RemoveSelfOnBattleRetreat)
+		{
+			return;
+		}
+
+		GlobalGameSession? session = GetNodeOrNull<GlobalGameSession>("/root/GlobalGameSession");
+		if (session == null)
+		{
+			return;
+		}
+
+		Node currentScene = GetTree().CurrentScene ?? this;
+		string selfPath = currentScene.GetPathTo(this).ToString();
+		if (string.IsNullOrWhiteSpace(selfPath))
+		{
+			return;
+		}
+
+		session.SetPendingRetreatCleanupInteractables(new[] { selfPath });
+	}
+
 	private void ClearRetreatCleanup()
 	{
 		GetNodeOrNull<GlobalGameSession>("/root/GlobalGameSession")?.ClearPendingRetreatCleanupInteractables();
@@ -469,10 +505,17 @@ public partial class StoryTriggerZone : InteractableTemplate
 		session?.ClearPendingRestorePlayerPosition();
 		session?.SetPendingSceneTransfer(NextScenePath.Trim(), NextSceneSpawnId);
 
-		Error result = GetTree().ChangeSceneToFile(NextScenePath.Trim());
-		if (result != Error.Ok)
+		if (!MapSceneTransitionHelper.TryChangeSceneWithDissolve(
+			this,
+			null,
+			NextScenePath,
+			0.22f,
+			0.05f,
+			0.22f,
+			out string failureReason,
+			reason => GD.PushError($"StoryTriggerZone: {reason}")))
 		{
-			GD.PushError($"StoryTriggerZone: scene change failed, error={result}, path='{NextScenePath}'.");
+			GD.PushError($"StoryTriggerZone: {failureReason}");
 			return false;
 		}
 
@@ -553,7 +596,21 @@ public partial class StoryTriggerZone : InteractableTemplate
 		IsDisabled = true;
 		Visible = false;
 		_triggerArea?.SetDeferred(Area2D.PropertyName.Monitoring, false);
+		SyncPersistentStateToPendingBattleReturn();
 		CallDeferred(MethodName.QueueFree);
+	}
+
+	private void SyncPersistentStateToPendingBattleReturn()
+	{
+		GlobalGameSession? session = GetNodeOrNull<GlobalGameSession>("/root/GlobalGameSession");
+		MapResumeContext? pendingResume = session?.PeekPendingBattleReturnContext();
+		if (pendingResume == null)
+		{
+			return;
+		}
+
+		Node sceneRoot = GetTree().CurrentScene ?? this;
+		MapRuntimeSnapshotHelper.UpsertInteractableSnapshot(sceneRoot, this, pendingResume.MapRuntimeSnapshot);
 	}
 
 	private void ApplyGridPlacement()

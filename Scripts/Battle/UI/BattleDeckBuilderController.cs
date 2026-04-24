@@ -28,6 +28,7 @@ public partial class BattleDeckBuilderController : Control
 	private Button _starterButton = null!;
 
 	private BattleCardTemplate[] _availableTemplates = Array.Empty<BattleCardTemplate>();
+	private DeckListEntry[] _visibleDeckEntries = Array.Empty<DeckListEntry>();
 	private List<string> _workingDeck = new();
 	private bool _deckDirty;
 
@@ -57,6 +58,7 @@ public partial class BattleDeckBuilderController : Control
 		_saveButton = GetNode<Button>("Margin/Root/Footer/SaveButton");
 		_resetButton = GetNode<Button>("Margin/Root/Footer/ResetButton");
 		_starterButton = GetNode<Button>("Margin/Root/Footer/StarterButton");
+		_resetButton.Text = "Clear Deck";
 
 		_availableList.ItemSelected += OnAvailableSelected;
 		_deckList.ItemSelected += OnDeckSelected;
@@ -78,7 +80,7 @@ public partial class BattleDeckBuilderController : Control
 		}
 
 		_workingDeck = _session.DeckBuildState.CardIds.ToList();
-		_deckDirty = false;
+		RefreshDeckDirtyFlag();
 	}
 
 	public void RefreshFromExternalState()
@@ -94,49 +96,52 @@ public partial class BattleDeckBuilderController : Control
 			return;
 		}
 
+		string selectedAvailableCardId = GetSelectedAvailableCardId();
+		string selectedDeckCardId = GetSelectedDeckCardId();
 		ProgressionSnapshot progression = _session.BuildProgressionSnapshotModel();
 		_availableTemplates = _constructionService.GetAvailableCardPool(progression).ToArray();
+		_visibleDeckEntries = BuildVisibleDeckEntries();
+		BattleDeckValidationResult validation = _constructionService.ValidateDeck(BuildWorkingDeckSnapshot(), progression);
 
 		_availableList.Clear();
 		foreach (BattleCardTemplate template in _availableTemplates)
 		{
 			bool isOverlimitCandidate = !template.CanCarryNormally(progression) && template.CanCarryOverlimit(progression);
+			bool atCopyLimit = IsAtDeckCopyLimit(template, progression);
 			string learnedLabel = template.IsLearnedCard ? "  [学习]" : string.Empty;
 			string overlimitLabel = isOverlimitCandidate ? "  [超规]" : string.Empty;
-			_availableList.AddItem($"{template.DisplayName}{learnedLabel}{overlimitLabel}  C{template.Cost}  I{template.GetEffectiveBuildPoints()}");
+			string copyState = $"{GetCurrentCopies(_workingDeck, template.CardId)}/{GetDeckCopyLimit(template, progression)}";
+			int itemIndex = _availableList.AddItem($"{template.DisplayName}{learnedLabel}{overlimitLabel}  C{template.Cost}  I{template.GetEffectiveBuildPoints()}  {copyState}");
+			_availableList.SetItemCustomFgColor(itemIndex, atCopyLimit ? new Color(0.42f, 0.42f, 0.42f, 1.0f) : Colors.White);
 		}
 
 		_deckList.Clear();
-		foreach (string cardId in _workingDeck)
+		foreach (DeckListEntry entry in _visibleDeckEntries)
 		{
-			BattleCardTemplate? template = BattleCardLibrary.FindTemplate(cardId);
-			if (template == null)
-			{
-				_deckList.AddItem(cardId);
-				continue;
-			}
-
-			bool usesOverlimitCarry = !template.CanCarryNormally(progression) && template.CanCarryOverlimit(progression);
-			_deckList.AddItem(usesOverlimitCarry ? $"{template.DisplayName} [超规]" : template.DisplayName);
+			_deckList.AddItem(BuildDeckEntryText(entry, progression));
 		}
 
 		_poolSummaryLabel.Text = $"可选牌库 {_availableTemplates.Length} 张";
+		_deckSummaryLabel.Text = $"当前牌组 {validation.TotalCardCount} 张 / 影响 {validation.TotalBuildPoints} / 超规 {validation.UsedOverlimitCarrySlots} / 正式版本 #{_session.DeckBuildState.Revision}";
+		_validationLabel.Text = _deckDirty
+			? BuildValidationText(validation) + $"\n正式构筑版本 #{_session.DeckBuildState.Revision}\n未保存"
+			: BuildValidationText(validation) + $"\n正式构筑版本 #{_session.DeckBuildState.Revision}\n已保存";
+		_saveButton.Disabled = !_deckDirty || !validation.IsValid;
+		_resetButton.Disabled = _workingDeck.Count == 0;
 
-		DeckBuildSnapshot snapshot = new()
+		RestoreAvailableSelection(selectedAvailableCardId);
+		RestoreDeckSelection(selectedDeckCardId);
+		if (_availableList.ItemCount > 0 && _availableList.GetSelectedItems().Length == 0)
 		{
-			BuildName = _session.DeckBuildState.BuildName,
-			CardIds = _workingDeck.ToArray(),
-			RelicIds = _session.DeckBuildState.RelicIds,
-		};
-		BattleDeckValidationResult validation = _constructionService.ValidateDeck(snapshot, progression);
-		_deckSummaryLabel.Text = $"当前牌组 {validation.TotalCardCount} 张 / 影响 {validation.TotalBuildPoints} / 超规 {validation.UsedOverlimitCarrySlots}";
-		_validationLabel.Text = BuildValidationText(validation);
-		_saveButton.Disabled = !validation.IsValid;
-
-		if (_availableTemplates.Length > 0 && _availableList.ItemCount > 0)
-		{
-			_availableList.Select(Mathf.Clamp(_availableList.GetSelectedItems().FirstOrDefault(), 0, _availableList.ItemCount - 1));
+			_availableList.Select(0);
 		}
+
+		if (_deckList.ItemCount > 0 && _deckList.GetSelectedItems().Length == 0)
+		{
+			_deckList.Select(0);
+		}
+
+		UpdateActionButtons();
 	}
 
 	private static string BuildValidationText(BattleDeckValidationResult validation)
@@ -182,13 +187,14 @@ public partial class BattleDeckBuilderController : Control
 
 	private void OnDeckSelected(long index)
 	{
-		if (index < 0 || index >= _workingDeck.Count || BattleCardLibrary == null)
+		if (index < 0 || index >= _visibleDeckEntries.Length || BattleCardLibrary == null)
 		{
 			return;
 		}
 
-		BattleCardTemplate? template = BattleCardLibrary.FindTemplate(_workingDeck[(int)index]);
-		_detailLabel.Text = template != null ? BuildTemplateDetailText(template) : _workingDeck[(int)index];
+		string cardId = _visibleDeckEntries[(int)index].CardId;
+		BattleCardTemplate? template = BattleCardLibrary.FindTemplate(cardId);
+		_detailLabel.Text = template != null ? BuildTemplateDetailText(template) : cardId;
 	}
 
 	private static string BuildTemplateDetailText(BattleCardTemplate template)
@@ -233,6 +239,151 @@ public partial class BattleDeckBuilderController : Control
 		};
 	}
 
+	private DeckListEntry[] BuildVisibleDeckEntries()
+	{
+		return _workingDeck
+			.GroupBy(cardId => cardId, StringComparer.Ordinal)
+			.OrderBy(group => group.Key, StringComparer.Ordinal)
+			.Select(group => new DeckListEntry(group.Key, group.Count()))
+			.ToArray();
+	}
+
+	private string BuildDeckEntryText(DeckListEntry entry, ProgressionSnapshot progression)
+	{
+		BattleCardTemplate? template = BattleCardLibrary?.FindTemplate(entry.CardId);
+		bool usesOverlimitCarry = template != null && !template.CanCarryNormally(progression) && template.CanCarryOverlimit(progression);
+		string displayName = template?.DisplayName ?? entry.CardId;
+		return usesOverlimitCarry ? $"{displayName} x{entry.Count} [超规]" : $"{displayName} x{entry.Count}";
+	}
+
+	private void RefreshDeckDirtyFlag()
+	{
+		if (_session == null)
+		{
+			_deckDirty = false;
+			return;
+		}
+
+		_deckDirty = !_workingDeck.SequenceEqual(_session.DeckBuildState.CardIds, StringComparer.Ordinal);
+	}
+
+	private static int GetCurrentCopies(IReadOnlyList<string> workingDeck, string cardId)
+	{
+		return workingDeck.Count(value => string.Equals(value, cardId, StringComparison.Ordinal));
+	}
+
+	private int GetDeckCopyLimit(BattleCardTemplate template, ProgressionSnapshot progression)
+	{
+		bool usesOverlimitCarry = !template.CanCarryNormally(progression) && template.CanCarryOverlimit(progression);
+		if (usesOverlimitCarry)
+		{
+			return 1;
+		}
+
+		int effectiveMaxCopies = Math.Max(1, (BattleDeckBuildRules?.BaseMaxCopiesPerCard ?? 1) + progression.DeckMaxCopiesPerCardBonus);
+		return Math.Min(effectiveMaxCopies, Math.Max(1, template.MaxCopiesInDeck));
+	}
+
+	private bool IsAtDeckCopyLimit(BattleCardTemplate template, ProgressionSnapshot progression)
+	{
+		return GetCurrentCopies(_workingDeck, template.CardId) >= GetDeckCopyLimit(template, progression);
+	}
+
+	private bool CanAddTemplateToWorkingDeck(BattleCardTemplate template, ProgressionSnapshot progression, out BattleDeckValidationResult validation)
+	{
+		if (_constructionService == null || _session == null || IsAtDeckCopyLimit(template, progression))
+		{
+			validation = new BattleDeckValidationResult();
+			return false;
+		}
+
+		List<string> candidateDeck = new(_workingDeck) { template.CardId };
+		validation = _constructionService.ValidateDeck(
+			new DeckBuildSnapshot
+			{
+				BuildName = _session.DeckBuildState.BuildName,
+				CardIds = candidateDeck.ToArray(),
+				RelicIds = _session.DeckBuildState.RelicIds,
+			},
+			progression);
+		return validation.CanAddCards;
+	}
+
+	private string GetSelectedAvailableCardId()
+	{
+		int[] selected = _availableList.GetSelectedItems();
+		if (selected.Length == 0)
+		{
+			return string.Empty;
+		}
+
+		int selectedIndex = selected[0];
+		return selectedIndex >= 0 && selectedIndex < _availableTemplates.Length
+			? _availableTemplates[selectedIndex].CardId
+			: string.Empty;
+	}
+
+	private string GetSelectedDeckCardId()
+	{
+		int[] selected = _deckList.GetSelectedItems();
+		if (selected.Length == 0)
+		{
+			return string.Empty;
+		}
+
+		int selectedIndex = selected[0];
+		return selectedIndex >= 0 && selectedIndex < _visibleDeckEntries.Length
+			? _visibleDeckEntries[selectedIndex].CardId
+			: string.Empty;
+	}
+
+	private void RestoreAvailableSelection(string cardId)
+	{
+		if (_availableTemplates.Length == 0)
+		{
+			return;
+		}
+
+		int selectedIndex = Array.FindIndex(_availableTemplates, template => string.Equals(template.CardId, cardId, StringComparison.Ordinal));
+		_availableList.Select(selectedIndex >= 0 ? selectedIndex : 0);
+	}
+
+	private void RestoreDeckSelection(string cardId)
+	{
+		if (_visibleDeckEntries.Length == 0)
+		{
+			return;
+		}
+
+		int selectedIndex = Array.FindIndex(_visibleDeckEntries, entry => string.Equals(entry.CardId, cardId, StringComparison.Ordinal));
+		_deckList.Select(selectedIndex >= 0 ? selectedIndex : 0);
+	}
+
+	private void UpdateActionButtons()
+	{
+		if (_constructionService == null || _session == null)
+		{
+			_addButton.Disabled = true;
+			_removeButton.Disabled = true;
+			return;
+		}
+
+		ProgressionSnapshot progression = _session.BuildProgressionSnapshotModel();
+		bool canAdd = false;
+		int[] selected = _availableList.GetSelectedItems();
+		if (selected.Length > 0)
+		{
+			int selectedIndex = selected[0];
+			if (selectedIndex >= 0 && selectedIndex < _availableTemplates.Length)
+			{
+				canAdd = CanAddTemplateToWorkingDeck(_availableTemplates[selectedIndex], progression, out _);
+			}
+		}
+
+		_addButton.Disabled = !canAdd;
+		_removeButton.Disabled = _deckList.GetSelectedItems().Length == 0;
+	}
+
 	private void OnAddPressed()
 	{
 		if (_constructionService == null || _session == null || BattleCardLibrary == null)
@@ -247,19 +398,19 @@ public partial class BattleDeckBuilderController : Control
 		}
 
 		BattleCardTemplate template = _availableTemplates[selected[0]];
-		List<string> candidateDeck = new(_workingDeck) { template.CardId };
-		BattleDeckValidationResult validation = _constructionService.ValidateDeck(
-			new DeckBuildSnapshot { CardIds = candidateDeck.ToArray(), RelicIds = _session.DeckBuildState.RelicIds },
-			_session.BuildProgressionSnapshotModel());
-		if (!validation.IsValid)
+		ProgressionSnapshot progression = _session.BuildProgressionSnapshotModel();
+		if (!CanAddTemplateToWorkingDeck(template, progression, out BattleDeckValidationResult validation))
 		{
-			_validationLabel.Text = BuildValidationText(validation);
+			_validationLabel.Text = IsAtDeckCopyLimit(template, progression)
+				? "该卡已达携带上限"
+				: BuildValidationText(validation) + (_deckDirty ? "\n未保存" : string.Empty);
 			return;
 		}
 
-		_workingDeck = candidateDeck;
-		_deckDirty = true;
+		_workingDeck.Add(template.CardId);
+		RefreshDeckDirtyFlag();
 		RefreshAll();
+		RestoreDeckSelection(template.CardId);
 	}
 
 	private void OnRemovePressed()
@@ -270,9 +421,23 @@ public partial class BattleDeckBuilderController : Control
 			return;
 		}
 
-		_workingDeck.RemoveAt(selected[0]);
-		_deckDirty = true;
+		int selectedIndex = selected[0];
+		if (selectedIndex < 0 || selectedIndex >= _visibleDeckEntries.Length)
+		{
+			return;
+		}
+
+		string cardId = _visibleDeckEntries[selectedIndex].CardId;
+		int removeIndex = _workingDeck.FindIndex(value => string.Equals(value, cardId, StringComparison.Ordinal));
+		if (removeIndex < 0)
+		{
+			return;
+		}
+
+		_workingDeck.RemoveAt(removeIndex);
+		RefreshDeckDirtyFlag();
 		RefreshAll();
+		RestoreDeckSelection(cardId);
 	}
 
 	private void OnSavePressed()
@@ -296,13 +461,17 @@ public partial class BattleDeckBuilderController : Control
 		}
 
 		_session.ApplyDeckBuildSnapshot(snapshot.ToDictionary());
+		LoadWorkingDeckFromSession();
+		RefreshAll();
 		_validationLabel.Text = BuildValidationText(validation) + "\n已保存到 GlobalGameSession";
 	}
 
 	private void OnResetPressed()
 	{
-		LoadWorkingDeckFromSession();
+		_workingDeck.Clear();
+		RefreshDeckDirtyFlag();
 		RefreshAll();
+		_detailLabel.Text = "Select a card.";
 	}
 
 	private void OnStarterPressed()
@@ -313,7 +482,20 @@ public partial class BattleDeckBuilderController : Control
 		}
 
 		_workingDeck = BattleCardLibrary.BuildStarterDeckCardIds().ToList();
-		_deckDirty = true;
+		RefreshDeckDirtyFlag();
 		RefreshAll();
+	}
+
+	private sealed class DeckListEntry
+	{
+		public DeckListEntry(string cardId, int count)
+		{
+			CardId = cardId;
+			Count = Math.Max(0, count);
+		}
+
+		public string CardId { get; }
+
+		public int Count { get; }
 	}
 }

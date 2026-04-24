@@ -9,13 +9,15 @@ public sealed class MapResumeContext
         Vector2 playerGlobalPosition,
         Godot.Collections.Dictionary? mapRuntimeSnapshot = null,
         string sourceInteractablePath = "",
-        string encounterId = "")
+        string encounterId = "",
+        MapReturnReason returnReason = MapReturnReason.PendingBattle)
     {
         ScenePath = scenePath ?? string.Empty;
         PlayerGlobalPosition = playerGlobalPosition;
         MapRuntimeSnapshot = mapRuntimeSnapshot ?? new Godot.Collections.Dictionary();
         SourceInteractablePath = sourceInteractablePath?.Trim() ?? string.Empty;
         EncounterId = encounterId?.Trim() ?? string.Empty;
+        ReturnReason = returnReason;
     }
 
     public string ScenePath { get; }
@@ -27,4 +29,17 @@ public sealed class MapResumeContext
     public string SourceInteractablePath { get; }
 
     public string EncounterId { get; }
+
+    public MapReturnReason ReturnReason { get; }
+
+    public MapResumeContext WithReturnReason(MapReturnReason returnReason)
+    {
+        return new MapResumeContext(
+            ScenePath,
+            PlayerGlobalPosition,
+            MapRuntimeSnapshot,
+            SourceInteractablePath,
+            EncounterId,
+            returnReason);
+    }
 }

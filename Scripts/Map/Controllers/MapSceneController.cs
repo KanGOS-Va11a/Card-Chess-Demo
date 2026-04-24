@@ -43,7 +43,7 @@ public partial class MapSceneController : Node2D
 			&& resumeContext != null)
 		{
 			consumedBattleResumeContext = resumeContext;
-			GD.Print($"MapSceneController: applying battle return for '{currentScenePath}', playerPos={resumeContext.PlayerGlobalPosition}");
+			GD.Print($"MapSceneController: applying battle return for '{currentScenePath}', reason={resumeContext.ReturnReason}, playerPos={resumeContext.PlayerGlobalPosition}");
 			MapRuntimeSnapshotHelper.ApplyToScene(GetTree().CurrentScene ?? this, resumeContext.MapRuntimeSnapshot);
 			PlacePlayer(player, resumeContext.PlayerGlobalPosition);
 		}
@@ -208,21 +208,38 @@ public partial class MapSceneController : Node2D
 		Node sceneRoot = GetTree().CurrentScene ?? this;
 		foreach (StringName interactableId in _globalSession.UsedInteractables)
 		{
-			string relativePath = interactableId.ToString();
-			if (string.IsNullOrWhiteSpace(relativePath))
+			string stateKeyOrPath = interactableId.ToString();
+			if (string.IsNullOrWhiteSpace(stateKeyOrPath))
 			{
 				continue;
 			}
 
-			InteractableTemplate? interactable = sceneRoot.GetNodeOrNull<InteractableTemplate>(relativePath);
+			InteractableTemplate? interactable = MapRuntimeSnapshotHelper.ResolveInteractable(sceneRoot, stateKeyOrPath);
 			if (interactable == null)
 			{
 				continue;
 			}
 
 			Godot.Collections.Dictionary snapshot = interactable.BuildRuntimeSnapshot();
-			snapshot["is_disabled"] = true;
-			snapshot["remove_from_scene"] = true;
+			bool disableWhenSessionUsed = snapshot.TryGetValue("disable_when_session_used", out Variant disableWhenSessionUsedVariant)
+				&& disableWhenSessionUsedVariant.AsBool();
+			bool removeWhenSessionUsed = snapshot.TryGetValue("remove_when_session_used", out Variant removeWhenSessionUsedVariant)
+				&& removeWhenSessionUsedVariant.AsBool();
+			if (!disableWhenSessionUsed && !removeWhenSessionUsed)
+			{
+				continue;
+			}
+
+			if (disableWhenSessionUsed || removeWhenSessionUsed)
+			{
+				snapshot["is_disabled"] = true;
+			}
+
+			if (removeWhenSessionUsed)
+			{
+				snapshot["remove_from_scene"] = true;
+			}
+
 			interactable.ApplyRuntimeSnapshot(snapshot);
 		}
 	}

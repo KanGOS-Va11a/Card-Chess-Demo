@@ -100,6 +100,8 @@ public partial class Enemy : InteractableTemplate
 		snapshot["remove_from_scene"] = false;
 		snapshot["remove_on_battle_victory"] = RemoveOnBattleVictory;
 		snapshot["mark_used_on_battle_victory"] = MarkUsedOnBattleVictory;
+		snapshot["disable_when_session_used"] = true;
+		snapshot["remove_when_session_used"] = true;
 		return snapshot;
 	}
 

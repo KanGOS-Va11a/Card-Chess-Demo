@@ -189,6 +189,8 @@ public abstract partial class InteractableTemplate : StaticBody2D, IInteractable
 		{
 			["is_disabled"] = IsDisabled,
 			["next_available_time_ms"] = (long)_nextAvailableTimeMs,
+			["disable_when_session_used"] = false,
+			["remove_when_session_used"] = false,
 		};
 	}
 
@@ -248,6 +250,11 @@ public abstract partial class InteractableTemplate : StaticBody2D, IInteractable
 			return $"{normalizedScenePath}::{GetType().Name}::{cell.X},{cell.Y}";
 		}
 
-		return sceneRoot == null ? GetPath().ToString() : sceneRoot.GetPathTo(this).ToString();
+		if (sceneRoot != null && sceneRoot.IsAncestorOf(this))
+		{
+			return sceneRoot.GetPathTo(this).ToString();
+		}
+
+		return GetPath().ToString();
 	}
 }

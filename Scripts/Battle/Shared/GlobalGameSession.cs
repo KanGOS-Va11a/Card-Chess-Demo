@@ -8,6 +8,7 @@ using CardChessDemo.Battle.Cards;
 using CardChessDemo.Battle.Progression;
 using CardChessDemo.Battle.Services;
 using CardChessDemo.Battle.Stats;
+using CardChessDemo.Map;
 
 namespace CardChessDemo.Battle.Shared;
 
@@ -45,6 +46,7 @@ public partial class GlobalGameSession : Node
 	[Export] public string DeckBuildName { get; set; } = "default";
 	[Export] public string[] DeckCardIds { get; set; } = Array.Empty<string>();
 	[Export] public string[] DeckRelicIds { get; set; } = Array.Empty<string>();
+	[Export] public int DeckBuildRevision { get; set; } = 0;
 	[Export] public string EquippedWeaponItemId { get; set; } = string.Empty;
 	[Export] public string EquippedArmorItemId { get; set; } = string.Empty;
 	[Export] public string EquippedAccessoryItemId { get; set; } = string.Empty;
@@ -727,6 +729,11 @@ public partial class GlobalGameSession : Node
 			MarkEncounterCleared(new StringName(resolutionPlan.ClearedEncounterId));
 		}
 
+		if (PendingBattleReturnContext != null)
+		{
+			PendingBattleReturnContext = PendingBattleReturnContext.WithReturnReason(ResolveMapReturnReason(result.Outcome));
+		}
+
 		if (result.Outcome == BattleOutcome.Victory && PendingBattleReturnContext != null)
 		{
 			ApplyBattleVictoryToPendingMapResume(PendingBattleReturnContext);
@@ -816,11 +823,17 @@ public partial class GlobalGameSession : Node
 		}
 
 		Godot.Collections.Dictionary snapshot = resumeContext.MapRuntimeSnapshot;
-		if (!snapshot.TryGetValue(interactablePath, out Variant sourceSnapshotVariant)
+		string snapshotKey = MapRuntimeSnapshotHelper.ResolveSnapshotKey(snapshot, interactablePath);
+		if (string.IsNullOrWhiteSpace(snapshotKey))
+		{
+			snapshotKey = interactablePath;
+		}
+
+		if (!snapshot.TryGetValue(snapshotKey, out Variant sourceSnapshotVariant)
 			|| sourceSnapshotVariant.Obj is not Godot.Collections.Dictionary interactableSnapshot)
 		{
 			interactableSnapshot = new Godot.Collections.Dictionary();
-			snapshot[interactablePath] = interactableSnapshot;
+			snapshot[snapshotKey] = interactableSnapshot;
 		}
 
 		bool markUsedOnVictory = !interactableSnapshot.TryGetValue("mark_used_on_battle_victory", out Variant markUsedVariant)
@@ -838,6 +851,16 @@ public partial class GlobalGameSession : Node
 		{
 			interactableSnapshot["remove_from_scene"] = true;
 		}
+	}
+
+	private static MapReturnReason ResolveMapReturnReason(BattleOutcome outcome)
+	{
+		return outcome switch
+		{
+			BattleOutcome.Victory => MapReturnReason.BattleVictory,
+			BattleOutcome.Retreat => MapReturnReason.BattleRetreat,
+			_ => MapReturnReason.PendingBattle,
+		};
 	}
 
 	public Godot.Collections.Dictionary BuildPlayerSnapshot()
@@ -908,6 +931,7 @@ public partial class GlobalGameSession : Node
 			BuildName = DeckBuildState.BuildName,
 			CardIds = DeckBuildState.CardIds,
 			RelicIds = DeckBuildState.RelicIds,
+			Revision = DeckBuildState.Revision,
 		};
 	}
 
@@ -1047,9 +1071,16 @@ public partial class GlobalGameSession : Node
 	public void ApplyDeckBuildSnapshot(Godot.Collections.Dictionary snapshot)
 	{
 		DeckBuildSnapshot deckBuild = DeckBuildSnapshot.FromDictionary(snapshot);
+		bool changed = !string.Equals(DeckBuildState.BuildName, string.IsNullOrWhiteSpace(deckBuild.BuildName) ? "default" : deckBuild.BuildName, StringComparison.Ordinal)
+			|| !DeckBuildState.CardIds.SequenceEqual(deckBuild.CardIds ?? Array.Empty<string>(), StringComparer.Ordinal)
+			|| !DeckBuildState.RelicIds.SequenceEqual(deckBuild.RelicIds ?? Array.Empty<string>(), StringComparer.Ordinal);
+		int targetRevision = deckBuild.Revision > 0
+			? deckBuild.Revision
+			: (changed ? Math.Max(1, DeckBuildState.Revision + 1) : DeckBuildState.Revision);
 		DeckBuildState.BuildName = string.IsNullOrWhiteSpace(deckBuild.BuildName) ? "default" : deckBuild.BuildName;
 		DeckBuildState.CardIds = deckBuild.CardIds;
 		DeckBuildState.RelicIds = deckBuild.RelicIds;
+		DeckBuildState.Revision = targetRevision;
 
 		SyncFieldsFromCompositeState();
 	}
@@ -1474,6 +1505,7 @@ public partial class GlobalGameSession : Node
 		DeckBuildState.BuildName = DeckBuildName;
 		DeckBuildState.CardIds = DeckCardIds;
 		DeckBuildState.RelicIds = DeckRelicIds;
+		DeckBuildState.Revision = Math.Max(0, DeckBuildRevision);
 
 		EquipmentLoadoutState.WeaponItemId = EquippedWeaponItemId;
 		EquipmentLoadoutState.ArmorItemId = EquippedArmorItemId;
@@ -1524,6 +1556,7 @@ public partial class GlobalGameSession : Node
 		DeckBuildName = DeckBuildState.BuildName;
 		DeckCardIds = DeckBuildState.CardIds;
 		DeckRelicIds = DeckBuildState.RelicIds;
+		DeckBuildRevision = DeckBuildState.Revision;
 		EquippedWeaponItemId = EquipmentLoadoutState.WeaponItemId;
 		EquippedArmorItemId = EquipmentLoadoutState.ArmorItemId;
 		EquippedAccessoryItemId = EquipmentLoadoutState.AccessoryItemId;

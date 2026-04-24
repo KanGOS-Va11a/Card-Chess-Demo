@@ -67,14 +67,12 @@ public sealed class SupportHealerEnemyAiStrategy : IEnemyAiStrategy
             return EnemyAiDecision.Wait();
         }
 
-        Vector2I? nextCell = EnemyAiTactics.FindBestApproachCell(
+        return EnemyAiTactics.DecideChasePlayerOrBreakBlockingObstacle(
             context,
             nearestOpponent,
             desiredMaxRange: context.SelfState.AttackRange,
             desiredMinRange: Math.Min(2, context.SelfState.AttackRange),
             preferFlank: true);
-
-        return nextCell.HasValue ? EnemyAiDecision.Move(nextCell.Value) : EnemyAiDecision.Wait();
     }
 
     private static BoardObject? FindBestSupportTarget(EnemyAiContext context)
